@@ -13,11 +13,14 @@
 //   node render.mjs <项目目录> --captions        列出全部字幕分段和时间，检查断句
 //   node render.mjs <项目目录> --board           导出整块白板画完后的全貌大图 → out/board.png（渲染成片时也会自动导出）
 //   node render.mjs <项目目录> --cover           导出封面（视频第一帧）→ out/cover.png（渲染成片时也会自动导出）
-// 其他参数：--workers 4  --fps 30  --out 文件名  --no-audio  --bgm 音乐文件 --bgm-volume 0.12
+// 其他参数：--workers 4  --fps 30  --out 文件名  --no-audio
+// 配乐：默认按 script.json 的 "bgm" 用代码自动生成并混入（见 bgm.mjs）；--no-bgm 不要配乐；--bgm-style 风格 临时换风格；
+//       --bgm-volume 1.2 调整配乐音量（倍数）；--bgm 音乐文件 改用自己的音乐（此时 --bgm-volume 默认 0.12）
 //           --offline 模拟断网（测试字体回退用）
 // 自动检查每次都会运行；有"错误"时拒绝渲染成片（草稿、截图不受影响），确认没问题可以加 --force 强制渲染
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import { makeProjectBgm } from './bgm.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -285,7 +288,12 @@ async function main() {
     if (!flag('no-audio') && fs.existsSync(narration)) {
       inputs.push('-ss', String(from), '-t', String(to - from), '-i', narration);
       const bgm = opt('bgm');
-      if (bgm) {
+      const gen = !bgm && !flag('no-bgm') ? makeProjectBgm(proj, comp.duration, { style: opt('bgm-style'), volume: Number(opt('bgm-volume', 1)) }) : null;
+      if (gen) {
+        console.log(`配乐：${gen.name}（${gen.style}），代码生成`);
+        inputs.push('-ss', String(from), '-t', String(to - from), '-i', gen.file);
+        filter = `[1:a]apad=whole_dur=${to - from}[n];[n][2:a]amix=inputs=2:duration=first:normalize=0[a]`;
+      } else if (bgm) {
         inputs.push('-stream_loop', '-1', '-t', String(to - from), '-i', path.resolve(bgm));
         const v = Number(opt('bgm-volume', 0.12));
         filter = `[1:a]apad=whole_dur=${to - from}[n];[2:a]volume=${v},afade=t=out:st=${Math.max(0, to - from - 2)}:d=2[m];[n][m]amix=inputs=2:duration=first:normalize=0[a]`;

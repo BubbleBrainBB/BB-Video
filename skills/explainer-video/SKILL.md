@@ -15,7 +15,7 @@ description: 用纯代码制作知识讲解视频（手绘白板风格），自�
 - `references/modes.md`：各种内容（现象、题目、单词、概念、典故 / 历史故事）的讲法。**写脚本之前必须读对应的那一节。**
 - `references/characters.md`：卡通角色（Notion 风格）的设计方法、规格参数和表演原则。**视频里要出现人物时必须读。**
 - `references/review.md`：自检清单。
-- `scripts/new.mjs` 新建项目 · `scripts/tts.py` 配音和时间轴 · `scripts/render.mjs` 渲染 · `scripts/cast.mjs` 角色定妆图
+- `scripts/new.mjs` 新建项目 · `scripts/tts.py` 配音和时间轴 · `scripts/render.mjs` 渲染 · `scripts/cast.mjs` 角色定妆图 · `scripts/bgm.mjs` 背景音乐（代码合成）
 
 ## 工作流程
 
@@ -68,7 +68,7 @@ node scripts/render.mjs videos/<名字> --strip 14,17      # ③ 动画过程
 node scripts/render.mjs videos/<名字>            # → out/video.mp4（1080p 30fps）；自动检查有错误时会拒绝渲染
 node scripts/render.mjs videos/<名字> --draft    # 半分辨率快速版，想先看节奏时用
 ```
-可选背景音乐：`--bgm 音乐文件 --bgm-volume 0.1`。
+背景音乐按 script.json 的 `bgm` 自动生成混入；临时关掉用 `--no-bgm`，换风格用 `--bgm-style calm`，改用自己的音乐文件用 `--bgm 文件 --bgm-volume 0.1`。
 成片渲染完会**同时导出封面** `out/cover.png`（就是视频第一帧，可以单独上传当封面）**和整块白板的全貌大图** `out/board.png`：所有内容画完后的样子，不含字幕和进度条，可以当"知识地图"单独发。只想导出这张图：`node scripts/render.mjs videos/<名字> --board`。
 最后告诉用户成片、封面和全貌图的路径，以及在浏览器里直接打开 `index.html` 可以预览、拖动进度条（空格播放暂停）。
 
@@ -78,6 +78,7 @@ node scripts/render.mjs videos/<名字> --draft    # 半分辨率快速版，想
   "voice": "zh-CN-XiaoxiaoNeural",
   "rate": "+0%",
   "lead_in": 0.6, "gap": 0.35, "tail": 1.5,
+  "bgm": "bright",
   "lines": [
     { "id": "hook", "text": "苹果为什么会往下掉，而不是往天上飞？", "chapter": "提出问题" },
     { "id": "word", "text": "serendipity", "voice": "en-US-AvaNeural", "rate": "-15%" },
@@ -87,6 +88,18 @@ node scripts/render.mjs videos/<名字> --draft    # 半分辨率快速版，想
 }
 ```
 `chapter`：新的一章从这一句开始，画面顶部会自动出现章节进度条（至少 2 章才出现）。一般 3–6 章，每章标题 2–6 个字，对应 `references/modes.md` 里结构的大段。
+
+`bgm`：背景音乐，**由代码现场合成**（`scripts/bgm.mjs`，不需要任何音乐文件），渲染成片时自动混入。按内容选风格：
+
+| 风格 | 听感 | 适合 |
+|---|---|---|
+| `bright` | 温暖铺底 + 马林巴琶音 + 很轻的 lo-fi 节拍 | 现象科普、概念讲解（默认） |
+| `calm` | 慢铺底 + 稀疏的钢琴音，没有鼓 | 题目讲解（不打扰思考） |
+| `history` | 五声音阶 + 古筝式拨弦 + 低沉的鼓 | 典故、历史故事、中国文化 |
+| `playful` | 明亮拨弦 + 沙锤，节奏稍快 | 英文单词、做法 / 教程 |
+
+配乐会自动跟着视频走：封面时起音，每换一章换一个乐句并响一声提示音，讲完后回到主和弦淡出；**有人说话时自动压低**（约低于人声 19 分贝），停顿时抬起来；音量按旁白响度自动匹配。
+不要配乐写 `"bgm": false`；嫌大或嫌小写 `{ "style": "history", "volume": 0.7 }`（倍数）。单独试听：`node scripts/bgm.mjs videos/<名字>` → `audio/bgm.wav`；四种风格各 30 秒的样品：`--demo`。
 
 常用声音：`zh-CN-XiaoxiaoNeural`（女声，温暖，默认）、`zh-CN-YunxiNeural`（男声，活泼）、`zh-CN-YunyangNeural`（男声，播音腔）、`en-US-AvaNeural` / `en-US-AndrewNeural`（英文）。
 

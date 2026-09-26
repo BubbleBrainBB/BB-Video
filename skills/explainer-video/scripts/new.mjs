@@ -31,7 +31,7 @@ for (const d of ['audio', 'review', 'out']) fs.mkdirSync(path.join(proj, d), { r
 const tpl = fs.readFileSync(path.join(skill, 'templates', style, 'index.html'), 'utf8');
 fs.writeFileSync(idx, tpl.replaceAll('__TITLE__', opt('title', slug)).replaceAll('__SLUG__', slug));
 fs.writeFileSync(path.join(proj, 'script.json'), JSON.stringify({
-  voice: 'zh-CN-XiaoxiaoNeural', rate: '+0%', lead_in: 0.6, gap: 0.35, tail: 1.5,
+  voice: 'zh-CN-XiaoxiaoNeural', rate: '+0%', lead_in: 0.6, gap: 0.35, tail: 1.5, bgm: 'bright',
   lines: [{ id: 'l1', text: '在这里写第一句旁白。' }],
 }, null, 2) + '\n');
 fs.writeFileSync(path.join(proj, 'characters.js'), '// 本视频的角色：名字 → 规格（见 references/characters.md）\nwindow.CAST = {};\n');
