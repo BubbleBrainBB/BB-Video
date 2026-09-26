@@ -43,7 +43,7 @@
 - 画的时机跟着旁白：**说到"苹果"时苹果开始画**，用 `T.word('id', '苹果')`。
 - 画完一个东西以后要有停顿，给观众看的时间，不要一直在画。
 - 镜头移动：`ease.inOut`，1–1.5 秒；**画新内容之前先把镜头移过去**，不要边画边大幅移动。
-- 结尾：镜头拉远看全貌 `b.focus(b.bounds(), …)`，让观众看到整张白板的"知识地图"。`focus` 取景会自动避开顶部进度条和底部字幕。
+- 结尾：用 `b.overview({ at })` 拉远看全貌，让观众看到整张白板的"知识地图"。它会按章节顺序在各区域旁标出 ①②③……，用虚线箭头串起来，并在顶部进度条的章节名前加上同样的编号；导出的全貌图上方也会有一行图例。序号会自动找不压内容的空位。**`overview` 放在 build 的最后调用**。
 - 结尾的总结要**写在白板的空地上**，不要用 `hud: true` 固定在屏幕中央：全貌镜头里它会挡住内容（自动检查会提醒），而写在白板上的总结还会出现在导出的全貌图里。
 
 ### 时间安排（自动检查会逐条核对）
@@ -156,6 +156,18 @@ b.sideLabels([A, B, C], ['5', '6', '4']);           // 边 AB、BC、CA 的中�
 几何图要用坐标**精确计算**（先写一个"图形 → 屏幕坐标"的函数，所有顶点都从它算）。
 同一段视频里：相等的边用相同道数的短杠，相等的角用相同道数的弧，全片统一。
 
+### 一堆、一把、时长、档位
+```js
+// 区域 area：{ x, y, w, h } 矩形 | { cx, cy, r } 或 { cx, cy, rx, ry } 圆 / 椭圆 | { shape: 'mound', cx, cy, w, h } 小山（(cx, cy) 是底边中点）
+b.pile({ shape: 'mound', cx: 400, cy: 600, w: 360, h: 160 }, { count: 14, size: 36, shape: 'chunk', color: 'red', fill: '#F59A9A' });  // 一堆，互不重叠
+b.sprinkle({ x: 300, y: 500, w: 260, h: 80 }, { count: 16, size: 14, shape: 'ring', color: 'green', fill: '#B8F0A6' });               // 撒一把，逐个出现
+// shape：chunk 块 · blob 团 · grain 颗粒 · ring 小圈 · dot 实心点 · dash 短线；也可以 make: (x, y, size, r, i) => ({ d, color, fill }) 自己画
+b.timer(x, y, { label: '2 分钟', r: 40 });                          // 小钟 + 时长，分针转一圈
+b.level(x, y, { icon: 'flame', level: 2, max: 3, label: '中火' });   // 档位：flame 火苗 | bar 柱 | star 星
+WB.scatterPoints(area, { count, gap, seed })                        // 只要点的坐标时用：可复现、点间距 ≥ gap
+```
+`timer`、`level` 返回的是一组元素，可以整体 `erase`、`pulse`、`move`。
+
 ### 标注已有元素（传元素或 {x,y,w,h}）
 ```js
 b.highlight(el, { color: 'yellow' });     // 荧光笔刷过
@@ -176,7 +188,7 @@ const [sx, sy] = ax.toScreen(3, 9);   // 数据坐标 → 白板坐标，用来�
 ```js
 b.camera(at, { x, y, zoom }, dur);             // 画面中心对准世界坐标 (x,y)
 b.focus(el 或 [el, el] 或 box, { at, dur, pad, zoom });   // 自动取景
-b.focus(b.bounds(), { at: T.end('last') + 0.3, dur: 2 });  // 结尾拉远看全貌
+b.overview({ at: T.start('last') - 0.2, dur: 2 });        // 结尾全貌 + 顺序编号；numbers: false 只拉远不编号；放在 build 最后
 ```
 
 ### 擦除和转场

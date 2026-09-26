@@ -111,12 +111,56 @@
   }
 
   const boxOf = (t) => (t && t.box ? t.box : t);
+
+  // ---------- 散布：在一块区域里取点（可复现；gap > 0 时点与点之间保持距离）----------
+  // area：{ x, y, w, h }（矩形）| { cx, cy, r } 或 { cx, cy, rx, ry }（圆 / 椭圆）
+  //       | { shape: 'mound', cx, cy, w, h }（底边中点在 (cx, cy) 的小山，越往上越窄）
+  function areaOf(area) {
+    const shape = area.shape || (area.cx === undefined ? 'rect' : 'ellipse');
+    if (shape === 'rect') return { size: area.w * area.h, pick: (r) => [area.x + r() * area.w, area.y + r() * area.h] };
+    if (shape === 'mound') {
+      const { cx, cy, w, h } = area;
+      return { size: (Math.PI / 4) * w * h, pick: (r) => { const x = cx + (r() - 0.5) * w; const top = h * Math.sqrt(Math.max(0, 1 - Math.pow((2 * (x - cx)) / w, 2))); return [x, cy - r() * top]; } };
+    }
+    const rx = area.rx ?? area.r, ry = area.ry ?? area.r, { cx, cy } = area;
+    return { size: Math.PI * rx * ry, pick: (r) => { const a = r() * Math.PI * 2, k = Math.sqrt(r()); return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]; } };
+  }
+  function scatterPoints(area, { count = 12, gap, seed = 1 } = {}) {
+    const A = areaOf(area), r = rng(seed);
+    const g = gap ?? 0.7 * Math.sqrt(A.size / count);
+    const pts = [];
+    for (let tries = 0; pts.length < count && tries < count * 400; tries++) {
+      const p = A.pick(r);
+      if (pts.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) >= g)) pts.push(p);
+    }
+    return pts;
+  }
+  // 小形状：(x, y) 为中心、s 为外沿直径（约数）、r 为随机数；返回 { d } 等，供 pile / sprinkle / sketch 使用
+  const circleD = (x, y, rr) => `M${x + rr},${y} A${rr},${rr} 0 1 0 ${x - rr},${y} A${rr},${rr} 0 1 0 ${x + rr},${y} Z`;
+  const SHAPES = {
+    chunk: (x, y, s, r) => { const a = r() * Math.PI / 2; const P = [0, 1, 2, 3].map((k) => [x + Math.cos(a + (k * Math.PI) / 2) * s * 0.5 * (0.9 + r() * 0.2), y + Math.sin(a + (k * Math.PI) / 2) * s * 0.5 * (0.9 + r() * 0.2)]); return { d: `M${P.map((p) => p.join(',')).join('L')}Z` }; },
+    ring: (x, y, s) => ({ d: circleD(x, y, s / 2) }),
+    dot: (x, y, s) => ({ d: circleD(x, y, s / 2), dot: true }),
+    grain: (x, y, s, r) => { const a = r() * Math.PI, c = Math.cos(a), si = Math.sin(a), L = s / 2, W = s / 4.5; return { d: `M${x - c * L},${y - si * L} Q${x - si * W},${y + c * W} ${x + c * L},${y + si * L} Q${x + si * W},${y - c * W} ${x - c * L},${y - si * L} Z` }; },
+    dash: (x, y, s, r) => { const a = r() * Math.PI; return { d: `M${x - (Math.cos(a) * s) / 2},${y - (Math.sin(a) * s) / 2} L${x + (Math.cos(a) * s) / 2},${y + (Math.sin(a) * s) / 2}`, open: true }; },
+    blob: (x, y, s, r) => { const n = 7, pts = []; for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2, k = (s / 2) * (0.85 + r() * 0.2); pts.push([x + Math.cos(a) * k, y + Math.sin(a) * k]); } return { d: smoothD(pts, true) + 'Z' }; },
+  };
   const unionBox = (boxes) => {
     boxes = boxes.filter(Boolean);
     const x = Math.min(...boxes.map((b) => b.x)), y = Math.min(...boxes.map((b) => b.y));
     const r = Math.max(...boxes.map((b) => b.x + b.w)), btm = Math.max(...boxes.map((b) => b.y + b.h));
     return { x, y, w: r - x, h: btm - y };
-  };
+  };  // 把几个元素当成一个整体（时长、档位等复合图形用）：有 .start .end .box，可以一起 erase / pulse / move
+  const groupOf = (items, kind) => ({
+    items, kind,
+    get start() { return Math.min(...items.map((i) => i.start)); },
+    get end() { return Math.max(...items.map((i) => i.end)); },
+    get box() { return unionBox(items.map((i) => i.box)); },
+    erase(at, dur) { items.forEach((i) => i.erase(at, dur)); return this; },
+    pulse(at, amt, dur) { items.forEach((i) => i.pulse(at, amt, dur)); return this; },
+    move(at, dx, dy, dur, e) { items.forEach((i) => i.move(at, dx, dy, dur, e)); return this; },
+  });
+
 
   // ---------- 元素基类 ----------
   class Item {
@@ -705,7 +749,15 @@
         const maxW = w - 22;
         if (label.getComputedTextLength() > maxW) { size = Math.max(16, (size * maxW) / label.getComputedTextLength()); label.setAttribute('font-size', size); }
         while (label.getComputedTextLength() > maxW && text.length > 1) { text = text.slice(0, -1); label.textContent = text + '…'; }
-        const item = { ...c, x, w, tick, label, size, state: null };
+        const item = { ...c, x, w, tick, label, size, text: label.textContent, state: null };
+        // 全貌镜头时显示的"带序号"版本，同样按宽度缩放 / 截断
+        let t2 = `${'①②③④⑤⑥⑦⑧⑨⑩⑪⑫'[i] || i + 1} ${c.title}`;
+        label.textContent = t2;
+        const s2 = label.getComputedTextLength() > maxW ? Math.max(16, (size * maxW) / label.getComputedTextLength()) : size;
+        label.setAttribute('font-size', s2);
+        while (label.getComputedTextLength() > maxW && t2.length > 3) { t2 = t2.slice(0, -1); label.textContent = t2 + '…'; }
+        item.numText = label.textContent; item.numSize = s2;
+        label.textContent = item.text; label.setAttribute('font-size', size);
         x += w;
         return item;
       });
@@ -734,6 +786,12 @@
       const { el, L, x0, x1 } = this.chInk;
       el.style.strokeDashoffset = L * (1 - (hx - x0) / (x1 - x0));
       for (const [i, ch] of this.chs.entries()) {
+        const numbered = this.overviewNumbers && t >= this.overviewNumbers.at;
+        if (numbered !== ch.numbered) {
+          ch.numbered = numbered;
+          ch.label.textContent = numbered ? ch.numText : ch.text;
+          ch.label.setAttribute('font-size', numbered ? ch.numSize : ch.size);
+        }
         const state = i < cur ? 'done' : i === cur ? 'cur' : 'todo';
         if (state !== ch.state) {
           ch.state = state;
@@ -1053,6 +1111,153 @@
       };
     }
 
+    // ---------- 一堆、一把、时长、档位 ----------
+    // 在一块区域里堆一堆互不重叠的小东西（块、豆子、石子……），从后往前画。
+    // o: count, size, shape（SHAPES 里的名字）或 make(x, y, size, r, i) 自己返回 {d, color, fill}，color, fill, seed, gap
+    pile(area, o = {}) {
+      const seed = o.seed ?? this.nextSeed(), r = rng(seed + 7), size = o.size ?? 36;
+      // 每个形状的大小在 size 的 0.85–1.15 倍之间浮动，间距取 1.2 倍才不会互相压住
+      const pts = scatterPoints(area, { count: o.count ?? 12, gap: o.gap ?? size * 1.2, seed }).sort((p, q) => p[1] - q[1] || p[0] - q[0]);
+      const make = o.make || SHAPES[o.shape || 'chunk'];
+      const list = pts.map((p, i) => ({ ...make(p[0], p[1], size * (0.85 + r() * 0.3), r, i) }));
+      const it = this.path(list, { width: Math.min(3.5, Math.max(2, size / 11)), fill: o.fill ?? '#FFFFFF', ...o });
+      it.kind = '一堆';
+      return it;
+    }
+    // 撒一把小东西（葱花、盐粒、气泡、雪花……）：大致均匀、随机分布，一个接一个出现
+    sprinkle(area, o = {}) {
+      const seed = o.seed ?? this.nextSeed(), r = rng(seed + 7), size = o.size ?? 12;
+      const pts = scatterPoints(area, { count: o.count ?? 14, gap: o.gap ?? size * 1.3, seed });
+      const make = o.make || SHAPES[o.shape || 'ring'];
+      const color = o.color ?? 'green';
+      const list = pts.map((p, i) => {
+        const sh = make(p[0], p[1], size * (0.8 + r() * 0.4), r, i);
+        return { ...sh, fill: sh.dot ? col(color) : sh.open ? undefined : o.fill ?? '#FFFFFF' };
+      });
+      const it = this.path(list, { width: 3, rough: 0.4, ...o, color, fill: undefined, dur: o.dur ?? Math.min(1.2, 0.08 * list.length + 0.2) });
+      it.kind = '一把';
+      return it;
+    }
+    // 时长：小钟 + 文字（如 "2 分钟"）；画完后分针转一圈
+    timer(x, y, o = {}) {
+      const R = o.r ?? 40, color = o.color ?? 'ink', at = o.at ?? this.cursor;
+      const face = this.path([circleD(x, y, R), ...[0, 1, 2, 3].map((k) => { const a = (k * Math.PI) / 2; return `M${x + Math.cos(a) * R * 0.78},${y + Math.sin(a) * R * 0.78} L${x + Math.cos(a) * R * 0.92},${y + Math.sin(a) * R * 0.92}`; })], { color, width: 4, rough: 0.4, at, dur: o.dur ?? 0.45, fill: o.fill ?? '#FFFFFF' });
+      const hour = this.line(x, y, x + R * 0.42, y + R * 0.12, { color, width: 4.5, rough: 0, at: face, dur: 0.12 });
+      const hand = this.line(x, y, x, y - R * 0.66, { color: o.handColor ?? 'red', width: 4.5, rough: 0, dur: 0.12 });
+      if (o.sweep !== false) hand.transform(hand.end + 0.05, { rotate: 360, origin: [x, y] }, 0.9, ease.inOut);
+      const items = [face, hour, hand];
+      if (o.label) items.push(this.text(o.label, { x: x + R + 14, y, valign: 'middle', size: o.size ?? Math.round(R * 1.05), color: o.labelColor ?? color, at: hand, delay: 0.05 }));
+      return groupOf(items, '时长');
+    }
+    // 档位：火候 / 力度 / 难度这类"第几档"的信息。icon: 'flame' | 'bar' | 'star'；level 档亮起，其余为灰色轮廓
+    level(x, y, o = {}) {
+      const max = o.max ?? 3, lv = o.level ?? 1, s = o.size ?? 40, icon = o.icon ?? 'bar', color = o.color ?? 'red';
+      const at = o.at ?? this.cursor;
+      const items = [];
+      for (let i = 0; i < max; i++) {
+        const cx = x + i * s * 1.15, on = i < lv;
+        let d;
+        // 火苗：底部圆、尖端带弯，外焰 + 内焰
+        if (icon === 'flame') d = [`M${cx},${y + s * 0.45} C${cx - s * 0.42},${y + s * 0.45} ${cx - s * 0.45},${y + s * 0.05} ${cx - s * 0.2},${y - s * 0.2} C${cx - s * 0.12},${y - s * 0.28} ${cx - s * 0.12},${y - s * 0.42} ${cx - s * 0.05},${y - s * 0.58} C${cx + s * 0.22},${y - s * 0.36} ${cx + s * 0.46},${y - s * 0.14} ${cx + s * 0.42},${y + s * 0.12} C${cx + s * 0.4},${y + s * 0.38} ${cx + s * 0.2},${y + s * 0.45} ${cx},${y + s * 0.45} Z`, `M${cx},${y + s * 0.36} C${cx - s * 0.17},${y + s * 0.33} ${cx - s * 0.14},${y + s * 0.08} ${cx + s * 0.02},${y - s * 0.1} C${cx + s * 0.12},${y + s * 0.1} ${cx + s * 0.17},${y + s * 0.3} ${cx},${y + s * 0.36} Z`];
+        else if (icon === 'star') d = `M${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => { const a = -Math.PI / 2 + (k * Math.PI) / 5, rr = (k % 2 ? 0.22 : 0.5) * s; return `${cx + Math.cos(a) * rr},${y + Math.sin(a) * rr}`; }).join('L')}Z`;
+        else { const h = s * (0.35 + (0.65 * (i + 1)) / max); d = `M${cx - s * 0.3},${y + s * 0.5} L${cx - s * 0.3},${y + s * 0.5 - h} L${cx + s * 0.3},${y + s * 0.5 - h} L${cx + s * 0.3},${y + s * 0.5} Z`; }
+        const parts = [].concat(d).map((dd, k) => ({ d: dd, fill: on ? (k ? '#FFD166' : col(color)) : undefined }));
+        items.push(this.path(parts, { color: on ? color : '#B9BCC2', fillOpacity: 0.9, width: 3.5, rough: 0.4, at: i ? items[i - 1] : at, dur: 0.18 }));
+      }
+      if (o.label) items.push(this.text(o.label, { x: x + (max - 1) * s * 1.15 + s * 0.6, y, valign: 'middle', size: o.labelSize ?? Math.round(s * 1.05), color: o.labelColor ?? color, at: items[items.length - 1], delay: 0.05 }));
+      return groupOf(items, '档位');
+    }
+
+    // ---------- 结尾全貌：拉远看整块白板，并按顺序标出 ①②③…… ----------
+    // 每一段（有章节时按章节，否则按镜头停留的位置）在白板上占的区域旁边，标上序号和章节名，
+    // 再用虚线箭头按顺序串起来。放在 build 最后调用：取景包含结尾时白板上的全部内容，
+    // 分段只统计全貌镜头开始（at）之前画的内容。
+    overview(o = {}) {
+      const at = o.at ?? this.cursor, dur = o.dur ?? 2;
+      const T = this.T;
+      let spans;
+      if (T && T.chapters.length >= 2) spans = T.chapters.map((c) => ({ title: c.title, t0: c.start, t1: c.end }));
+      else {
+        const stops = this.moves.filter((m) => m.at < at).map((m) => m.at);
+        spans = [0, ...stops].map((t0, i, a) => ({ title: '', t0, t1: i + 1 < a.length ? a[i + 1] : at }));
+      }
+      // 取景：结尾时还留在白板上的全部内容；分段：只算全貌镜头开始之前画的
+      const dur0 = this.duration;
+      const kept = (i) => !i.o.hud && i.box && !i.o.noOverview && (i.exits.length === 0 || Math.min(...i.exits.map((x) => x.at)) > dur0);
+      const shown = (i) => kept(i) && i.start < at;
+      const boxAt = (i) => {
+        const b = i.boxAt(at);
+        if (!i.cropRect && !i.o.crop) return b;
+        const c = this.camAt(i.done), r = { x: c.x - this.W / 2 / c.zoom, y: c.y - this.H / 2 / c.zoom, w: this.W / c.zoom, h: this.H / c.zoom };
+        const x = Math.max(r.x, b.x), y = Math.max(r.y, b.y);
+        return { x, y, w: Math.min(r.x + r.w, b.x + b.w) - x, h: Math.min(r.y + r.h, b.y + b.h) - y };
+      };
+      const items = this.items.filter(shown);
+      const keptItems = this.items.filter(kept);
+      const regions = spans.map((sp) => {
+        const its = items.filter((i) => i.start >= sp.t0 && i.start < sp.t1);
+        return its.length ? { ...sp, box: unionBox(its.map(boxAt)) } : null;
+      }).filter(Boolean);
+      const all = unionBox(keptItems.map(boxAt));
+      // 镜头：和 focus 一样避开进度条和字幕，并给序号留出位置
+      const pad = o.pad ?? 150, top = this.chapterZone || 0, bottom = this.capEl ? 150 : 0, availH = this.H - top - bottom;
+      const zoom = Math.min(1, this.W / (all.w + pad * 2), availH / (all.h + pad * 2));
+      this.camera(at, { x: all.x + all.w / 2, y: all.y + all.h / 2 - (top + availH / 2 - this.H / 2) / zoom, zoom }, dur);
+      if (o.numbers === false || regions.length < 2) return this;
+      // 序号：屏幕上约 30 像素半径，按全貌镜头的缩放换算成白板尺寸
+      const R = 30 / zoom, fs = 36 / zoom, color = o.color ?? 'red';
+      const camY = all.y + all.h / 2 - (top + availH / 2 - this.H / 2) / zoom, camX = all.x + all.w / 2;
+      const view = { x: camX - this.W / 2 / zoom, y: camY - this.H / 2 / zoom + top / zoom, w: this.W / zoom, h: availH / zoom };
+      // 自动找空位：在区域四周挑候选位置，选第一个不压内容、在画面安全区内、也不和别的序号重叠的
+      const obstacles = keptItems.map(boxAt);
+      const placed = [];
+      const clash = (c) => {
+        const bb = { x: c[0] - R * 1.15, y: c[1] - R * 1.15, w: R * 2.3, h: R * 2.3 };
+        if (bb.x < view.x || bb.y < view.y || bb.x + bb.w > view.x + view.w || bb.y + bb.h > view.y + view.h) return Infinity;
+        return [...obstacles, ...placed].reduce((a, ob) => a + inter(bb, ob), 0);
+      };
+      const inter = (a, c) => Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
+      let t = at + dur + 0.2;
+      const badges = regions.map((rg, i) => {
+        const b = rg.box, cands = [];
+        for (const k of [1.3, 2.2, 3.2]) {
+          cands.push([b.x - R * k, b.y - R * k], [b.x + R * 0.5, b.y - R * k], [b.x - R * k, b.y + R * 0.5], [b.x - R * k, b.y + b.h / 2], [b.x + b.w / 2, b.y - R * k], [b.x + b.w + R * k, b.y - R * k], [b.x - R * k, b.y + b.h + R * k]);
+        }
+        let best = cands[0], bestScore = Infinity;
+        for (const c of cands) { const sc = clash(c); if (sc < bestScore) { best = c; bestScore = sc; } if (sc === 0) break; }
+        const [cx, cy] = best;
+        placed.push({ x: cx - R * 1.15, y: cy - R * 1.15, w: R * 2.3, h: R * 2.3 });
+        const ring = this.circle(cx, cy, R, { color, width: 5 / zoom, fill: '#FFFFFF', fillOpacity: 1, turns: 1.05, drift: 0, rough: 0.3, at: t, dur: 0.25, overlap: true, noOverview: true });
+        const num = this.text(String(i + 1), { x: cx, y: cy, size: fs * 1.1, align: 'center', valign: 'middle', color, font: 'en', at: ring, dur: 0.1, overlap: true, noOverview: true });
+        t = num.end + 0.12;
+        return { cx, cy, items: [ring, num] };
+      });
+      // 顶部进度条的章节名前加上对应的序号；导出的全貌图顶部也会有图例
+      this.overviewNumbers = { at: at + dur, titles: regions.map((rg) => rg.title) };
+      // 按顺序连起来的虚线箭头
+      if (o.route !== false) {
+        for (let i = 0; i + 1 < badges.length; i++) {
+          const a = badges[i], b = badges[i + 1], L = Math.hypot(b.cx - a.cx, b.cy - a.cy) || 1;
+          const ux = (b.cx - a.cx) / L, uy = (b.cy - a.cy) / L;
+          const x1 = a.cx + ux * R * 1.3, y1 = a.cy + uy * R * 1.3, x2 = b.cx - ux * R * 1.3, y2 = b.cy - uy * R * 1.3;
+          // 自动选弯度：在几种弯法里挑一条穿过内容最少的
+          const hits = (bend) => {
+            const mx = (x1 + x2) / 2 - uy * bend * L, my = (y1 + y2) / 2 + ux * bend * L;
+            let n = 0;
+            for (let k = 1; k < 20; k++) {
+              const u = k / 20, v = 1 - u, px = v * v * x1 + 2 * v * u * mx + u * u * x2, py = v * v * y1 + 2 * v * u * my + u * u * y2;
+              if (obstacles.some((ob) => px > ob.x && px < ob.x + ob.w && py > ob.y && py < ob.y + ob.h)) n++;
+            }
+            return n + Math.abs(bend) * 2;
+          };
+          const bend = [0.12, -0.12, 0.25, -0.25, 0.4, -0.4, 0].reduce((best, bd) => (hits(bd) < hits(best) ? bd : best), 0.12);
+          this.arrow(x1, y1, x2, y2, { color: 'gray', width: 3 / zoom, head: 16 / zoom, dash: [14 / zoom, 12 / zoom], bend, at: t, dur: 0.35, overlap: true, noOverview: true });
+          t += 0.3;
+        }
+      }
+      return this;
+    }
+
     // 一次擦掉多个元素（'all' = 当前已出现的全部）
     erase(items, at, dur = 0.5) {
       at = at ?? this.cursor;
@@ -1072,7 +1277,19 @@
         const r = i.cropRect, x = Math.max(r.x, b.x), y = Math.max(r.y, b.y);
         return { x, y, w: Math.min(r.x + r.w, b.x + b.w) - x, h: Math.min(r.y + r.h, b.y + b.h) - y };
       });
-      const b = unionBox(boxes);
+      let b = unionBox(boxes);
+      // 有顺序标注时，在图的上方写一行图例：① 章节名 ② 章节名 ……
+      const titles = this.overviewNumbers ? this.overviewNumbers.titles.filter(Boolean) : [];
+      if (titles.length) {
+        const lg = document.createElement('div');
+        lg.className = 'wb-text';
+        lg.style.cssText = `font-family:${this.fonts.hand};font-size:${Math.round(Math.max(56, b.w / 45))}px;color:${COLORS.red};left:${b.x}px;top:0px`;
+        lg.textContent = titles.map((tt, i) => `${'①②③④⑤⑥⑦⑧⑨⑩⑪⑫'[i] || i + 1} ${tt}`).join('    ');
+        this.html.appendChild(lg);
+        const lh = lg.offsetHeight;
+        lg.style.top = b.y - lh - 60 + 'px';
+        b = unionBox([b, { x: b.x, y: b.y - lh - 60, w: lg.offsetWidth, h: lh }]);
+      }
       const w = Math.ceil(b.w + 2 * pad), h = Math.ceil(b.h + 2 * pad);
       this.stage.style.width = w + 'px';
       this.stage.style.height = h + 'px';
@@ -1222,5 +1439,6 @@
     Board, COLORS, HL, NOTE, FONTS, board: (o) => new Board(o), unionBox,
     // 供扩展模块（如 character.js）使用的内部工具
     _: { Item, svgEl, col, smoothD, wobble, samplePathD, boxOf },
+    SHAPES, scatterPoints,
   };
 })();
