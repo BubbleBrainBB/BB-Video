@@ -694,37 +694,75 @@
       this.caps = [];
       for (const l of this.T.lines) {
         if (!l.text || l.silence) continue;
-        // 按标点切句，再合并成不超过 max 个字的小段
-        const pieces = l.text.match(/[^，。！？；：,.!?;:]+[，。！？；：,.!?;:]*/g) || [l.text];
-        const chunks = [];
-        for (const pc of pieces) {
-          const last = chunks[chunks.length - 1];
-          if (last && (last + pc).replace(PUN, '').length <= max && !/[。！？.!?]$/.test(last)) chunks[chunks.length - 1] = last + pc;
-          else chunks.push(pc);
+        // 以"显示宽度"衡量长度：汉字算 1，英文字母 / 数字约 0.55，空格 0.3
+        const text = l.text, words = l.words || [];
+        const CJK = /[⺀-鿿豈-﫿＀-￯]/, LAT = /[A-Za-z0-9'’\-%]/;
+        const wOf = (i, j) => { let w = 0; for (let k = i; k < j; k++) { const ch = text[k]; w += CJK.test(ch) ? 1 : ch === ' ' ? 0.3 : 0.55; } return w; };
+        // 允许断开的位置：标点和空格之后、配音逐词结果的词与词之间；英文单词、数字内部永远不断开
+        const wpos = [];
+        const allowed = new Array(text.length + 1).fill(false);
+        let from = 0;
+        for (const w of words) {
+          const i = text.indexOf(w.text, from);
+          if (i < 0) { wpos.push(null); continue; }
+          wpos.push(i);
+          allowed[i] = allowed[i + w.text.length] = true;
+          from = i + w.text.length;
         }
-        const split = chunks.flatMap((c) => {
-          const n = Math.ceil(c.replace(/\s/g, '').length / (max + 4));
-          if (n <= 1) return [c];
-          const size = Math.ceil(c.length / n);
-          return Array.from({ length: n }, (_, i) => c.slice(i * size, (i + 1) * size));
+        for (let i = 1; i < text.length; i++) {
+          if (/[\s，。、？！；：,.!?;:]/.test(text[i - 1])) allowed[i] = true;
+          if (!words.length && CJK.test(text[i - 1]) && CJK.test(text[i])) allowed[i] = true;
+          if (LAT.test(text[i - 1]) && LAT.test(text[i])) allowed[i] = false;
+        }
+        // 1) 按标点切成小句 2) 相邻小句合并到不超过 max 3) 仍然太长的，在允许的位置切成宽度相近的几段
+        const ranges = [];
+        const re = /[^，。！？；：,.!?;:]+[，。！？；：,.!?;:]*/g;
+        let m;
+        while ((m = re.exec(text))) ranges.push([m.index, m.index + m[0].length]);
+        if (!ranges.length) ranges.push([0, text.length]);
+        const merged = [];
+        for (const r of ranges) {
+          const last = merged[merged.length - 1];
+          if (last && wOf(last[0], r[1]) <= max && !/[。！？.!?]\s*$/.test(text.slice(last[0], last[1]))) last[1] = r[1];
+          else merged.push([...r]);
+        }
+        // 太短的片段（不到上限的 30%）会一闪而过：并进前一段或后一段；合并后超长也没关系，下一步会在词与词之间重新均衡切分
+        const ends = (r) => /[。！？.!?]\s*$/.test(text.slice(r[0], r[1]));
+        for (let i = 0; i < merged.length; i++) {
+          const r = merged[i];
+          if (merged.length < 2 || wOf(r[0], r[1]) >= max * 0.3) continue;
+          const prev = merged[i - 1], next = merged[i + 1];
+          if (prev && !ends(prev)) { prev[1] = r[1]; merged.splice(i--, 1); }
+          else if (next && !ends(r)) { next[0] = r[0]; merged.splice(i--, 1); }
+        }
+        const split = merged.flatMap(([s0, e0]) => {
+          const n = Math.ceil(wOf(s0, e0) / (max + 3));
+          if (n <= 1) return [[s0, e0]];
+          const target = wOf(s0, e0) / n, out = [];
+          let st = s0;
+          for (let k = 1; k < n; k++) {
+            // 在目标宽度附近找最近的可断开位置
+            let best = -1, bestD = Infinity;
+            for (let i = st + 1; i < e0; i++) {
+              if (!allowed[i]) continue;
+              const d = Math.abs(wOf(st, i) - target);
+              if (d < bestD) { bestD = d; best = i; }
+            }
+            if (best < 0) break;
+            out.push([st, best]);
+            st = best;
+          }
+          out.push([st, e0]);
+          return out;
         });
-        // 每段的开始时间：取这段第一个字被念出的时间
-        const words = l.words || [];
-        const norm = (s) => s.replace(new RegExp(PUN.source, 'g'), '').toLowerCase();
-        let concat = '';
-        const owner = [];
-        words.forEach((w, i) => { const n = norm(w.text); concat += n; for (let k = 0; k < n.length; k++) owner.push(i); });
-        let idx = 0;
-        const starts = split.map((c) => {
-          const n = norm(c).length;
-          const wi = owner[Math.min(idx, owner.length - 1)];
-          const st = words.length && wi !== undefined ? words[wi].start : lerp(l.start, l.end, idx / Math.max(1, norm(l.text).length));
-          idx += n;
-          return st;
+        // 每段的开始时间：这段里第一个被念到的词的开始时间
+        const starts = split.map(([s0]) => {
+          const k = wpos.findIndex((p) => p !== null && p >= s0);
+          return k >= 0 ? words[k].start : lerp(l.start, l.end, s0 / Math.max(1, text.length));
         });
-        split.forEach((c, i) => {
-          const text = c.trim().replace(/[，。、；：,;:]+$/, '').replace(/[，、,]/g, ' ');
-          this.caps.push({ text, start: i === 0 ? l.start : starts[i], end: i < split.length - 1 ? starts[i + 1] : l.end + 0.25 });
+        split.forEach(([s0, e0], i) => {
+          const cap = text.slice(s0, e0).trim().replace(/[，。、；：,;:]+$/, '').replace(/[，、]/g, ' ');
+          this.caps.push({ text: cap, start: i === 0 ? l.start : starts[i], end: i < split.length - 1 ? starts[i + 1] : l.end + 0.25 });
         });
       }
     }

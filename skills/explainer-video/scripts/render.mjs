@@ -10,6 +10,7 @@
 //   node render.mjs <项目目录> --sheet           每句台词结束时的画面拼成总览图 → review/sheet.png
 //   node render.mjs <项目目录> --strip 14,17     这段时间内连续 8 帧拼成一张图，用来检查动画过程 → review/strip-14-17.png
 //   node render.mjs <项目目录> --check           只运行自动检查（时间线、画面范围、重叠等），不渲染
+//   node render.mjs <项目目录> --captions        列出全部字幕分段和时间，检查断句
 //   node render.mjs <项目目录> --board           导出整块白板画完后的全貌大图 → out/board.png（渲染成片时也会自动导出）
 //   node render.mjs <项目目录> --cover           导出封面（视频第一帧）→ out/cover.png（渲染成片时也会自动导出）
 // 其他参数：--workers 4  --fps 30  --out 文件名  --no-audio  --bgm 音乐文件 --bgm-volume 0.12
@@ -185,6 +186,11 @@ async function main() {
     const lint = await first.eval('window.__lint ? window.__lint() : []');
     const errors = report(lint.result.value || []);
     if (flag('check')) { process.exitCode = errors ? 1 : 0; return; }
+    if (flag('captions')) {
+      const caps = (await first.eval('window.__captions ? window.__captions() : []')).result.value || [];
+      for (const c of caps) console.log(`  ${c.start.toFixed(2).padStart(7)} – ${c.end.toFixed(2).padStart(7)}  ${c.text}`);
+      return;
+    }
     if (flag('cover')) {
       const out = path.join(proj, 'out', 'cover.png');
       fs.mkdirSync(path.dirname(out), { recursive: true });

@@ -122,6 +122,7 @@
     })();
     window.__lint = () => (scene && scene.lint ? scene.lint() : []);
     window.__snapshot = () => (scene && scene.snapshot ? scene.snapshot() : null);
+    window.__captions = () => (scene && scene.caps ? scene.caps : []);
     window.__ready.catch((e) => showError(e));
     if (!window.__RENDER__) window.__ready.then(() => player(stage, opts.audio, window.__composition));
   }
