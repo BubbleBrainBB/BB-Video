@@ -1256,15 +1256,23 @@
     }
 
     // ---------- 结尾全貌：拉远看整块白板，并按顺序标出 ①②③…… ----------
-    // 每一段（有章节时按章节，否则按镜头停留的位置）在白板上占的区域旁边，标上序号和章节名，
-    // 再用虚线箭头按顺序串起来。放在 build 最后调用：取景包含结尾时白板上的全部内容，
-    // 分段只统计全貌镜头开始（at）之前画的内容。
+    // 每一段（有章节时按章节，否则按镜头停留的位置）在白板上占的区域旁边标上序号，再用虚线箭头按讲解顺序串起来。
+    // 一章里镜头停过好几个不同的位置时，按停留顺序标成 2-1、2-2、2-3……，看得出章内是怎么走的。
+    // 放在 build 最后调用：取景包含结尾时白板上的全部内容，分段只统计全貌镜头开始（at）之前画的内容。
+    // o: at, dur（镜头拉远用时，默认 2）, hold（全部标完后至少停留几秒，默认 3，视频会自动加长）,
+    //    margin（画面四周给序号留的空白，屏幕像素，默认 100）, pad（额外留白，白板像素，默认 0）, numbers, route, color
     overview(o = {}) {
       const at = o.at ?? this.cursor, dur = o.dur ?? 2;
       const T = this.T;
+      const chapters = T && T.chapters.length >= 2;
       let spans;
-      if (T && T.chapters.length >= 2) spans = T.chapters.map((c) => ({ title: c.title, t0: c.start, t1: c.end }));
-      else {
+      if (chapters) {
+        // 每章再按镜头移动切成几小段（镜头移动开始的时刻为分界）
+        spans = T.chapters.flatMap((c, ci) => {
+          const cuts = this.moves.filter((m) => m.at > c.start && m.at < Math.min(c.end, at)).map((m) => m.at);
+          return [c.start, ...cuts].map((t0, k, a) => ({ title: c.title, num: ci + 1, t0, t1: k + 1 < a.length ? a[k + 1] : c.end }));
+        });
+      } else {
         const stops = this.moves.filter((m) => m.at < at).map((m) => m.at);
         spans = [0, ...stops].map((t0, i, a) => ({ title: '', t0, t1: i + 1 < a.length ? a[i + 1] : at }));
       }
@@ -1281,46 +1289,74 @@
       };
       const items = this.items.filter(shown);
       const keptItems = this.items.filter(kept);
-      const regions = spans.map((sp) => {
+      const near = (a, c, g) => a.x - g < c.x + c.w && c.x - g < a.x + a.w && a.y - g < c.y + c.h && c.y - g < a.y + a.h;
+      const regions = [];
+      for (const sp of spans) {
         const its = items.filter((i) => i.start >= sp.t0 && i.start < sp.t1);
-        return its.length ? { ...sp, box: unionBox(its.map(boxAt)) } : null;
-      }).filter(Boolean);
+        if (!its.length) continue;
+        const box = unionBox(its.map(boxAt)), prev = regions[regions.length - 1];
+        // 同一段里镜头只是推近拉远、没有换地方：合并成一个区域
+        if (prev && sp.num && prev.num === sp.num && near(prev.box, box, 40)) prev.box = unionBox([prev.box, box]);
+        else regions.push({ ...sp, box });
+      }
+      if (chapters) {
+        const count = {};
+        regions.forEach((rg) => { count[rg.num] = (count[rg.num] || 0) + 1; });
+        const seen = {};
+        regions.forEach((rg) => { seen[rg.num] = (seen[rg.num] || 0) + 1; rg.label = count[rg.num] > 1 ? `${rg.num}-${seen[rg.num]}` : String(rg.num); });
+      } else regions.forEach((rg, i) => { rg.label = String(i + 1); });
       const all = unionBox(keptItems.map(boxAt));
-      // 镜头：和 focus 一样避开进度条和字幕，并给序号留出位置
-      const pad = o.pad ?? 150, top = this.chapterZone || 0, bottom = this.capEl ? 150 : 0, availH = this.H - top - bottom;
-      const zoom = Math.min(1, this.W / (all.w + pad * 2), availH / (all.h + pad * 2));
-      this.camera(at, { x: all.x + all.w / 2, y: all.y + all.h / 2 - (top + availH / 2 - this.H / 2) / zoom, zoom }, dur);
-      if (o.numbers === false || regions.length < 2) return this;
+      // 镜头：和 focus 一样避开进度条和字幕；四周按屏幕像素留出放序号的空白（缩得越小，白板上留得越多）
+      const numbers = o.numbers !== false && regions.length >= 2;
+      const margin = o.margin ?? (numbers ? 100 : 60), pad = o.pad ?? 0;
+      const top = this.chapterZone || 0, bottom = this.capEl ? 150 : 0, availH = this.H - top - bottom;
+      const zoom = Math.min(1, (this.W - margin * 2) / (all.w + pad * 2), (availH - margin * 2) / (all.h + pad * 2));
+      const camX = all.x + all.w / 2, camY = all.y + all.h / 2 - (top + availH / 2 - this.H / 2) / zoom;
+      this.camera(at, { x: camX, y: camY, zoom }, dur);
+      this.endHold = at + dur + (o.hold ?? 3);
+      if (!numbers) return this;
       // 序号：屏幕上约 30 像素半径，按全貌镜头的缩放换算成白板尺寸
       const R = 30 / zoom, fs = 36 / zoom, color = o.color ?? 'red';
-      const camY = all.y + all.h / 2 - (top + availH / 2 - this.H / 2) / zoom, camX = all.x + all.w / 2;
       const view = { x: camX - this.W / 2 / zoom, y: camY - this.H / 2 / zoom + top / zoom, w: this.W / zoom, h: availH / zoom };
-      // 自动找空位：在区域四周挑候选位置，选第一个不压内容、在画面安全区内、也不和别的序号重叠的
+      // 自动找空位：在区域四周挑候选位置，选不压内容、在画面安全区内、也不和别的序号重叠的；
+      // 实在找不到，就选压得最少的位置，并挪回画面里（宁可压一点内容，也不能被画面裁掉）
       const obstacles = keptItems.map(boxAt);
       const placed = [];
+      const inter = (a, c) => Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
+      const inset = R * 1.2;
+      const inView = (c) => [clamp(c[0], view.x + inset, view.x + view.w - inset), clamp(c[1], view.y + inset, view.y + view.h - inset)];
       const clash = (c) => {
         const bb = { x: c[0] - R * 1.15, y: c[1] - R * 1.15, w: R * 2.3, h: R * 2.3 };
-        if (bb.x < view.x || bb.y < view.y || bb.x + bb.w > view.x + view.w || bb.y + bb.h > view.y + view.h) return Infinity;
         return [...obstacles, ...placed].reduce((a, ob) => a + inter(bb, ob), 0);
       };
-      const inter = (a, c) => Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
-      let t = at + dur + 0.2;
-      const badges = regions.map((rg, i) => {
+      // 节奏：序号和箭头交替画出（像沿着路线走一遍），总共约 5 秒，区域多时每步更快
+      const t0 = at + dur + 0.2, step = clamp(5 / regions.length, 0.3, 0.7);
+      const badges = regions.map((rg) => {
         const b = rg.box, cands = [];
         for (const k of [1.3, 2.2, 3.2]) {
-          cands.push([b.x - R * k, b.y - R * k], [b.x + R * 0.5, b.y - R * k], [b.x - R * k, b.y + R * 0.5], [b.x - R * k, b.y + b.h / 2], [b.x + b.w / 2, b.y - R * k], [b.x + b.w + R * k, b.y - R * k], [b.x - R * k, b.y + b.h + R * k]);
+          cands.push([b.x - R * k, b.y - R * k], [b.x + R * 0.5, b.y - R * k], [b.x - R * k, b.y + R * 0.5], [b.x - R * k, b.y + b.h / 2], [b.x + b.w / 2, b.y - R * k], [b.x + b.w + R * k, b.y - R * k], [b.x - R * k, b.y + b.h + R * k], [b.x + b.w + R * k, b.y + b.h / 2], [b.x + b.w / 2, b.y + b.h + R * k]);
         }
-        let best = cands[0], bestScore = Infinity;
-        for (const c of cands) { const sc = clash(c); if (sc < bestScore) { best = c; bestScore = sc; } if (sc === 0) break; }
+        let best = null, bestScore = Infinity;
+        for (const c0 of cands) {
+          const c = inView(c0);
+          // 被挪动过的候选位置离区域更远，稍微扣分
+          const sc = clash(c) + (c[0] !== c0[0] || c[1] !== c0[1] ? R * R * 0.5 : 0);
+          if (sc < bestScore) { best = c; bestScore = sc; }
+          if (sc === 0) break;
+        }
         const [cx, cy] = best;
         placed.push({ x: cx - R * 1.15, y: cy - R * 1.15, w: R * 2.3, h: R * 2.3 });
-        const ring = this.circle(cx, cy, R, { color, width: 5 / zoom, fill: '#FFFFFF', fillOpacity: 1, turns: 1.05, drift: 0, rough: 0.3, at: t, dur: 0.25, overlap: true, noOverview: true });
-        const num = this.text(String(i + 1), { x: cx, y: cy, size: fs * 1.1, align: 'center', valign: 'middle', color, font: 'en', at: ring, dur: 0.1, overlap: true, noOverview: true });
-        t = num.end + 0.12;
-        return { cx, cy, items: [ring, num] };
+        return { cx, cy, label: rg.label };
+      });
+      let t = t0;
+      badges.forEach((bd, i) => {
+        const ta = t0 + i * step;
+        const ring = this.circle(bd.cx, bd.cy, R, { color, width: 5 / zoom, fill: '#FFFFFF', fillOpacity: 1, turns: 1.05, drift: 0, rough: 0.3, at: ta, dur: step * 0.4, overlap: true, noOverview: true });
+        const num = this.text(bd.label, { x: bd.cx, y: bd.cy, size: fs * (bd.label.length > 2 ? 0.72 : 1.1), align: 'center', valign: 'middle', color, font: 'en', at: ring, dur: 0.08, overlap: true, noOverview: true });
+        t = Math.max(t, num.end);
       });
       // 顶部进度条的章节名前加上对应的序号；导出的全貌图顶部也会有图例
-      this.overviewNumbers = { at: at + dur, titles: regions.map((rg) => rg.title) };
+      this.overviewNumbers = { at: at + dur, titles: chapters ? T.chapters.map((c) => c.title) : regions.map((rg) => rg.title) };
       // 按顺序连起来的虚线箭头
       if (o.route !== false) {
         for (let i = 0; i + 1 < badges.length; i++) {
@@ -1338,10 +1374,11 @@
             return n + Math.abs(bend) * 2;
           };
           const bend = [0.12, -0.12, 0.25, -0.25, 0.4, -0.4, 0].reduce((best, bd) => (hits(bd) < hits(best) ? bd : best), 0.12);
-          this.arrow(x1, y1, x2, y2, { color: 'gray', width: 3 / zoom, head: 16 / zoom, dash: [14 / zoom, 12 / zoom], bend, at: t, dur: 0.35, overlap: true, noOverview: true });
-          t += 0.3;
+          const ar = this.arrow(x1, y1, x2, y2, { color: 'gray', width: 3 / zoom, head: 16 / zoom, dash: [14 / zoom, 12 / zoom], bend, at: t0 + i * step + step * 0.5, dur: step * 0.5, overlap: true, noOverview: true });
+          t = Math.max(t, ar.end);
         }
       }
+      this.endHold = Math.max(this.endHold, t + (o.hold ?? 3));
       return this;
     }
 
@@ -1391,7 +1428,8 @@
 
     get duration() {
       const last = Math.max(0, ...this.items.map((i) => i.end + (i.hasFill ? 0.35 : 0)));
-      return Math.max(this.T ? this.T.duration : 0, last + 1);
+      // 最后一笔画完后至少停 2 秒；有结尾全貌时，标完序号后至少停 hold 秒（视频自动加长，不会没看完就结束）
+      return Math.max(this.T ? this.T.duration : 0, last + 2, this.endHold || 0);
     }
 
     render(t) {

@@ -93,10 +93,25 @@ const c = b.character(CAST.名字, { x: 1650, y: 1080, size: 380, at: T.start('i
 | `c.say('id')` / `c.say(['id1','id2'])` | 这几句旁白由这个角色"说"：嘴巴跟着逐词时间开合 |
 | `c.say('id', { from: '任何', to: '吸引' })` | 只说这句里的一段（旁白"他说：……"时，只有引号里的部分由角色说） |
 | `c.nod(at)` | 点头 |
-| `c.point(at, x, y, { hold: 1.5 })` | 抬起手臂（肩 → 肘 → 手）指向白板上的世界坐标 (x, y)；目标在下方时改为水平指 |
+| `c.point(at, x, y, { hold: 1.5 })` | 抬起手臂（肩 → 肘 → 手）指向白板上的世界坐标 (x, y)；目标在下方时改为水平指。上一次指向还没放下时，新的指向从当前姿势直接转过去（挥动、换方向指），不会先放下再抬 |
+| `c.hold(at, x, y, prop, { hold })` | 手里拿着道具指向 (x, y)（剑、教鞭、火把、放大镜……）。等于 `point(at, x, y, { prop })`；接着的几次 `point` 只要手没放下，会一直拿着 |
+| `c.handAt(t)` | t 时刻手在白板上的位置和朝向 `{ x, y, angle }`（没抬手时为 null）。要让别的元素从手里出发（递出的东西、射出的线）时用它，**不要自己复刻手臂的计算** |
 | `c.move(...)` `c.erase(...)` `c.pulse(...)` | 和其他元素一样 |
 
 眨眼、呼吸起伏、说话时的轻微晃动都是自动的。
+
+**道具**（`prop`）和 `b.sketch` 一样是部件列表（字符串，或 `{ d, fill, stroke, width }`），按世界尺寸（像素）画：
+**原点 = 手握住的位置，+x 方向 = 指向目标的方向**。道具画在手的下面，手会"握"在上面；抬手时淡入、放下时淡出。
+```js
+// 剑：剑柄在握点后面，护手在握点前面一点，剑身朝 +x
+const SWORD = [
+  { d: 'M-40,-6 L0,-6 L0,6 L-40,6 Z', fill: 'ink' },            // 剑柄
+  { d: 'M0,-22 L12,-22 L12,22 L0,22 Z', fill: 'accent' },        // 护手
+  { d: 'M12,-9 L200,-9 L226,0 L200,9 L12,9 Z', fill: '#EEF2F7' }, // 剑身
+];
+c.hold(T.word('dance', '剑') - 0.1, 900, 300, SWORD, { hold: 1 })  // 举剑
+ .point(T.word('dance', '刘邦'), 1000, 700, { hold: 1.2 });         // 挥向另一边，剑还在手里
+```
 
 **表情**：`neutral` `smile` `happy` `explain` `think` `surprised` `confused` `sad` `serious` `proud` `excited`
 表情参数（用于局部覆盖）：`eyeOpen` `eyeSize` `lookX` `lookY` `happyEyes` `browL` `browR` `browTilt` `mouthCurve` `mouthOpen` `mouthWidth` `mouthShift` `tilt`

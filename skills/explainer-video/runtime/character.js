@@ -346,7 +346,7 @@
       this.gArm = svgEl('g', {}, place);
       const clipId = 'cc' + board.nextSeed();
       const cp = svgEl('clipPath', { id: clipId }, place);
-      svgEl('rect', { x: -400, y: -600, width: 800, height: 832 }, cp);
+      svgEl('rect', { x: -3000, y: -3000, width: 6000, height: 3232 }, cp); // 只裁掉胸像底边以下（手放下时藏起来）
       this.gArm.setAttribute('clip-path', `url(#${clipId})`);
 
       const hair = buildHair(S, F, seed);
@@ -385,6 +385,7 @@
       // 手臂 = 肩 → 肘 → 腕 两段，粗墨线描边 + 衣服颜色的袖子，叠在身体前面
       this.arm = svgEl('path', { fill: 'none', stroke: INK, 'stroke-width': 46, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, this.gArm);
       this.armIn = svgEl('path', { fill: 'none', stroke: body[0].fill, 'stroke-width': 36, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, this.gArm);
+      this.gProp = svgEl('g', {}, this.gArm); // 手里的道具：画在手的下面，手"握"在道具上
       this.hand = svgEl('g', {}, this.gArm);
       svgEl('path', { d: HAND_D, fill: S.skin, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, this.hand);
       svgEl('path', { d: KNUCKLE_D, fill: 'none', stroke: INK, 'stroke-width': 3, 'stroke-linecap': 'round' }, this.hand);
@@ -454,8 +455,27 @@
       return this;
     }
     nod(at, dur = 0.5) { this.nods.push({ at, dur }); return this; }
-    // 抬手指向白板上的某个点（世界坐标），hold 秒后放下
-    point(at, x, y, o = {}) { this.points.push({ at, x, y, hold: o.hold ?? 1.5, dur: 0.35 }); this.points.sort((a, b) => a.at - b.at); return this; }
+    // 抬手指向白板上的某个点（世界坐标），hold 秒后放下。
+    // o.prop：手里拿的道具，和 b.sketch 一样的部件列表（字符串或 {d, fill, stroke, width}），
+    //   用世界尺寸（像素）画，坐标原点 = 握手的位置，+x 方向 = 指向目标的方向（剑身、教鞭、火把都朝 +x 画）。
+    // 上一次指向还没放下时，新的指向从当前姿势直接转过去（挥剑、换方向指），不会先放下再抬起。
+    point(at, x, y, o = {}) {
+      const p = { at, x, y, hold: o.hold ?? 1.5, dur: o.dur ?? 0.35, prop: o.prop ? this.buildProp(o.prop, o) : null };
+      this.points.push(p);
+      this.points.sort((a, b) => a.at - b.at);
+      return this;
+    }
+    // 拿着道具指向 (x, y)：point 的简写
+    hold(at, x, y, prop, o = {}) { return this.point(at, x, y, { ...o, prop }); }
+    buildProp(parts, o) {
+      const WBcol = window.WB._.col, col = (v) => WBcol(v === 'accent' ? this.spec.accent : v);
+      const g = svgEl('g', { transform: `scale(${1 / this.s})`, display: 'none' }, this.gProp);
+      for (const part of [].concat(parts)) {
+        const q = typeof part === 'string' ? { d: part } : part;
+        svgEl('path', { d: q.d, fill: q.fill ? col(q.fill) : 'none', stroke: col(q.stroke || o.color || 'ink'), 'stroke-width': q.width ?? o.width ?? 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+      }
+      return g;
+    }
 
     // ---------- 渲染 ----------
     draw(p) {
@@ -559,18 +579,52 @@
       }
     }
 
-    drawArm(t) {
-      let pt = null;
-      for (const p of this.points) if (t >= p.at && t < p.at + p.dur * 2 + p.hold) pt = p;
-      if (!pt) { this.gArm.style.display = 'none'; return; }
+    // t 时刻手臂的姿势（角色自己的坐标系）；没有抬手时返回 null
+    armAt(t) {
+      let i = -1;
+      this.points.forEach((p, k) => { if (t >= p.at && t < p.at + p.dur * 2 + p.hold) i = k; });
+      if (i < 0) return null;
+      const pt = this.points[i];
       const up = ease.outBack(clamp((t - pt.at) / pt.dur));
       const down = ease.in(clamp((t - (pt.at + pt.dur + pt.hold)) / pt.dur));
       const e = Math.max(0, up * (1 - down));
       const g = this.armPose(pt);
-      // 从垂在胸像下方的放松姿势，抬到指向姿势
-      const rest = { hand: [g.side * 110, 300], ang: -Math.PI / 2 };
-      const hand = [lerp(rest.hand[0], g.hand[0], e), lerp(rest.hand[1], g.hand[1], e)];
-      const ang = lerp(rest.ang, g.ang, clamp(e));
+      // 起点：上一次指向还举着时从那个姿势转过来，否则从垂在胸像下方的放松姿势抬起
+      const prev = i > 0 ? this.points[i - 1] : null;
+      const held = prev && pt.at < prev.at + prev.dur + prev.hold;
+      const g0 = held ? this.armPose(prev) : null;
+      const from = g0 && g0.side === g.side ? { hand: g0.hand, ang: g0.ang } : { hand: [g.side * 110, 300], ang: -Math.PI / 2 };
+      const upOnly = held && g0.side === g.side;
+      const k = upOnly ? clamp((t - pt.at) / pt.dur) : e;
+      const q = upOnly ? (t < pt.at + pt.dur + pt.hold ? ease.inOut(k) : 1 - down) : e;
+      const base = upOnly && t >= pt.at + pt.dur + pt.hold ? { hand: [g.side * 110, 300], ang: -Math.PI / 2 } : from;
+      const hand = [lerp(base.hand[0], g.hand[0], q), lerp(base.hand[1], g.hand[1], q)];
+      const ang = lerp(base.ang, g.ang, clamp(q));
+      // 连续的指向（中间没放下手）一直拿着最近一次给的道具
+      let carried = null;
+      for (let j = i; j > 0 && !carried; j--) {
+        const a = this.points[j - 1], b = this.points[j];
+        if (b.prop || b.at >= a.at + a.dur + a.hold || this.armPose(a).side !== this.armPose(b).side) break;
+        carried = a.prop;
+      }
+      return { pt, g, hand, ang, e: upOnly ? 1 - down : e, carried };
+    }
+
+    // t 时刻手在白板上的位置和朝向（世界坐标，angle 为弧度，指向手指 / 道具的方向）；没有抬手时返回 null。
+    // 用来把别的元素放到手上，例如手里递出去的东西、从手里射出的线
+    handAt(t) {
+      const a = this.armAt(t);
+      if (!a) return null;
+      const s = this.s, f = this.flip;
+      const ang = f > 0 ? a.ang : Math.PI - a.ang;
+      return { x: this.X + a.hand[0] * s * f, y: this.Y - 230 * s + a.hand[1] * s, angle: Math.atan2(Math.sin(ang), Math.cos(ang)), raised: a.e };
+    }
+
+    drawArm(t) {
+      const a = this.armAt(t);
+      for (const p of this.points) if (p.prop) p.prop.setAttribute('display', 'none');
+      if (!a) { this.gArm.style.display = 'none'; return; }
+      const { g, hand, ang } = a;
       const wrist = [hand[0] - Math.cos(ang) * 30, hand[1] - Math.sin(ang) * 30];
       const elbow = this.elbow(g.shoulder, wrist, g.side);
       const d = `M${g.shoulder[0]},${g.shoulder[1]} L${elbow[0]},${elbow[1]} L${wrist[0]},${wrist[1]}`;
@@ -578,6 +632,14 @@
       this.armIn.setAttribute('d', d);
       const flipHand = Math.cos(ang) < 0;
       this.hand.setAttribute('transform', `translate(${hand[0]},${hand[1]}) rotate(${(ang * 180) / Math.PI}) scale(1.4${flipHand ? ',-1.4' : ''})`);
+      // 道具：跟着手走；抬手过程中淡入、放下时淡出（放松姿势是手朝上的，不能让道具在胸前露出来）
+      const prop = a.pt.prop || a.carried;
+      if (prop) {
+        const tr = `translate(${hand[0]},${hand[1]}) rotate(${(ang * 180) / Math.PI})${flipHand ? ' scale(1,-1)' : ''}`;
+        prop.setAttribute('transform', `${tr} scale(${1 / this.s})`);
+        prop.setAttribute('display', '');
+        prop.setAttribute('opacity', clamp((a.e - 0.35) / 0.4));
+      }
       this.gArm.style.display = '';
     }
 

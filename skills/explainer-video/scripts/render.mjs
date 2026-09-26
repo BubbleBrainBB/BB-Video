@@ -183,6 +183,9 @@ async function main() {
       const ok = fonts.filter((f) => f.ok).map((f) => f.family), miss = fonts.filter((f) => !f.ok).map((f) => f.family);
       console.log('字体：' + (ok.length ? ok.join('、') + ' 可用' : '') + (miss.length ? `${ok.length ? '；' : ''}${miss.join('、')} 不可用（本机没装、也没能联网下载），已自动改用备用字体` : ''));
     }
+    // 时长：画面比旁白长时（结尾停留、全貌标序号），视频自动加长，音轨用静音补齐
+    const tlDur = (await first.eval('window.TIMELINE ? window.TIMELINE.duration : 0')).result.value || 0;
+    console.log(`时长：${comp.duration.toFixed(1)} 秒` + (tlDur && comp.duration > tlDur + 0.05 ? `（旁白 ${tlDur.toFixed(1)} 秒，结尾画面多停留 ${(comp.duration - tlDur).toFixed(1)} 秒）` : ''));
     const lint = await first.eval('window.__lint ? window.__lint() : []');
     const errors = report(lint.result.value || []);
     if (flag('check')) { process.exitCode = errors ? 1 : 0; return; }
@@ -285,9 +288,9 @@ async function main() {
       if (bgm) {
         inputs.push('-stream_loop', '-1', '-t', String(to - from), '-i', path.resolve(bgm));
         const v = Number(opt('bgm-volume', 0.12));
-        filter = `[2:a]volume=${v},afade=t=out:st=${Math.max(0, to - from - 2)}:d=2[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]`;
-        maps.push('-map', '[a]');
-      } else maps.push('-map', '1:a');
+        filter = `[1:a]apad=whole_dur=${to - from}[n];[2:a]volume=${v},afade=t=out:st=${Math.max(0, to - from - 2)}:d=2[m];[n][m]amix=inputs=2:duration=first:normalize=0[a]`;
+      } else filter = `[1:a]apad=whole_dur=${to - from}[a]`; // 画面比旁白长（结尾停留）时，用静音补齐音轨
+      maps.push('-map', '[a]');
     }
     await ffmpeg([...inputs, ...(filter ? ['-filter_complex', filter] : []), ...maps, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out], 'mux').done;
     fs.rmSync(tmp, { recursive: true, force: true });
