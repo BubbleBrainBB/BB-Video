@@ -31,6 +31,7 @@ node scripts/new.mjs videos/<英文短名>
 ```
 - `script.json`：旁白，一句一个对象（格式见下）。
 - `storyboard.md`：分镜表，每一句写清楚画面上画什么、在哪个区域、镜头怎么动。先规划整张白板的区域布局，再逐句安排。
+- **封面**：在分镜里写明封面的标题、副标题和主视觉（见 STYLE.md 的"封面"），`script.json` 的 `lead_in` 设为约 1.9 秒。
 - 需要人物时：按 `references/characters.md` 的方法设计角色，写进 `characters.js`，并在分镜里标出角色的出场、表情和台词。用 `node scripts/cast.mjs videos/<名字>` 渲染定妆图，**新角色要连同定妆图一起给用户确认**。
 
 **把旁白和分镜给用户过目**，得到确认后再往下做。用户说"直接做"就跳过确认。
@@ -68,8 +69,8 @@ node scripts/render.mjs videos/<名字>            # → out/video.mp4（1080p 3
 node scripts/render.mjs videos/<名字> --draft    # 半分辨率快速版，想先看节奏时用
 ```
 可选背景音乐：`--bgm 音乐文件 --bgm-volume 0.1`。
-成片渲染完会**同时导出整块白板的全貌大图** `out/board.png`：所有内容画完后的样子，不含字幕和进度条，可以当"知识地图"单独发。只想导出这张图：`node scripts/render.mjs videos/<名字> --board`。
-最后告诉用户成片和全貌图的路径，以及在浏览器里直接打开 `index.html` 可以预览、拖动进度条（空格播放暂停）。
+成片渲染完会**同时导出封面** `out/cover.png`（就是视频第一帧，可以单独上传当封面）**和整块白板的全貌大图** `out/board.png`：所有内容画完后的样子，不含字幕和进度条，可以当"知识地图"单独发。只想导出这张图：`node scripts/render.mjs videos/<名字> --board`。
+最后告诉用户成片、封面和全貌图的路径，以及在浏览器里直接打开 `index.html` 可以预览、拖动进度条（空格播放暂停）。
 
 ## script.json 格式
 ```json

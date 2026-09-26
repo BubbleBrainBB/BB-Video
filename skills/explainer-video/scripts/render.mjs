@@ -11,6 +11,7 @@
 //   node render.mjs <项目目录> --strip 14,17     这段时间内连续 8 帧拼成一张图，用来检查动画过程 → review/strip-14-17.png
 //   node render.mjs <项目目录> --check           只运行自动检查（时间线、画面范围、重叠等），不渲染
 //   node render.mjs <项目目录> --board           导出整块白板画完后的全貌大图 → out/board.png（渲染成片时也会自动导出）
+//   node render.mjs <项目目录> --cover           导出封面（视频第一帧）→ out/cover.png（渲染成片时也会自动导出）
 // 其他参数：--workers 4  --fps 30  --out 文件名  --no-audio  --bgm 音乐文件 --bgm-volume 0.12
 //           --offline 模拟断网（测试字体回退用）
 // 自动检查每次都会运行；有"错误"时拒绝渲染成片（草稿、截图不受影响），确认没问题可以加 --force 强制渲染
@@ -184,6 +185,13 @@ async function main() {
     const lint = await first.eval('window.__lint ? window.__lint() : []');
     const errors = report(lint.result.value || []);
     if (flag('check')) { process.exitCode = errors ? 1 : 0; return; }
+    if (flag('cover')) {
+      const out = path.join(proj, 'out', 'cover.png');
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      fs.writeFileSync(out, await first.frame(0, 'png'));
+      console.log(`封面：${out}`);
+      return;
+    }
     if (flag('board')) {
       const out = path.join(proj, 'out', 'board.png');
       const v = await first.snapshot(out);
@@ -281,6 +289,9 @@ async function main() {
     if (logs.length) console.log([...new Set(logs)].join('\n'));
     console.log(`完成：${out}（${(to - from).toFixed(1)} 秒，${fps}fps，用时 ${((Date.now() - t0) / 1000).toFixed(0)} 秒）`);
     if (!draft && !flag('from') && !flag('to')) {
+      const cover = path.join(outDir, 'cover.png');
+      fs.writeFileSync(cover, await first.frame(0, 'png'));
+      console.log(`封面：${cover}`);
       const board = path.join(outDir, 'board.png');
       const v = await first.snapshot(board);
       if (v) console.log(`白板全貌：${board}（${v.w}×${v.h}）`);

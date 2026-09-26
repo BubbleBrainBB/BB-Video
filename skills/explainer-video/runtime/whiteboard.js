@@ -185,7 +185,7 @@
     }
     get end() { return this.start + this.dur; }
     // 画完（含填色）的时间
-    get done() { return this.end + (this.hasFill ? 0.35 : 0); }
+    get done() { return this.end + (this.hasFill && this.dur > 0 ? 0.35 : 0); }
     describe() {
       const b = this.box;
       const txt = this.label ? `"${this.label.slice(0, 14)}${this.label.length > 14 ? '…' : ''}"` : '';
@@ -354,7 +354,7 @@
     update(t) {
       super.update(t);
       if (this.hasFill && this._vis) {
-        const f = progress(t, this.end, 0.35, ease.out);
+        const f = progress(t, this.end, this.dur > 0 ? 0.35 : 0, ease.out);
         for (const p of this.parts) if (p.fillPath) p.fillPath.setAttribute('opacity', f);
       }
     }
@@ -529,7 +529,7 @@
       board.add(this);
     }
     draw(p) {
-      const t = p * this.dur;
+      const t = this.dur > 0 ? p * this.dur : 1e9; // dur: 0 = 一开始就是贴好、写好的样子
       const land = ease.out(clamp(t / this.landDur));
       this.baseTransform = `rotate(${this.rot}deg) translateY(${(1 - land) * -40}px) scale(${1 + (1 - land) * 0.06})`;
       this.node.style.transform = this.baseTransform;
@@ -562,6 +562,19 @@
   }
 
   // 圆点：弹出
+  // 一整屏的纸：画在屏幕固定层的最底下，用来做封面这类"盖住白板"的画面
+  class PanelItem extends Item {
+    constructor(board, o) {
+      const g = svgEl('g', {}, board.hudSvg);
+      super(board, o, g);
+      svgEl('rect', { x: 0, y: 0, width: board.W, height: board.H, fill: o.fill || board.bg }, g);
+      this.box = { x: 0, y: 0, w: board.W, h: board.H };
+      this.dur = 0;
+      this.kind = '封面底';
+      board.add(this);
+    }
+  }
+
   class DotItem extends Item {
     constructor(board, x, y, o) {
       const g = svgEl('g', {}, o.hud ? board.hudSvg : o.layer === 'top' ? board.topSvg : board.inkSvg);
@@ -595,7 +608,8 @@
       this.cam0 = { x: this.W / 2, y: this.H / 2, zoom: 1, ...(opts.camera || {}) };
       this.paperKind = opts.paper || 'plain';
       this.gridSize = opts.grid || 48;
-      this.stage.style.setProperty('--wb-bg', opts.bg || '#FAF8F3');
+      this.bg = opts.bg || '#FAF8F3';
+      this.stage.style.setProperty('--wb-bg', this.bg);
 
       const mk = (cls, tag = 'div', parent = this.stage) => { const e = document.createElement(tag); e.className = cls; parent.appendChild(e); return e; };
       this.paper = mk('wb-paper');
@@ -774,7 +788,7 @@
       this.chPen = pen;
     }
     renderChapters(t) {
-      const enter = clamp(t / 0.8);
+      const enter = clamp((t - (this.coverEnd || 0)) / 0.8);
       this.chG.style.opacity = enter;
       const last = this.chs[this.chs.length - 1];
       const tt = clamp(t, this.chs[0].start, last.end);
@@ -1111,6 +1125,41 @@
       };
     }
 
+    // ---------- 封面：视频第一帧就是一张完整的封面，停留 hold 秒后淡出，进入白板 ----------
+    // o: title（支持 {red:关键词}）、subtitle、tag（左上角小标签）、hold（默认 1.3 秒）
+    // 返回 { hold, end, area, add(item) }：area 是标题下方留给主视觉的区域；
+    // 主视觉（插画、角色）用 hud: true, at: 0, dur: 0 画好后交给 add()，会和封面一起淡出。
+    cover(o = {}) {
+      const W = this.W, H = this.H, hold = o.hold ?? 1.3, fade = 0.4;
+      const items = [];
+      const keep = (it) => { items.push(it); return it; };
+      keep(new PanelItem(this, { hud: true, at: 0, overlap: true }));
+      keep(this.rect(64, 64, W - 128, H - 128, { hud: true, at: 0, dur: 0, color: o.color ?? 'ink', width: 5, rough: 0.8, overlap: true }));
+      // 标题：从大字号往下试，直到一行放得下（最小 88）
+      let title = null;
+      for (const size of [150, 136, 124, 112, 100, 88]) {
+        title = this.text(o.title || '', { hud: true, x: W / 2, y: o.titleY ?? (o.tag ? 310 : 250), size, align: 'center', valign: 'middle', at: 0, dur: 0 });
+        if (title.box.w <= W - 300 || size === 88) break;
+        title.node.remove(); this.items.pop();
+      }
+      keep(title);
+      let bottom = title.box.y + title.box.h;
+      if (o.subtitle) {
+        const sub = keep(this.text(o.subtitle, { hud: true, x: W / 2, y: bottom + 24, size: o.subtitleSize ?? 56, align: 'center', color: 'gray', at: 0, dur: 0 }));
+        bottom = sub.box.y + sub.box.h;
+      }
+      if (o.tag) keep(this.note(o.tag, { hud: true, x: 104, y: 96, w: Math.min(420, 60 + o.tag.length * 40), size: 36, color: 'yellow', rotate: -3, at: 0, dur: 0 }));
+      items.forEach((it) => it.erase(hold, fade));
+      this.coverHold = hold;
+      this.coverEnd = hold + fade;
+      this.cursor = Math.max(this.cursor, this.coverEnd);
+      const area = { x: 160, y: bottom + 40, w: W - 320, h: H - 110 - (bottom + 40) };
+      return {
+        hold, end: hold + fade, area, items,
+        add: (it) => { (it.items || [it]).forEach((x) => { x.coverPart = true; x.erase(hold, fade); }); items.push(it); return it; },
+      };
+    }
+
     // ---------- 一堆、一把、时长、档位 ----------
     // 在一块区域里堆一堆互不重叠的小东西（块、豆子、石子……），从后往前画。
     // o: count, size, shape（SHAPES 里的名字）或 make(x, y, size, r, i) 自己返回 {d, color, fill}，color, fill, seed, gap
@@ -1363,7 +1412,7 @@
         if (visible < 0.02) add('error', t, it, '画完的时候完全不在画面里（镜头没对准它）');
         else if (visible < 0.97) add('warn', t, it, `画完的时候有 ${Math.round((1 - visible) * 100)}% 在画面外，被裁掉了`);
         // 4a. 压住顶部章节进度条
-        if (this.chapterZone && !it.annot && r.y < this.chapterZone && r.y + r.h > 0 && r.x < W - 60 && r.x + r.w > 60) {
+        if (this.chapterZone && !it.annot && gone(it) > (this.coverEnd || 0) + 0.01 && r.y < this.chapterZone && r.y + r.h > 0 && r.x < W - 60 && r.x + r.w > 60) {
           add('warn', t, it, `压到了顶部章节进度条（屏幕最上面 ${this.chapterZone} 像素）`);
         }
         // 4. 压住字幕区
@@ -1428,6 +1477,17 @@
       if (swept.length) {
         const names = swept.slice(0, 3).map((i) => i.describe()).join('、');
         out.push({ level: 'warn', t: Math.round(m.at * 100) / 100, src: '', what: '镜头移动', msg: `移动途中扫过了别的区域的 ${swept.length} 个元素（${names}${swept.length > 3 ? ' 等' : ''}）。把区域按镜头路线依次排开，让每次只移到相邻区域；或者用 dur: 0 直接切过去` });
+      }
+    }
+    // 9. 封面：第一帧不该是空白；封面收起前不该开始讲、也不该开始画
+    const lines = this.T ? this.T.lines.filter((l) => !l.silence && l.text) : [];
+    if (!this.coverHold) {
+      if (!this.items.some((i) => i.start <= 0.05)) out.push({ level: 'warn', t: 0, src: '', what: '第一帧', msg: '第一帧是空白的。很多平台默认拿第一帧当封面，建议用 b.cover() 做一张封面' });
+    } else {
+      if (lines.length && lines[0].start < this.coverEnd) out.push({ level: 'warn', t: lines[0].start, src: '', what: '封面', msg: `封面还没收起，旁白就开始了：把 script.json 的 lead_in 调大 ${(this.coverEnd - lines[0].start + 0.2).toFixed(1)} 秒` });
+      for (const it of this.items) {
+        if (it.o.hud || it.coverPart || it.start >= this.coverEnd - 0.05) continue;
+        add('warn', it.start, it, '在封面收起之前就开始画了，会被封面挡住');
       }
     }
     // 7. 各元素自己的检查（例如角色指向的目标在画面外）
