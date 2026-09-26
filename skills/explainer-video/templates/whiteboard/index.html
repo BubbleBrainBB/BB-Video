@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="lib/katex/katex.min.css">
+<link rel="stylesheet" href="lib/whiteboard.css">
+<script src="lib/katex/katex.min.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/whiteboard.js"></script>
+<script src="lib/character.js"></script>
+<script src="characters.js"></script>
+<script src="timeline.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+EV.composition({
+  audio: 'audio/narration.m4a',
+  build: async ({ T }) => {
+    const b = WB.board({ T, paper: 'plain', seed: '__SLUG__' });
+
+    // ===== 镜头 1：开场问题 =====
+    // 时间一律从时间轴取：T.start('id') / T.end('id') / T.word('id', '某个词')
+    b.at(T.start('l1'));
+    b.text('在这里写开场问题', { x: 960, y: 420, size: 88, align: 'center' });
+
+    return b;
+  },
+});
+</script>
+</body>
+</html>

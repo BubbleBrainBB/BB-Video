@@ -1,0 +1,32 @@
+html, body { margin: 0; padding: 0; background: #1b1b1b; }
+#stage { position: relative; overflow: hidden; transform-origin: 0 0; background: var(--wb-bg, #FAF8F3); }
+body.ev-preview { display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+.ev-frame { position: relative; overflow: hidden; flex: none; }
+.ev-bar { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 1200px; padding: 10px 16px; box-sizing: border-box; color: #ddd; font: 13px -apple-system, "PingFang SC", sans-serif; }
+.ev-bar input { flex: 1; }
+.ev-bar button { font: inherit; padding: 4px 14px; border-radius: 6px; border: 1px solid #666; background: #2a2a2a; color: #eee; cursor: pointer; }
+.ev-time { font-variant-numeric: tabular-nums; min-width: 130px; }
+.ev-hint { color: #888; }
+
+/* 白板层级：纸面 → 荧光笔 → 墨线 → 文字/公式/便签 → 顶层墨线 → 固定层（字幕、题目固定区） */
+.wb-paper { position: absolute; inset: 0; }
+.wb-texture { position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply; }
+.wb-world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+.wb-world > svg { position: absolute; left: 0; top: 0; overflow: visible; width: 1px; height: 1px; }
+.wb-html { position: absolute; left: 0; top: 0; }
+.wb-hud { position: absolute; inset: 0; pointer-events: none; }
+.wb-hud > svg { position: absolute; left: 0; top: 0; overflow: visible; width: 1px; height: 1px; }
+
+.wb-text { position: absolute; width: max-content; white-space: pre-wrap; color: #1F2328; line-height: 1.35; }
+.wb-text .w { display: inline-block; white-space: nowrap; }
+.wb-text .c { display: inline-block; }
+.wb-math { position: absolute; width: max-content; color: #1F2328; white-space: nowrap; }
+.wb-math .katex { font-size: 1em; }
+.wb-note { position: absolute; box-sizing: border-box; padding: 28px 30px; border-radius: 4px;
+  box-shadow: 0 10px 18px rgba(60, 50, 20, .16), 0 2px 3px rgba(60, 50, 20, .12); }
+.wb-note .wb-text { position: relative; width: auto; white-space: pre-wrap; }
+
+.wb-caption { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); max-width: 1500px;
+  padding: 10px 28px; border-radius: 12px; background: rgba(255, 255, 255, .88); color: #1F2328;
+  font-size: 40px; font-weight: 500; line-height: 1.35; letter-spacing: .02em; text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .06); white-space: nowrap; }
