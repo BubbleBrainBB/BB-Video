@@ -1,0 +1,10 @@
+html, body { margin: 0; padding: 0; background: #1b1b1b; }
+#stage { position: relative; overflow: hidden; transform-origin: 0 0; }
+#stage text { white-space: pre; }
+body.ev-preview { display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+.ev-frame { position: relative; overflow: hidden; flex: none; }
+.ev-bar { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 1200px; padding: 10px 16px; box-sizing: border-box; color: #ddd; font: 13px -apple-system, "PingFang SC", sans-serif; }
+.ev-bar input { flex: 1; }
+.ev-bar button { font: inherit; padding: 4px 14px; border-radius: 6px; border: 1px solid #666; background: #2a2a2a; color: #eee; cursor: pointer; }
+.ev-time { font-variant-numeric: tabular-nums; min-width: 130px; }
+.ev-hint { color: #888; }

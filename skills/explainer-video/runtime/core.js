@@ -129,8 +129,9 @@
 
   // 加载所有声明过的字体里、这些文字用得到的分片；没网或没字体时最多等 12 秒，然后用备用字体继续
   async function settleFonts(text) {
-    const fams = [...new Set([...document.fonts].map((f) => f.family.replace(/^["']|["']$/g, '')))];
-    const all = Promise.all(fams.map((f) => document.fonts.load(`40px "${f}"`, text + '0123456789').catch(() => {})));
+    // 每个字体的每种粗细都要单独加载（分片按粗细分开，只加载常规体时，粗体的字会空着）
+    const faces = [...new Set([...document.fonts].map((f) => `${f.style} ${f.weight} 40px "${f.family.replace(/^["']|["']$/g, '')}"`))];
+    const all = Promise.all(faces.map((f) => document.fonts.load(f, text + '0123456789+-%.').catch(() => {})));
     await Promise.race([all.then(() => document.fonts.ready), new Promise((r) => setTimeout(r, 12000))]);
   }
   // 每个声明过的字体最后是否可用（本机或网络）；不可用时画面用的是备用字体
