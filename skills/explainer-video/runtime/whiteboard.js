@@ -709,16 +709,18 @@
           allowed[i] = allowed[i + w.text.length] = true;
           from = i + w.text.length;
         }
+        // 英文标点（. , : ; ! ?）只有后面是空白或在句尾时才算断句；夹在字母数字中间的（SKILL.md、3.5、1,000、3:30、a/b）是词的一部分
+        const AN = /[A-Za-z0-9]/;
+        const inWord = (k) => LAT.test(text[k] || '') || (/[.,:;_\/]/.test(text[k] || '') && AN.test(text[k - 1] || '') && AN.test(text[k + 1] || ''));
+        const isBreak = (k) => /[，。！？；：]/.test(text[k]) || (/[,.!?;:]/.test(text[k]) && !inWord(k) && (k + 1 >= text.length || /[\s，。！？；：”’)）]/.test(text[k + 1])));
         for (let i = 1; i < text.length; i++) {
-          if (/[\s，。、？！；：,.!?;:]/.test(text[i - 1])) allowed[i] = true;
+          if (/[\s、]/.test(text[i - 1]) || isBreak(i - 1)) allowed[i] = true;
           if (!words.length && CJK.test(text[i - 1]) && CJK.test(text[i])) allowed[i] = true;
-          if (LAT.test(text[i - 1]) && LAT.test(text[i])) allowed[i] = false;
+          if (inWord(i - 1) && inWord(i)) allowed[i] = false;
         }
         // 1) 按标点切成小句 2) 相邻小句合并到不超过 max 3) 仍然太长的，在允许的位置切成宽度相近的几段
         const ranges = [];
-        const re = /[^，。！？；：,.!?;:]+[，。！？；：,.!?;:]*/g;
-        let m;
-        while ((m = re.exec(text))) ranges.push([m.index, m.index + m[0].length]);
+        for (let i = 0, st = 0; i < text.length; i++) if (isBreak(i) && !isBreak(i + 1)) { ranges.push([st, i + 1]); st = i + 1; } else if (i === text.length - 1) ranges.push([st, text.length]);
         if (!ranges.length) ranges.push([0, text.length]);
         const merged = [];
         for (const r of ranges) {
@@ -727,7 +729,7 @@
           else merged.push([...r]);
         }
         // 太短的片段（不到上限的 30%）会一闪而过：并进前一段或后一段；合并后超长也没关系，下一步会在词与词之间重新均衡切分
-        const ends = (r) => /[。！？.!?]\s*$/.test(text.slice(r[0], r[1]));
+        const ends = (r) => { const k = text.slice(0, r[1]).replace(/\s+$/, '').length - 1; return /[。！？]/.test(text[k]) || (/[.!?]/.test(text[k]) && isBreak(k)); };
         for (let i = 0; i < merged.length; i++) {
           const r = merged[i];
           if (merged.length < 2 || wOf(r[0], r[1]) >= max * 0.3) continue;
@@ -1423,7 +1425,7 @@
         this.paper.style.backgroundPosition = `${pad - b.x}px ${pad - b.y}px`;
       }
       this.hud.style.display = 'none';
-      return { w, h };
+      return { w, h, label: '白板全貌' };
     }
 
     get duration() {

@@ -1,7 +1,7 @@
 # 孔版印刷风格（riso）
 
 像一本印得很讲究的独立杂志：几种专色油墨叠印，套色轻微错位，网点表现明暗，纸上有油墨颗粒。
-视频按**页**组织：一章通常就是一页，换页时一道印刷滚筒从上往下扫过。
+视频按**页**组织：一章通常是一页。但它不是幻灯片：页和页之间有各种换场，镜头在页内会推近，元素可以从一页带到下一页。
 
 ## 什么时候用
 | 适合 | 不适合 |
@@ -42,16 +42,43 @@
 
 ## 3. 时间和页面
 ```js
-const cover = b.cover({ ... });               // 封面：第 0 帧就是完整的封面
-const p1 = b.page(cover.hold);                 // 第 1 页：封面停留 hold 秒后滚筒翻页
+const cover = b.cover({ ... });                                         // 封面：第 0 帧就是完整的封面
+const p1 = b.page(cover.hold);                                           // 封面之后：滚筒翻页
 b.title('……', { x: 110, y: 200, at: T.start('hook') });
-const p2 = b.page(T.end('hook2') + 0.05);      // 第 2 页：上一句一说完就翻页
+const p2 = b.page(T.end('hook2') + 0.05, { transition: 'flood', from: pct }); // 换章：从关键数字漫开油墨
 b.head('……', { x: 110, y: 150, at: Math.max(p2.end, T.start('why')) });
+const p3 = b.page(T.end('r3') + 0.05, { transition: 'push' });             // 同一话题往下讲：推页
+b.title('……', { x: 110, y: 190, at: p3.start + 0.1 });                     // 推页时标题可以跟着新页一起滑进来
 ```
-- **翻页在上一句说完时立刻开始**（`T.end(上一句) + 0.05`），滚筒 0.6 秒。新页上的东西不早于 `page.end` 出现，否则会被滚筒盖住（自动检查会报）。
+- **换页在上一句说完时立刻开始**（`T.end(上一句) + 0.05`）。
 - 章节（script.json 的 `chapter`）一般对应一页；一章内容多时可以分成两页。
-- 每一页上的东西都要在翻页前至少 0.8 秒印完，否则观众来不及看。
+- 每一页上的东西都要在换页前至少 0.8 秒印完，否则观众来不及看。
 - 封面：`lead_in` 设为 2.3 秒（新建项目时已设好），旁白在封面翻走后才开始。
+- **视频讲完就结束**：最后一页停留到旁白结束后约 2 秒，不要做"全部页面缩成目录"的结尾。（全部页面的目录图会在渲染成片时自动导出成 `out/board.png`，不出现在视频里。）
+
+### 换场：不要让它像幻灯片
+`b.page(at, { transition })`，按叙事选，**不要全片只用一种**：
+
+| transition | 效果 | 什么时候用 | 新页的东西最早什么时候出现 |
+|---|---|---|---|
+| `roll` | 印刷滚筒从上往下扫过，换成新的一页 | 封面之后（默认）、大段落开始 | `page.end`（滚筒扫完） |
+| `push` | 新页把旧页推出去，三种油墨在移动中错开 | 同一话题往下讲（封面之后的默认） | `page.start`：可以提前印好，跟着页面一起滑进来 |
+| `flood` | 一团油墨从某个元素（`from`）漫开盖满画面，再退开露出新页 | **换章 / 转折**：从上一页的关键元素（数字、图形）漫开，把两页连起来 | 换场过半（`page.start + 0.45`） |
+| `zoom` | 旧页放大、套色散开淡出，新页从略小处印进来 | "往里看一层"：从整体进入细节 | `page.start`，跟着新页一起进来 |
+| `cut` | 硬切 | 节奏很快的连续对比 | `page.start` |
+
+可调：`dur`（换场时长）、`ink`（`flood` 的油墨，默认 `accent`）。
+
+### 镜头：页面不是静止的
+- **慢推近**：每一页从印好开始，到下一页换场前，都会很慢地推近 3%，画面一直是"活"的。`b.page(at, { drift: 0 })` 关闭，`RISO.board({ drift })` 改全片默认值。
+- **页内推镜头**：`b.focus(目标, { at, dur, zoom })` 把镜头推到这一页的某个元素 / 区域（自动避开章节条和字幕），用来强调细节，例如图表的最后几根柱子；`b.focus(null, { at })` 拉回整页。一页最多推一两次，默认最多放大 1.5 倍。
+- **跨页元素**：用 `hud: true` 画出的元素不属于任何一页，换场时不会跟着旧页离开。配合 `.to(at, { x, y, scale }, dur)` 把它挪到新页的角落，前后两页就连起来了；不再需要时 `.erase(at)`：
+```js
+const pct = b.number(1010, 150, { to: 30, prefix: '+', suffix: '%', size: 190, hud: true });
+const p2 = b.page(T.end('hook2') + 0.05, { transition: 'flood', from: pct });
+pct.to(p2.start + 0.45, { x: 1690, y: 180, scale: 0.42 }, 0.8);   // 飞到第 2 页右上角，继续提醒观众
+pct.erase(p3.start, 0.3);
+```
 
 ## 4. 出场动作
 每个元素都有 `enter`（有合适的默认值，一般不用写）：
@@ -74,8 +101,8 @@ b.head('……', { x: 110, y: 150, at: Math.max(p2.end, T.start('why')) });
 | 方法 | 说明 |
 |---|---|
 | `b.cover({ title, subtitle, kicker, issue, hold, motif })` | 封面。`title` 支持 `{accent:关键词}` 和 `\n`；`kicker` 左上栏目名（如 "民生 · 物价"）；`issue` 右上期号；`motif: false` 去掉右下装饰网点圆。返回 `{ hold, end, area }`，`area` 是标题下方留给主视觉的区域；主视觉用 `at: 0, dur: 0` 画在封面页上 |
-| `b.page(at, { roll, title })` | 翻到新的一页，返回 `{ start, end }`（`end` = 滚筒扫完）。`title` 用于结尾目录，缺省取当时的章节名 |
-| `b.overview({ at })` | 结尾：所有页面缩小排成一版"目录"，带编号和标题；视频会自动加长，停留约 3 秒。放在 build 最后 |
+| `b.page(at, { transition, from, ink, dur, drift, title })` | 换到新的一页，返回 `{ start, end }`（`end` = 换场结束）。换场方式见上面第 3 节；`title` 用于导出的目录图，缺省取当时的章节名 |
+| `b.focus(target, { at, dur, zoom, pad })` | 页内推镜头；`target` 为元素、元素数组、`{x, y, w, h}` 区域，或 `null`（拉回整页） |
 
 ### 文字
 `b.title / b.head / b.body / b.label (str, o)`，或 `b.text(str, { style })`。
@@ -89,7 +116,7 @@ b.head('……', { x: 110, y: 150, at: Math.max(p2.end, T.start('why')) });
 | `b.tag(str, x, y, { bg, ink, size })` | 名牌 / 标签：底色块（默认 `base`）+ 文字，盖章式出场 |
 | `b.number(x, y, { to, from, decimals, prefix, suffix, size, ink, align })` | 滚动的大数字，例如 `{ to: 30, prefix: '+', suffix: '%' }`；默认 `accent`、字号 150 |
 | `b.quote(str, { x, y, w, size })` | 引语：大号引号 + 粗宋 |
-| `b.highlight(target, { ink, pad })` | 在文字下面印一条底色（默认 `base`），从左往右刷出 |
+| `b.highlight(target, { ink, pad, fromY, toY })` | 在文字下面印一条底色（默认 `base`），从左往右刷出；`fromY` / `toY` 是色条从文字高度的几成画到几成（默认整行，`fromY: 0.55` 就是只画下半截） |
 | `b.underline(target, { ink, weight })` | 粗下划线（默认 `accent`） |
 
 ### 图形和插画
@@ -116,7 +143,7 @@ b.sketch([
 
 ### 通用
 - 时间：`at`（秒，或另一个元素 / 组 = 在它结束时开始）、`delay`、`dur`；`b.at(t)`、`b.wait(s)`
-- 元素方法：`.erase(at, dur)`、`.move(at, dx, dy, dur)`、`.pulse(at)`
+- 元素方法：`.erase(at, dur)`、`.move(at, dx, dy, dur)`、`.to(at, { x, y, scale }, dur)`（移动 / 缩放到新位置，`x, y` 是中心点）、`.pulse(at)`
 - 选项：`bleed: true` 允许有意出血到画面外；`annot: true` 标注类元素（可以压章节条 / 字幕区的检查）；`overlap: true` 跳过文字重叠检查；`hud: true` 固定在屏幕上、不跟随页面
 - `RISO.groupOf(items)` 把几个元素组成一组（有 `start / end / box / erase / move`）
 
@@ -124,8 +151,9 @@ b.sketch([
 - 每一页只有一个视觉焦点；`accent` 没有滥用
 - 网点、叠色是好看的，文字是清楚的：正文没有被网点压住
 - 数据类画面：数字和旁白一致，标明来源和时间（或"示意数据"），纵轴从 0 开始
-- 翻页前，这一页的东西都印完并停留了足够时间（看 `--strip` 翻页前后）
-- 结尾目录 `out/board.png`：每页一眼能看出讲了什么
+- 换场有变化、贴合叙事：换章 / 转折用 `flood` 或 `roll`，同一话题往下讲用 `push`，进入细节用 `zoom` 或 `focus`；没有全片都是同一种换场
+- 换页前，这一页的东西都印完并停留了足够时间（看 `--strip` 换场前后）
+- 导出的目录图 `out/board.png`：每页一眼能看出讲了什么
 
 ## 7. 暂不支持
 - **人物**（`references/characters.md` 的角色目前只有白板风格的画法）。需要人物表演的题材用 `whiteboard`。

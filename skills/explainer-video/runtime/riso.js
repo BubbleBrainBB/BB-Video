@@ -107,17 +107,26 @@
     }
     erase(at, dur = 0.35) { this.exits.push({ at: at ?? this.b.cursor, dur }); return this; }
     pulse(at, amt = 1.08, dur = 0.5) { this.pulses.push({ at, amt, dur }); return this; }
-    move(at, dx, dy, dur = 0.6, e = ease.inOut) { this.moves.push({ at, dx, dy, dur, e }); this.moves.sort((a, c) => a.at - c.at); return this; }
+    move(at, dx, dy, dur = 0.6, e = ease.inOut) { this.moves.push({ at, dx, dy, s: 1, dur, e }); this.moves.sort((a, c) => a.at - c.at); return this; }
+    // 移动 / 缩放到新位置：x, y 是元素中心要到达的位置，scale 是最终大小（相对原始大小）。跨页元素（hud: true）翻页时用它挪到新位置
+    to(at, o = {}, dur = 0.7, e = ease.inOut) {
+      if (at && typeof at === 'object') at = at.end;
+      const b = this.boxAt(at), cur = this.offsetAt(at)[2];
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      this.moves.push({ at, dx: (o.x ?? cx) - cx, dy: (o.y ?? cy) - cy, s: (o.scale ?? cur) / cur, dur, e });
+      this.moves.sort((a, c) => a.at - c.at);
+      return this;
+    }
     offsetAt(t) {
-      let dx = 0, dy = 0;
-      for (const m of this.moves) { const q = progress(t, m.at, m.dur, m.e); dx += m.dx * q; dy += m.dy * q; }
-      return [dx, dy];
+      let dx = 0, dy = 0, s = 1;
+      for (const m of this.moves) { const q = progress(t, m.at, m.dur, m.e); dx += m.dx * q; dy += m.dy * q; s *= lerp(1, m.s ?? 1, q); }
+      return [dx, dy, s];
     }
     boxAt(t) {
       const b = this.box;
       if (!b || !this.moves.length) return b;
-      const [dx, dy] = this.offsetAt(t);
-      return { x: b.x + dx, y: b.y + dy, w: b.w, h: b.h };
+      const [dx, dy, s] = this.offsetAt(t);
+      return { x: b.x + b.w / 2 + dx - (b.w * s) / 2, y: b.y + b.h / 2 + dy - (b.h * s) / 2, w: b.w * s, h: b.h * s };
     }
     update(t) {
       let fade = 1;
@@ -126,8 +135,8 @@
       if (vis !== this._vis) { this._vis = vis; for (const p of this.parts) p.g.style.display = vis ? '' : 'none'; }
       if (!vis) return;
       const q = this.dur > 0 ? clamp((t - this.start) / this.dur) : 1;
-      const [mx, my] = this.offsetAt(t);
-      let s = 1;
+      const [mx, my, ms] = this.offsetAt(t);
+      let s = ms;
       for (const pl of this.pulses) { const k = clamp((t - pl.at) / pl.dur); if (k > 0 && k < 1) s *= 1 + (pl.amt - 1) * Math.sin(Math.PI * k); }
       const b = this.box || { x: 0, y: 0, w: 0, h: 0 }, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
       if (this.pre) this.pre(t, q);
@@ -356,12 +365,12 @@
       this.kind = '数字';
       const st = TEXT.num, size = o.size ?? st.size;
       this.fmt = (v) => `${o.prefix ?? ''}${v.toLocaleString('en-US', { minimumFractionDigits: o.decimals ?? 0, maximumFractionDigits: o.decimals ?? 0 })}${o.suffix ?? ''}`;
-      this.from = o.from ?? 0; this.to = o.to ?? 0;
+      this.v0 = o.from ?? 0; this.v1 = o.to ?? 0;
       const css = `font-family:${FONTS[o.font ?? 'num'] || o.font};font-weight:${o.weight ?? st.weight};font-size:${size}px`;
       const anchor = { left: 'start', center: 'middle', right: 'end' }[o.align ?? 'left'];
       this.el = svgEl('text', { x: x, y: y + size * 0.86, 'text-anchor': anchor, style: css }, this.part(o.ink ?? 'accent', o.clean ?? false));
-      const w = b.measure(this.fmt(this.to), css);
-      this.label = this.fmt(this.to);
+      const w = b.measure(this.fmt(this.v1), css);
+      this.label = this.fmt(this.v1);
       const bx = anchor === 'start' ? x : anchor === 'middle' ? x - w / 2 : x - w;
       this.box = { x: bx, y, w, h: size };
       this.enter = o.enter ?? 'print';
@@ -369,7 +378,7 @@
       this.finish();
     }
     draw(t, q) {
-      const s = this.fmt(lerp(this.from, this.to, ease.out(q)));
+      const s = this.fmt(lerp(this.v0, this.v1, ease.out(q)));
       if (s !== this._s) { this._s = s; this.el.textContent = s; }
     }
   }
@@ -388,7 +397,10 @@
   class Page {
     constructor(b, idx, start, o) {
       this.b = b; this.idx = idx; this.start = start; this.o = o;
-      this.roll = o.roll ?? 0;
+      this.roll = o.roll ?? 0;        // 换场时长
+      this.type = o.type || 'none';   // 换场方式
+      this.cams = [];                 // 页内镜头
+      this.drift = o.drift ?? 0.03;   // 慢推近的幅度
       this.title = o.title || '';
       this.hideAt = Infinity;
       this.hud = !!o.hud;
@@ -408,6 +420,16 @@
     }
     get end() { return this.start + this.roll; }
     groups() { return this.b.inkNames.flatMap((k) => [this.g[k].tex, this.g[k].clean]); }
+    // 页内镜头：{ x, y, zoom }（x, y 是画面中心对准的页面坐标）
+    camAt(t) {
+      let c = { x: this.b.W / 2, y: this.b.H / 2, zoom: 1 };
+      for (const m of this.cams) {
+        if (t <= m.at) break;
+        const q = progress(t, m.at, m.dur, ease.inOut);
+        c = { x: lerp(c.x, m.x, q), y: lerp(c.y, m.y, q), zoom: Math.exp(lerp(Math.log(c.zoom), Math.log(m.zoom), q)) };
+      }
+      return c;
+    }
   }
 
   // ---------- 画板 ----------
@@ -424,6 +446,7 @@
       this.pages = [];
       this.cursor = 0.3;
       this.gap = o.gap ?? 0.15;
+      this.drift = o.drift ?? 0.03;
       this._seed = EV.hashStr(o.seed || 'riso');
       this.stage = o.stage || document.getElementById('stage');
       this.stage.style.background = this.P.paper;
@@ -509,12 +532,22 @@
 
     // ---------- 页面 ----------
     // 翻到新的一页：at 秒开始，印刷滚筒从上往下扫过（roll 秒），旧页换成新页。第一页（或封面后的第一页）会自动带滚筒转场
+    // transition：roll 滚筒 / push 推页 / flood 油墨漫开（from: 元素或 [x, y]，ink）/ zoom 推近 / cut 硬切
+    // 默认：封面之后用 roll，其余用 push。drift：这一页的慢推近幅度（0 关闭）
     page(at, o = {}) {
-      if (at && typeof at === 'object' && !Array.isArray(at)) { o = at; at = undefined; }
+      if (at && typeof at === 'object' && !Array.isArray(at) && !('end' in at)) { o = at; at = undefined; }
+      if (at && typeof at === 'object') at = at.end;
       at = at ?? this.cursor;
       const prev = this.pages[this.pages.length - 1];
-      const roll = prev ? (o.roll ?? 0.6) : 0;
-      const p = new Page(this, this.pages.length, prev ? at : Math.min(at, 0), { ...o, roll });
+      const DUR = { roll: 0.6, push: 0.7, flood: 0.9, zoom: 0.75, cut: 0 };
+      const type = prev ? (o.transition ?? (prev.cover ? 'roll' : 'push')) : 'none';
+      if (prev && !(type in DUR)) throw new Error(`没有这种换场："${type}"，可用：${Object.keys(DUR).join('、')}`);
+      const roll = prev ? (o.dur ?? DUR[type]) : 0;
+      const p = new Page(this, this.pages.length, prev ? at : Math.min(at, 0), { ...o, roll, type, drift: o.drift ?? this.drift });
+      if (type === 'flood') {
+        const f = o.from ? (Array.isArray(o.from) ? o.from : (() => { const b = o.from.boxAt ? o.from.boxAt(at) : boxOf(o.from); return [b.x + b.w / 2, b.y + b.h / 2]; })()) : [this.W / 2, this.H / 2];
+        p.flood = { from: f, ink: this.ink(o.ink ?? 'accent') };
+      }
       if (prev) prev.hideAt = at + roll;
       this.pages.push(p);
       this.cur = p;
@@ -522,6 +555,23 @@
       return p;
     }
     get content() { return this.pages.filter((p) => !p.cover); }
+    // 页内推镜头：把镜头推到某个元素 / 区域（自动避开章节条和字幕），target 为 null 时拉回整页
+    focus(target, o = {}) {
+      let at = o.at ?? this.cursor;
+      if (at && typeof at === 'object') at = at.end;
+      const dur = o.dur ?? 0.9, W = this.W, H = this.H;
+      const p = o.page || (target && target.page && !target.page.hud ? target.page : this.cur);
+      if (!target) p.cams.push({ at, dur, x: W / 2, y: H / 2, zoom: 1 });
+      else {
+        const b = Array.isArray(target) ? unionBox(target.map(boxOf)) : boxOf(target);
+        const top = this.chapterZone || 0, bottom = this.caps ? 150 : 0, availH = H - top - bottom, pad = o.pad ?? 80;
+        const zoom = o.zoom ?? Math.min(1.5, W / (b.w + pad * 2), availH / (b.h + pad * 2));
+        p.cams.push({ at, dur, x: b.x + b.w / 2, y: b.y + b.h / 2 - (top + availH / 2 - H / 2) / zoom, zoom });
+      }
+      p.cams.sort((a, c) => a.at - c.at);
+      this.cursor = Math.max(this.cursor, at + dur);
+      return this;
+    }
 
     // ---------- 绘图 API ----------
     sketch(parts, o = {}) { return new Shape(this, parts, o); }
@@ -552,14 +602,16 @@
     // 名牌 / 标签：底色块 + 文字，像盖章一样印上去
     tag(str, x, y, o = {}) { return new Text(this, str, { style: 'label', x, y, bg: o.bg ?? 'base', enter: 'stamp', kind: '标签', ...o }); }
     number(x, y, o = {}) { return new Num(this, x, y, o); }
-    // 荧光底：在目标下面印一条底色（默认 base），从左往右刷出来
+    // 荧光底：在目标下面印一条底色（默认 base），从左往右刷出来。fromY / toY：色条从文字高度的几成画到几成（默认整行）
     highlight(target, o = {}) {
-      const b = target.textBox || boxOf(target), pad = o.pad ?? 10;
-      return this.rect(b.x - pad, b.y + b.h * (o.from ?? 0.08), b.w + pad * 2, b.h * ((o.to ?? 1.02) - (o.from ?? 0.08)), { kind: '荧光底', ink: 'base', enter: 'wipe', dur: 0.4, annot: true, at: target, ...o });
+      const { pad = 10, fromY = 0.08, toY = 1.02, ...rest } = o;
+      const b = target.textBox || boxOf(target);
+      return this.rect(b.x - pad, b.y + b.h * fromY, b.w + pad * 2, b.h * (toY - fromY), { kind: '荧光底', ink: 'base', enter: 'wipe', dur: 0.4, annot: true, at: target, ...rest });
     }
     underline(target, o = {}) {
-      const b = target.textBox || boxOf(target), wt = o.weight ?? 10;
-      return this.rect(b.x, b.y + b.h + (o.gap ?? 8), b.w, wt, { kind: '下划线', ink: 'accent', enter: 'wipe', dur: 0.35, annot: true, at: target, ...o });
+      const { weight = 10, gap = 8, ...rest } = o;
+      const b = target.textBox || boxOf(target);
+      return this.rect(b.x, b.y + b.h + gap, b.w, weight, { kind: '下划线', ink: 'accent', enter: 'wipe', dur: 0.35, annot: true, at: target, ...rest });
     }
     // 引语：大号引号 + 粗宋
     quote(str, o = {}) {
@@ -673,7 +725,7 @@
       this.stage.style.width = this.W * k + 'px';
       this.stage.style.height = this.H * k + 'px';
       this.stage.style.transform = '';
-      return { w: this.W * k, h: this.H * k };
+      return { w: this.W * k, h: this.H * k, label: '目录' };
     }
 
     // ---------- 字幕：底色块 + 主色文字 ----------
@@ -691,16 +743,19 @@
           if (i < 0) { wpos.push(null); continue; }
           wpos.push(i); allowed[i] = allowed[i + w.text.length] = true; from = i + w.text.length;
         }
+        // 英文标点（. , : ; ! ?）只有后面是空白或在句尾时才算断句；夹在字母数字中间的（SKILL.md、3.5、1,000、3:30、a/b）是词的一部分
+        const AN = /[A-Za-z0-9]/;
+        const inWord = (k) => LAT.test(text[k] || '') || (/[.,:;_\/]/.test(text[k] || '') && AN.test(text[k - 1] || '') && AN.test(text[k + 1] || ''));
+        const isBreak = (k) => /[，。！？；：]/.test(text[k]) || (/[,.!?;:]/.test(text[k]) && !inWord(k) && (k + 1 >= text.length || /[\s，。！？；：”’)）]/.test(text[k + 1])));
         for (let i = 1; i < text.length; i++) {
-          if (/[\s，。、？！；：,.!?;:]/.test(text[i - 1])) allowed[i] = true;
+          if (/[\s、]/.test(text[i - 1]) || isBreak(i - 1)) allowed[i] = true;
           if (!words.length && CJK.test(text[i - 1]) && CJK.test(text[i])) allowed[i] = true;
-          if (LAT.test(text[i - 1]) && LAT.test(text[i])) allowed[i] = false;
+          if (inWord(i - 1) && inWord(i)) allowed[i] = false;
         }
-        const ranges = [], re = /[^，。！？；：,.!?;:]+[，。！？；：,.!?;:]*/g;
-        let m;
-        while ((m = re.exec(text))) ranges.push([m.index, m.index + m[0].length]);
+        const ranges = [];
+        for (let i = 0, st = 0; i < text.length; i++) if (isBreak(i) && !isBreak(i + 1)) { ranges.push([st, i + 1]); st = i + 1; } else if (i === text.length - 1) ranges.push([st, text.length]);
         if (!ranges.length) ranges.push([0, text.length]);
-        const ends = (r) => /[。！？.!?]\s*$/.test(text.slice(r[0], r[1]));
+        const ends = (r) => { const k = text.slice(0, r[1]).replace(/\s+$/, '').length - 1; return /[。！？]/.test(text[k]) || (/[.!?]/.test(text[k]) && isBreak(k)); };
         const merged = [];
         for (const r of ranges) { const last = merged[merged.length - 1]; if (last && wOf(last[0], r[1]) <= max && !ends(last)) last[1] = r[1]; else merged.push([...r]); }
         for (let i = 0; i < merged.length; i++) {
@@ -824,29 +879,76 @@
           });
         }
       }
-      // 页面：滚筒扫过时，线上方是新页、线下方是旧页；结尾"目录"时缩小排成网格
-      let rolling = null;
+      // 页面：换场（滚筒 / 推页 / 油墨漫开 / 推近）+ 页内镜头 + 慢推近；导出目录图时缩小排成网格
+      const W = this.W, H = this.H, n = this.inkNames.length;
+      const dur = this._dur ?? (this._dur = this.duration);
+      let rolling = null, flood = null;
       const ov = this.ov && t >= this.ov.at ? this.ov : null;
       for (const p of this.pages) {
-        let vis = t >= p.start && t < p.hideAt, y0 = -20, h = this.H + 40, tf = '', op = '';
-        if (p.roll && t >= p.start && t < p.end) { const ry = this.rollerY(p, t); h = ry + 20; rolling = ry; }
         const nxt = this.pages[p.idx + 1];
-        if (nxt && nxt.roll && t >= nxt.start && t < nxt.end) { const ry = this.rollerY(nxt, t); y0 = ry; h = this.H + 20 - ry; }
+        let vis = t >= p.start && t < p.hideAt, clipY = -20, clipH = H + 40, pre = '', op = 1;
+        const ink = new Array(n).fill(null).map(() => [0, 0]);
+        // 页内镜头 + 慢推近（从这一页印好开始，到下一页开始换场，缓慢放大 drift）
+        const c = p.camAt(t), life = Math.max(1, (nxt ? nxt.start : dur) - p.end);
+        const z = c.zoom * (1 + p.drift * ease.inOut(clamp((t - p.end) / life)));
+        let cam = Math.abs(z - 1) < 1e-4 && Math.abs(c.x - W / 2) < 0.05 && Math.abs(c.y - H / 2) < 0.05 ? '' : `translate(${W / 2},${H / 2}) scale(${z.toFixed(5)}) translate(${f1(-c.x)},${f1(-c.y)})`;
+        const localY = (sy) => c.y + (sy - H / 2) / z;
+        const spread = (amt, both) => ink.forEach((v, i) => { const d = (i - (n - 1) / 2) * amt; v[0] += d; if (both) v[1] -= d * 0.6; });
+        const scaleAbout = (sc) => `translate(${W / 2},${H / 2}) scale(${sc.toFixed(4)}) translate(${-W / 2},${-H / 2})`;
+        // 进场
+        if (p.roll && t >= p.start && t < p.end) {
+          const k = clamp((t - p.start) / p.roll), e = ease.inOut(k);
+          if (p.type === 'roll') { const ry = this.rollerY(p, t); rolling = ry; clipH = localY(ry) + 20; }
+          else if (p.type === 'push') { pre = `translate(${f1(W * (1 - e))},0)`; spread(Math.sin(Math.PI * k) * 26); }
+          else if (p.type === 'flood') { vis = vis && k >= 0.5; flood = { p, k }; }
+          else if (p.type === 'zoom') { const k2 = clamp((k - 0.4) / 0.6); vis = vis && k2 > 0; pre = scaleAbout(0.9 + 0.1 * ease.out(k2)); op = k2; spread((1 - k2) * 36, true); }
+        }
+        // 出场（由下一页的换场方式决定）
+        if (nxt && nxt.roll && t >= nxt.start && t < nxt.end) {
+          const k = clamp((t - nxt.start) / nxt.roll), e = ease.inOut(k);
+          if (nxt.type === 'roll') { const ry = this.rollerY(nxt, t); clipY = localY(ry); clipH = H + 40 - clipY; }
+          else if (nxt.type === 'push') { pre = `translate(${f1(-W * e)},0)`; spread(Math.sin(Math.PI * k) * 26); }
+          else if (nxt.type === 'flood') vis = vis && k < 0.5;
+          else if (nxt.type === 'zoom') { const k1 = clamp(k / 0.6); vis = vis && k1 < 1; pre = scaleAbout(1 + 0.3 * ease.in(k1)); op = Math.min(op, 1 - k1); spread(k1 * 36, true); }
+        }
+        // 镜头推近时，页面内容不能跑进顶部章节条和底部字幕区
+        if (c.zoom > 1.01 && !p.cover) {
+          if (this.chapterZone) { const y0 = localY(this.chapterZone); clipH -= Math.max(0, y0 - clipY); clipY = Math.max(clipY, y0); }
+          if (this.caps) clipH = Math.min(clipH, localY(H - this.capZone) - clipY);
+        }
         const cell = ov && ov.cells[p.idx];
         if (cell) {
-          y0 = 0; h = this.H;
+          clipY = 0; clipH = H; cam = ''; ink.forEach((v) => { v[0] = 0; v[1] = 0; }); op = 1;
           const k = cell.last ? ease.inOut(clamp((t - ov.at) / ov.dur)) : 1;
-          const s = lerp(1, ov.s, k), x = lerp(0, cell.x, k), y = lerp(0, cell.y, k);
-          tf = `translate(${f1(x)},${f1(y)}) scale(${s.toFixed(4)})`;
+          const s2 = lerp(1, ov.s, k);
+          pre = `translate(${f1(lerp(0, cell.x, k))},${f1(lerp(0, cell.y, k))}) scale(${s2.toFixed(4)})`;
           vis = t >= cell.show;
-          if (!cell.last) op = String(Math.round(clamp((t - cell.show) / 0.3) * 100) / 100);
+          if (!cell.last) op = clamp((t - cell.show) / 0.3);
         } else if (ov) vis = false;
         if (p._vis !== vis) { p._vis = vis; p.groups().forEach((g) => (g.style.display = vis ? '' : 'none')); }
         if (!vis) continue;
-        const key = `${f1(y0)}|${f1(h)}`;
-        if (p._clip !== key) { p._clip = key; p.clipRect.setAttribute('y', f1(y0)); p.clipRect.setAttribute('height', f1(Math.max(0, h))); }
-        if (p._tf !== tf) { p._tf = tf; p.groups().forEach((g) => (tf ? g.setAttribute('transform', tf) : g.removeAttribute('transform'))); }
-        if (p._op !== op) { p._op = op; p.groups().forEach((g) => (g.style.opacity = op === '1' ? '' : op)); }
+        const ck = `${f1(clipY)}|${f1(clipH)}`;
+        if (p._clip !== ck) { p._clip = ck; p.clipRect.setAttribute('y', f1(clipY)); p.clipRect.setAttribute('height', f1(Math.max(0, clipH))); }
+        const base = `${pre} ${cam}`.trim();
+        this.inkNames.forEach((k, i) => {
+          const [dx, dy] = ink[i];
+          const tf = (dx || dy ? `translate(${f1(dx)},${f1(dy)}) ` : '') + base;
+          const g = this.pages[p.idx].g[k];
+          if (g._tf !== tf) { g._tf = tf; for (const el of [g.tex, g.clean]) tf ? el.setAttribute('transform', tf) : el.removeAttribute('transform'); }
+        });
+        const o2 = op >= 0.999 ? '' : String(Math.round(op * 1000) / 1000);
+        if (p._op !== o2) { p._op = o2; p.groups().forEach((g) => (g.style.opacity = o2)); }
+      }
+      // 油墨漫开：一团油墨从 from 点扩散盖满画面，再从中间退开露出新页
+      if (!this.floodEls) this.floodEls = {};
+      for (const [k, el] of Object.entries(this.floodEls)) if (!flood || flood.p.flood.ink !== k) el.style.display = 'none';
+      if (flood) {
+        const { from: [fx, fy], ink: fk } = flood.p.flood, k = flood.k;
+        const el = this.floodEls[fk] || (this.floodEls[fk] = svgEl('path', { 'fill-rule': 'evenodd' }, this.hudPage.g[fk].tex));
+        const R = Math.max(...[[0, 0], [W, 0], [0, H], [W, H]].map(([x, y]) => Math.hypot(x - fx, y - fy))) + 30;
+        const rOut = k < 0.5 ? R * ease.inOut(k / 0.5) : R, rIn = k < 0.5 ? 0 : R * ease.inOut((k - 0.5) / 0.5);
+        el.setAttribute('d', circleD(fx, fy, Math.max(0.1, rOut)) + (rIn > 0.5 ? ' ' + circleD(fx, fy, rIn) : ''));
+        el.style.display = '';
       }
       this.roller.forEach((r, i) => {
         r.style.display = rolling === null ? 'none' : '';
@@ -874,7 +976,8 @@
         if (it.start >= dur) add('error', it.start, it, '开始时间超出了视频总时长');
         if (it.page.hud) continue;
         // 页面时间
-        if (it.start < it.page.end - 0.05) add('warn', it.start, it, `这一页的滚筒还没扫完（${it.page.end.toFixed(2)} 秒）就开始印，会被滚筒盖住`);
+        const pg = it.page, ready = pg.type === 'roll' ? pg.end : pg.type === 'flood' ? pg.start + pg.roll * 0.5 : pg.start;
+        if (it.start < ready - 0.05) add('warn', it.start, it, pg.type === 'roll' ? `这一页的滚筒还没扫完（${pg.end.toFixed(2)} 秒）就开始印，会被滚筒盖住` : `这一页还没开始换进来（${ready.toFixed(2)} 秒）就开始印了`);
         const nxt = this.pages[it.page.idx + 1];
         if (nxt && done > nxt.start - 0.05) add('error', it.start, it, `还没印完，这一页就翻走了（下一页 ${nxt.start.toFixed(2)} 秒开始）`);
         else if (nxt && nxt.start - done < 0.8 && !it.exits.length) add('warn', done, it, '印完不到 0.8 秒这一页就翻走了，观众来不及看');

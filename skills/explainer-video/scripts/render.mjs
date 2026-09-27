@@ -135,7 +135,7 @@ async function openPage(cdp, scale) {
       const shot = await s('Page.captureScreenshot', { format: 'png' });
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, Buffer.from(shot.data, 'base64'));
-      return { w: Math.round(v.w * k), h: Math.round(v.h * k) };
+      return { w: Math.round(v.w * k), h: Math.round(v.h * k), label: v.label || '全貌图' };
     },
   };
 }
@@ -207,7 +207,7 @@ async function main() {
     if (flag('board')) {
       const out = path.join(proj, 'out', 'board.png');
       const v = await first.snapshot(out);
-      console.log(v ? `白板全貌：${out}（${v.w}×${v.h}）` : '这个项目没有白板，无法导出全貌');
+      console.log(v ? `${v.label}：${out}（${v.w}×${v.h}）` : '这个项目没有白板，无法导出全貌');
       return;
     }
 
@@ -311,7 +311,7 @@ async function main() {
       console.log(`封面：${cover}`);
       const board = path.join(outDir, 'board.png');
       const v = await first.snapshot(board);
-      if (v) console.log(`白板全貌：${board}（${v.w}×${v.h}）`);
+      if (v) console.log(`${v.label}：${board}（${v.w}×${v.h}）`);
     }
   } finally {
     await close();
