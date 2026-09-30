@@ -141,6 +141,26 @@ b.sketch([
 | `b.arrow(x1, y1, x2, y2, { width, ink })` | 实心粗箭头（默认 `accent`），从尾部刷到头部 |
 | `b.bars(data, { x, y, w, h, max, grid, decimals, unit, hot })` | 柱状图：`data = [['4月', 4.3], ...]`，`x, y` 是基线左端，`h` 是 `max` 对应的高度；`hot: [3, 4, 5]` 要突出的柱子用 `accent`，其余用 `base` 网点；柱子逐根长出，数值跟着滚动。**纵轴从 0 开始，不要截断夸大** |
 
+### 图片和视频（照片、截图、录屏）
+素材先整理：把图片、视频放进项目的 `assets/src/`，运行 `node scripts/assets.mjs videos/<名字>`（见 SKILL.md）。素材名 = 文件名去掉扩展名。
+视频写成 `{ clip: '名字', from: 0, rate: 2, to: 10 }`：从片段第 `from` 秒开始、以 `rate` 倍速播放、播到 `to` 秒停住（默认播到结尾）；元素出现前停在第一帧，播完停在最后一帧，`play: 秒` 可以指定开始播放的时间。视频还没播完就被擦掉 / 翻页时，自动检查会提醒。
+```js
+b.image('发布会', { x: 110, y: 160, w: 820, at: ..., source: '图：发布会现场' });              // 照片：双色印刷
+b.image('settings', { x: 1000, y: 160, w: 800, inks: 'screen', at: ... });                     // 浅色界面截图
+b.image({ clip: 'terminal', rate: 1.5 }, { x: 110, y: 200, w: 900, inks: 'dark', at: ... });   // 深色界面的录屏
+```
+图片不会以原色出现，而是**按亮度分到油墨上套印**，所以和版面上其他元素的颜色一致。`inks` 选一种印法：
+
+| inks | 效果 | 适合 |
+|---|---|---|
+| `photo`（默认） | `base` 实色底 + `main` 印暗部，像双色印刷 | 照片、现场图 |
+| `screen` | 只用 `main` 印暗部，最清楚 | 浅色界面截图（字多） |
+| `screen-tint` | `screen` + 淡淡的 `base` 底色 | 浅色界面截图，想和版面更融合 |
+| `dark` | 亮的地方上墨（反白） | 深色界面：终端、深色图表 |
+
+也可以自己写油墨层数组：`[{ ink, tone: 'dark'|'light'|'flat', gamma, amount, alpha }]`。`gamma` > 1 只让最深处上墨、< 1 让中间调也上墨；`alpha` 可以把图里某种颜色单独分到一种油墨上，例如 `{ ink: 'accent', tone: 'light', alpha: '1.2 1.2 -2.2 0 0' }` 把黄色的线单独印成 `accent`。
+其他选项：`x, y, w, h`（只给 `w` 时按原图比例）、`fit: 'slice'`（裁满，默认）/ `'meet'`（完整放下）、`frame: false`（去掉细线框）、`source`（图片下方的来源 / 图注，**新闻、数据类必须写来源**）。
+
 ### 通用
 - 时间：`at`（秒，或另一个元素 / 组 = 在它结束时开始）、`delay`、`dur`；`b.at(t)`、`b.wait(s)`
 - 元素方法：`.erase(at, dur)`、`.move(at, dx, dy, dur)`、`.to(at, { x, y, scale }, dur)`（移动 / 缩放到新位置，`x, y` 是中心点）、`.pulse(at)`
@@ -156,5 +176,5 @@ b.sketch([
 - 导出的目录图 `out/board.png`：每页一眼能看出讲了什么
 
 ## 7. 暂不支持
-- **人物**（`references/characters.md` 的角色目前只有白板风格的画法）。需要人物表演的题材用 `whiteboard`。
+- **人物**（`references/characters.md` 的角色目前只有白板风格的画法）。需要人物表演的题材用 `whiteboard`；真实人物可以用照片（`b.image`）。
 - **公式**（KaTeX）。公式多的题目用 `whiteboard`；简单的式子可以直接写成文字。

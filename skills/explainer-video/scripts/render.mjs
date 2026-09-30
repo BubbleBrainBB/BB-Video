@@ -129,12 +129,34 @@ async function openPage(cdp, scale) {
       const r = await s('Runtime.evaluate', { expression: 'window.__snapshot && window.__snapshot()', returnByValue: true });
       const v = r.result && r.result.value;
       if (!v) return null;
+      await s('Runtime.evaluate', { expression: 'window.EV && EV.waitMedia && EV.waitMedia()', awaitPromise: true });
       const k = Math.min(1, 14000 / Math.max(v.w, v.h));
-      await s('Emulation.setDeviceMetricsOverride', { width: v.w, height: v.h, deviceScaleFactor: k, mobile: false });
-      await new Promise((res) => setTimeout(res, 300));
-      const shot = await s('Page.captureScreenshot', { format: 'png' });
       fs.mkdirSync(path.dirname(out), { recursive: true });
-      fs.writeFileSync(out, Buffer.from(shot.data, 'base64'));
+      // 分块截图再拼接：一次截太大的画面时，Chrome 只会栅格化其中一部分（其余是空白），尤其是有图片、阴影的时候
+      const TILE = 2000, tiles = [];
+      for (let y = 0; y < v.h; y += TILE) for (let x = 0; x < v.w; x += TILE) tiles.push({ x, y, w: Math.min(TILE, v.w - x), h: Math.min(TILE, v.h - y) });
+      const tdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ev-snap-'));
+      for (const [i, tl] of tiles.entries()) {
+        await s('Runtime.evaluate', { expression: `(() => { const st = document.getElementById('stage'); st.style.position = 'absolute'; st.style.left = '${-tl.x}px'; st.style.top = '${-tl.y}px'; })()` });
+        await s('Emulation.setDeviceMetricsOverride', { width: tl.w, height: tl.h, deviceScaleFactor: k, mobile: false });
+        await new Promise((res) => setTimeout(res, 250));
+        await s('Runtime.evaluate', { expression: 'window.EV && EV.waitMedia && EV.waitMedia()', awaitPromise: true });
+        const shot = await s('Page.captureScreenshot', { format: 'png' });
+        tl.file = path.join(tdir, `t${i}.png`);
+        fs.writeFileSync(tl.file, Buffer.from(shot.data, 'base64'));
+      }
+      if (tiles.length === 1) fs.copyFileSync(tiles[0].file, out);
+      else {
+        // 按像素位置把每一块叠到一张画布上
+        const W = Math.round(v.w * k), H = Math.round(v.h * k);
+        const inputs = tiles.flatMap((tl) => ['-i', tl.file]);
+        let chain = `color=c=white:s=${W}x${H}:d=1[c0]`;
+        tiles.forEach((tl, i) => { chain += `;[c${i}][${i}:v]overlay=${Math.round(tl.x * k)}:${Math.round(tl.y * k)}[c${i + 1}]`; });
+        const ff = ffmpeg([...inputs, '-filter_complex', chain, '-map', `[c${tiles.length}]`, '-frames:v', '1', out], 'snapshot');
+        ff.stdin.end();
+        await ff.done;
+      }
+      fs.rmSync(tdir, { recursive: true, force: true });
       return { w: Math.round(v.w * k), h: Math.round(v.h * k), label: v.label || '全貌图' };
     },
   };

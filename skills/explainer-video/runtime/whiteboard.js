@@ -1449,7 +1449,13 @@
     const f = Board.prototype[m];
     Board.prototype[m] = function (...a) {
       const it = f.apply(this, a);
-      if (it instanceof Item) { it.kind = label; it.annot = ANNOT.has(m); }
+      if (it instanceof Item) {
+        it.kind = label;
+        it.annot = ANNOT.has(m);
+        // 画在照片 / 视频上的线条、圈注、箭头（照片在文字层，比墨线高）：自动放到最上层，不被照片盖住
+        const hit = (a, c) => a.x < c.x + c.w && c.x < a.x + a.w && a.y < c.y + c.h && c.y < a.y + a.h;
+        if (m !== 'highlight' && !it.o.hud && !it.o.layer && it.box && it.node && it.node.parentNode === this.inkSvg && this.items.some((i) => i.isMedia && !i.o.hud && hit(i.box, it.box))) this.topSvg.appendChild(it.node);
+      }
       return it;
     };
   }
@@ -1507,7 +1513,7 @@
       }
     }
     // 6. 实体元素之间的重叠（o.overlap = true 表示有意叠放）
-    const solid = this.items.filter((i) => i.box && !i.o.overlap && (['文字', '公式', '便签', '角色', '气泡'].includes(i.kind) || (i.kind === '插画' && i.hasFill)));
+    const solid = this.items.filter((i) => i.box && !i.o.overlap && (['文字', '公式', '便签', '角色', '气泡', '图片'].includes(i.kind) || (i.kind === '插画' && i.hasFill)));
     for (let a = 0; a < solid.length; a++) {
       for (let b = a + 1; b < solid.length; b++) {
         const A = solid[a], B = solid[b];

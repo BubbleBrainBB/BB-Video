@@ -16,7 +16,7 @@ description: 用纯代码制作知识讲解视频，自带配音、字幕和配�
 - `references/modes.md`：各种内容（现象、题目、单词、概念、典故 / 历史故事）的讲法。**写脚本之前必须读对应的那一节。**
 - `references/characters.md`：卡通角色（Notion 风格）的设计方法、规格参数和表演原则。**视频里要出现人物时必须读。**
 - `references/review.md`：自检清单。
-- `scripts/new.mjs` 新建项目 · `scripts/tts.py` 配音和时间轴 · `scripts/render.mjs` 渲染 · `scripts/cast.mjs` 角色定妆图 · `scripts/bgm.mjs` 背景音乐（代码合成）
+- `scripts/new.mjs` 新建项目 · `scripts/tts.py` 配音和时间轴 · `scripts/render.mjs` 渲染 · `scripts/cast.mjs` 角色定妆图 · `scripts/bgm.mjs` 背景音乐（代码合成） · `scripts/assets.mjs` 整理图片 / 视频素材
 
 ## 工作流程
 
@@ -45,6 +45,13 @@ node scripts/new.mjs videos/<英文短名> --style riso    # 孔版印刷
 - 需要人物时（仅白板风格）：按 `references/characters.md` 的方法设计角色，写进 `characters.js`，并在分镜里标出角色的出场、表情和台词。用 `node scripts/cast.mjs videos/<名字>` 渲染定妆图，**新角色要连同定妆图一起给用户确认**。
 
 **把旁白和分镜给用户过目**，得到确认后再往下做。用户说"直接做"就跳过确认。
+
+**用到图片或视频时**（照片、截图、录屏、用户给的素材）：把原始文件放进项目的 `assets/src/`，运行
+```bash
+node scripts/assets.mjs videos/<名字>
+```
+图片会缩到合适大小，视频会抽成 30fps 的逐帧图片（画面仍然是时间的纯函数），并生成清单 `assets/manifest.js`。一个长视频只用其中几段时，写 `assets/clips.json`（格式见脚本开头的说明）。画面里用 `b.photo()`（白板）/ `b.image()`（孔版印刷）放素材，见对应 STYLE.md 的"图片和视频"。素材有版权的，只用用户提供的或允许使用的。
+旧项目要用素材：先 `--update-lib`，再在 index.html 里 `timeline.js` 之前加上 `<script src="lib/media.js"></script>` 和 `<script src="assets/manifest.js"></script>`。
 
 ### 3. 配音，生成时间轴
 ```bash
@@ -87,7 +94,7 @@ node scripts/render.mjs videos/<名字> --draft    # 半分辨率快速版，想
 {
   "voice": "zh-CN-XiaoxiaoNeural",
   "rate": "+0%",
-  "lead_in": 0.6, "gap": 0.35, "tail": 1.5,
+  "lead_in": 1.9, "gap": 0.35, "tail": 1.5,
   "bgm": "bright",
   "lines": [
     { "id": "hook", "text": "苹果为什么会往下掉，而不是往天上飞？", "chapter": "提出问题" },

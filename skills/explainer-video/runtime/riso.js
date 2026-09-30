@@ -1000,6 +1000,8 @@
         const ra = A.textBox || A.box, rb = B.textBox || B.box, ov = inter(ra, rb) / Math.max(1, Math.min(ra.w * ra.h, rb.w * rb.h));
         if (ov > 0.08) add('warn', t0, B, `和 ${A.describe()}（${A.src}）重叠了 ${Math.round(ov * 100)}%`);
       }
+      // 各元素自己的检查（例如视频片段还没播完就翻页）
+      for (const it of items) if (it.lint) it.lint(add);
       // 封面
       const lines = this.T ? this.T.lines.filter((l) => !l.silence && l.text) : [];
       if (!this.pages.length || this.pages[0].start > 0.05) out.push({ level: 'error', t: 0, src: '', what: '页面', msg: 'build 里还没有调用 b.cover() 或 b.page()' });

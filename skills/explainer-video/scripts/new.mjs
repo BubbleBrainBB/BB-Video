@@ -13,8 +13,8 @@ if (!args[0] || args[0].startsWith('--')) { console.error('用法：node new.mjs
 const proj = path.resolve(args[0]);
 // 每个风格需要复制到项目 lib/ 里的运行时文件；字体规则统一复制成 lib/fonts.css
 const STYLES = {
-  whiteboard: { files: ['whiteboard.js', 'whiteboard.css', 'character.js'], fonts: 'fonts.css', leadIn: 0.6, cast: true },
-  riso: { files: ['riso.js', 'riso.css'], fonts: 'fonts-riso.css', leadIn: 2.3, cast: false },
+  whiteboard: { files: ['whiteboard.js', 'whiteboard.css', 'character.js', 'media.js'], fonts: 'fonts.css', leadIn: 1.9, cast: true },
+  riso: { files: ['riso.js', 'riso.css', 'media.js'], fonts: 'fonts-riso.css', leadIn: 2.3, cast: false },
 };
 const lib = path.join(proj, 'lib');
 // 刷新运行时：没指定风格时，按项目 lib/ 里已有的文件判断原来的风格
@@ -34,7 +34,9 @@ if (args.includes('--update-lib')) { console.log(`已刷新 ${lib}（${style}）
 
 const idx = path.join(proj, 'index.html');
 if (fs.existsSync(idx)) { console.error('项目已存在：' + idx + '（只想刷新运行时请加 --update-lib）'); process.exit(1); }
-for (const d of ['audio', 'review', 'out']) fs.mkdirSync(path.join(proj, d), { recursive: true });
+for (const d of ['audio', 'review', 'out', 'assets/src']) fs.mkdirSync(path.join(proj, d), { recursive: true });
+// 素材清单（放进 assets/src/ 的图片、视频由 scripts/assets.mjs 整理后写进来）
+fs.writeFileSync(path.join(proj, 'assets', 'manifest.js'), 'window.MEDIA_ASSETS = { images: {}, clips: {} };\n');
 const tpl = fs.readFileSync(path.join(skill, 'templates', style, 'index.html'), 'utf8');
 fs.writeFileSync(idx, tpl.replaceAll('__TITLE__', opt('title', slug)).replaceAll('__SLUG__', slug));
 fs.writeFileSync(path.join(proj, 'script.json'), JSON.stringify({

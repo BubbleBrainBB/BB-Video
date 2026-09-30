@@ -194,6 +194,19 @@ b.circleAround(el);  b.boxAround(el);     // 默认红色
 b.strike(el);  b.strike(el, { cross: true });
 ```
 
+### 图片和视频（照片、截图、录屏）
+素材先整理：把图片、视频放进项目的 `assets/src/`，运行 `node scripts/assets.mjs videos/<名字>`（见 SKILL.md）。素材名 = 文件名去掉扩展名。
+视频写成 `{ clip: '名字', from: 0, rate: 2, to: 10 }`：从片段第 `from` 秒开始、以 `rate` 倍速播放、播到 `to` 秒停住（默认播到结尾）；元素出现前停在第一帧，播完停在最后一帧，`play: 秒` 可以指定开始播放的时间。视频还没播完就被擦掉 / 翻页时，自动检查会提醒。
+```js
+const ph = b.photo('login', { x: 120, y: 200, w: 800, rotate: -1.5, caption: '登录页', at: T.word('l3', '登录') });
+b.circleAround({ x: ph.imgBox.x + 200, y: ph.imgBox.y + 180, w: 380, h: 80 }, { at: ... });   // 在照片上圈重点
+b.photo({ clip: 'demo', rate: 2 }, { x: 1000, y: 260, w: 900, caption: '演示', at: ... });
+```
+- 像用胶带贴在白板上的照片：白边、阴影、两条纸胶带，从上方落下贴上。选项：`x, y, w`、`anchor: 'left'|'center'|'right'`、`valign`、`rotate`（默认 -1.2 度）、`caption`（照片下方的手写说明）、`tape: false`、`border`（白边宽）、`aspect`（强制宽高比，图片按 `focus: '50% 30%'` 裁切）、`hud`、`at`、`play`
+- `ph.imgBox` 是图片本身的区域（不含白边和说明），在照片上标注时用它算坐标
+- **画在照片范围内的线条、圈注、箭头会自动放到照片上面**，不用手动调图层
+- 照片参加重叠检查；照片旁边的文字要避开照片
+
 ### 坐标系和函数图像
 ```js
 const ax = b.axes({ x: 200, y: 200, w: 800, h: 500, xRange: [0, 5], yRange: [0, 25], xLabel: 't', yLabel: 'h' });

@@ -11,6 +11,8 @@
 <script src="lib/whiteboard.js"></script>
 <script src="lib/character.js"></script>
 <script src="characters.js"></script>
+<script src="lib/media.js"></script>
+<script src="assets/manifest.js"></script>
 <script src="timeline.js"></script>
 </head>
 <body>
@@ -20,6 +22,10 @@ EV.composition({
   audio: 'audio/narration.m4a',
   build: async ({ T }) => {
     const b = WB.board({ T, paper: 'plain', seed: '__SLUG__' });
+
+    // ===== 封面（第一帧）=====
+    const cover = b.cover({ title: '在这里写{red:标题}', subtitle: '一句话副标题' });
+    b.at(cover.end);
 
     // ===== 镜头 1：开场问题 =====
     // 时间一律从时间轴取：T.start('id') / T.end('id') / T.word('id', '某个词')

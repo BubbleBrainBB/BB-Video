@@ -103,7 +103,8 @@
     let scene = null;
 
     window.__composition = { width, height, fps, duration: opts.duration || T.duration };
-    window.renderFrame = (t) => { if (scene) scene.render(t); };
+    // 有图片 / 视频素材时，返回一个 Promise：等这一帧用到的图片解码完（渲染器会等它，再截图）
+    window.renderFrame = (t) => { if (scene) scene.render(t); return EV.waitMedia ? EV.waitMedia() : undefined; };
     window.__ready = (async () => {
       const loaded = () => [...document.fonts].filter((f) => f.status === 'loaded').length;
       const before = loaded();
