@@ -26,7 +26,7 @@ Check item by item; whenever you find a problem, fix index.html and regenerate t
 - [ ] Color meanings are consistent across the whole video
 
 **Cover** (look at `out/cover.png`, or export it alone with `--cover`)
-- [ ] The first frame is the complete cover: headline of 12 characters or fewer, keywords in red, and one key visual that makes the topic recognizable
+- [ ] The first frame is the complete cover: headline of 12 Chinese characters / 6 English words or fewer, keywords in red, and one key visual that makes the topic recognizable
 - [ ] Shrunk to about 1/4 size, the headline is still readable at a glance
 
 **Animation process** (view with `--strip start,end`; the overview can't show this)

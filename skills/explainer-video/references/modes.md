@@ -48,18 +48,19 @@ Examples: math, physics and chemistry calculation problems, geometry problems, w
 
 ## C. Word explainer: one English word
 Examples: "serendipity" "procrastinate" "ambiguous"
+Explanations are in the video's language (the viewer's language): for a Chinese viewer, Chinese definitions and explanations; for an English viewer, plain-English definitions (like a learner's dictionary) instead of translations. Below, "the viewer's language" means that.
 
 **Structure (30–60 seconds)**
-1. **Word + pronunciation**: write the word and its phonetic transcription in large letters; have this line read by an English voice (`"voice": "en-US-AvaNeural"`).
+1. **Word + pronunciation**: write the word and its phonetic transcription in large letters; have this line read by an English voice (`"voice": "en-US-AvaNeural"`; in an English video that is already the main voice).
 2. **Breakdown**: split it into syllables / roots and affixes, labeling the meaning of each part (e.g. pro- forward + crastin tomorrow → push to tomorrow). If there is a reliable etymology story, tell it in one sentence; **never invent an uncertain etymology**.
-3. **Core meaning**: a one-sentence Chinese definition + a small illustration to help remember it.
-4. **Example sentences**: 1–2 everyday example sentences, with the word highlighted in each; read the English sentence with an English voice, then explain it once in Chinese.
+3. **Core meaning**: a one-sentence definition in the viewer's language + a small illustration to help remember it.
+4. **Example sentences**: 1–2 everyday example sentences, with the word highlighted in each; read the English sentence with an English voice, then explain it once in the viewer's language (in an English video: rephrase it in simpler words).
 5. **Distinctions or collocations** (optional): the difference between a set of synonyms, or 2–3 common collocations.
-6. **Wrap-up**: show the word together with its Chinese meaning once more.
+6. **Wrap-up**: show the word together with its meaning once more.
 
 **Key points**
 - Phonetic transcription, part of speech and definition must be accurate; if unsure, say less rather than make things up.
-- Put English parts in their own lines in script.json with an English voice specified; English words embedded in Chinese sentences can be read by the Chinese voice, but the pronunciation is less natural than with an English voice.
+- In a Chinese video, put English parts in their own lines in script.json with an English voice specified; English words embedded in Chinese sentences can be read by the Chinese voice, but the pronunciation is less natural than with an English voice.
 
 ---
 
@@ -107,7 +108,7 @@ Examples: "How to make tomato and egg stir-fry", "How to tie a tie", "How to pat
 
 **Structure (60–120 seconds)**
 1. **Common question**: open with a question most people have ("Tomatoes or eggs — which goes in first?") and give the conclusion first.
-2. **Process overview**: draw all the steps with "box + arrow" (usually 3–5 steps), 2–4 characters per step, numbered ①②③. Viewers see the whole picture first, then the details.
+2. **Process overview**: draw all the steps with "box + arrow" (usually 3–5 steps), 2–4 Chinese characters or 1–2 English words per step, numbered ①②③. Viewers see the whole picture first, then the details.
 3. **Step-by-step**: one region per step (usually one chapter), each making two things clear:
    - **What to do**: draw the actions and the state changes (cutting into chunks, into the pan, changing color, bubbling...).
    - **Why**: one sentence on the principle or purpose ("Scramble the eggs first so they stay tender"). Actions without reasons don't stick.
@@ -153,7 +154,7 @@ Every mode can use any style; when none is specified, recommend by topic (see "P
 
 ## General: chapters
 The "major sections" of each structure above are the chapters (e.g. phenomenon explainer: the question / intuition / mechanism / consequence).
-- Put `"chapter"` on the first line of each chapter; 3–6 chapters, titles of 2–6 Chinese characters (a few words), so viewers can see at a glance "where we are", like a table of contents.
+- Put `"chapter"` on the first line of each chapter; 3–6 chapters, titles of 2–6 Chinese characters or 1–3 English words, so viewers can see at a glance "where we are", like a table of contents.
 - Short videos under 30 seconds can skip chapters.
 
 ## General: background music
@@ -161,8 +162,9 @@ Choose `"bgm"` in `script.json` by mode: A phenomenon, D concept → `bright`; B
 When the mood of the content doesn't match the mode, choose by mood (e.g. a light-hearted historical anecdote can also use `playful`). The music is synthesized in code; see SKILL.md.
 
 ## General: writing narration
-- Chinese edge-tts speaks about 4–5 characters per second. 60 seconds ≈ 250–300 characters.
-- 8–30 characters per line, one idea per line. If lines are too long, captions and visuals are hard to sync.
+- Write the narration in the video's language (SKILL.md, step 1).
+- Chinese edge-tts speaks about 4–5 characters per second: 60 seconds ≈ 250–300 characters. English speaks about 3 words per second: 60 seconds ≈ 160–180 words.
+- 8–30 Chinese characters or 5–18 English words per line, one idea per line. If lines are too long, captions and visuals are hard to sync.
 - Talk like chatting with a friend: use "you" and "we" a lot, avoid formal written language; rhetorical questions are fine.
 - Give lines meaningful ids (`hook`, `why1`, `step3`) so they are easy to find when writing the drawing code.
 - Where the visuals need "a breather", add a pause: `"pause_after": 0.8`, or a separate line `{"id": "beat1", "silence": 1.2}`.

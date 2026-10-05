@@ -21,6 +21,7 @@ All relative paths in this file are relative to this skill's directory.
 ## Workflow
 
 ### 1. Understand the input, settle the content
+- **Decide the video's language first**: unless the user says otherwise, it is **the language the user is writing in** (an English request → an English video; a Chinese request → a Chinese video). The topic doesn't change this: a Chinese user asking about an English word gets a Chinese video with English parts; an English user asking about a Chinese allusion gets an English video. The language sets the narration, all on-screen text, chapter titles, the voice and the pacing (see "General: writing narration" in `references/modes.md`).
 - Decide the content mode (phenomenon / problem / word / concept / allusion / tutorial / news explainer) and read the matching section of `references/modes.md`.
 - **Problem walkthrough**: first solve the problem completely, then verify with Python; write the problem transcription, solution and verification result into the project's `brief.md`. For screenshot problems, have the user confirm the transcription first.
 - **Allusion / historical story**: first look up the original source text, separate historical fact from later embellishment (plot added by operas and novels), and write the characters, dates and original quotes into `brief.md`.
@@ -38,7 +39,9 @@ All relative paths in this file are relative to this skill's directory.
 ```bash
 node scripts/new.mjs videos/<short-english-name>                 # hand-drawn whiteboard
 node scripts/new.mjs videos/<short-english-name> --style riso    # risograph
+node scripts/new.mjs videos/<short-english-name> --lang en       # an English video (default is zh-CN); also ja / ko / fr / de / es, other languages with --voice
 ```
+`--lang` sets the voice, `<html lang>`, and on whiteboard the default handwriting font (`WB.board({ lang })`).
 - `script.json`: the narration, one object per line (format below).
 - `storyboard.md`: the storyboard; for every line, state exactly what is drawn on screen and where. For whiteboard, first plan the region layout of the whole board and the camera route; for risograph, first plan the layout and color scheme of each page (one page per chapter).
 - **Cover**: in the storyboard, specify the cover's headline, subtitle and key visual (see "Cover" in the matching STYLE.md). `lead_in` in `script.json`: about 1.9 s for whiteboard, about 2.3 s for risograph (already set per style when the project is created).
@@ -104,7 +107,7 @@ Finally, tell the user the paths of the video, cover and board overview, and tha
   ]
 }
 ```
-`chapter`: a new chapter starts at this line; a chapter progress bar appears automatically at the top of the screen (only when there are at least 2 chapters). Usually 3–6 chapters, each title 2–6 Chinese characters (a few words), matching the major sections of the structures in `references/modes.md`.
+`chapter`: a new chapter starts at this line; a chapter progress bar appears automatically at the top of the screen (only when there are at least 2 chapters). Usually 3–6 chapters, each title 2–6 Chinese characters or 1–3 English words, matching the major sections of the structures in `references/modes.md`.
 
 `bgm`: background music, **synthesized on the spot in code** (`scripts/bgm.mjs`, no music files needed), mixed in automatically when rendering the final video. Choose a style by content:
 
@@ -118,7 +121,7 @@ Finally, tell the user the paths of the video, cover and board overview, and tha
 The music follows the video automatically: it starts on the cover, changes phrase and plays a chime at every new chapter, and returns to the tonic chord and fades out after the narration ends; **it ducks automatically while someone is speaking** (about 19 dB below the voice) and rises again during pauses; its volume is matched automatically to the narration loudness.
 For no music write `"bgm": false`; if it is too loud or too quiet write `{ "style": "history", "volume": 0.7 }` (a multiplier). To audition it alone: `node scripts/bgm.mjs videos/<name>` → `audio/bgm.wav`; 30-second samples of all four styles: `--demo`.
 
-Common voices: `zh-CN-XiaoxiaoNeural` (female, warm, default), `zh-CN-YunxiNeural` (male, lively), `zh-CN-YunyangNeural` (male, newscaster tone), `en-US-AvaNeural` / `en-US-AndrewNeural` (English).
+Common voices: `zh-CN-XiaoxiaoNeural` (female, warm, default), `zh-CN-YunxiNeural` (male, lively), `zh-CN-YunyangNeural` (male, newscaster tone), `en-US-AvaNeural` (female, warm) / `en-US-AndrewNeural` (male, warm) / `en-US-BrianNeural` (male, casual) for English. Other languages: `edge-tts --list-voices`. Pick the voice matching the video's language; a line in another language gets its own `"voice"`.
 
 ## Hard rules
 1. **The picture is a pure function of time**: no `Math.random()` (use `EV.rng(seed)` for randomness), no `Date.now()`, `requestAnimationFrame`, CSS animations or transitions.

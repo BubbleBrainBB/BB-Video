@@ -21,7 +21,7 @@ Give the agent a topic, a problem, a word or a story; it writes the narration, p
   - `riso`: spot-color overprint, halftone and slight ink misregistration; one magazine page per chapter with print-roller page turns.
 - **Everything built in**: edge-tts voiceover with word-level timing, captions synced to the voice, background music synthesized in code, images and video clips, a cover frame, and a "board overview" image of the whole video.
 - **Self-checking**: a lint check catches overlapping text, elements that leave too fast, things outside the frame and more, before anything is rendered.
-- Works in Chinese and English (Chinese captions, punctuation and fonts are handled properly).
+- **Speaks your language**: the video is made in the language you write your request in, unless you ask for another one. Chinese and English are fully tuned (voices, pacing, fonts, caption line-breaking); Japanese, Korean, French, German, Spanish and others work with any [edge-tts voice](https://github.com/rany2/edge-tts).
 
 ## Install
 

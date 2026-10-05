@@ -30,7 +30,7 @@ the whiteboard is an infinitely large sheet of paper, you draw wherever the expl
 The bottom 150px of the screen is reserved for captions; when there are chapters, the top 105px is reserved for the chapter progress bar. Keep content out of these two bands (except when the camera is zoomed out).
 
 ### Amount of text
-- The whiteboard shows **keywords**, not the narration verbatim. For 20 characters of narration, the board usually shows only 2–8 characters.
+- The whiteboard shows **keywords**, not the narration verbatim. For 20 characters (or 12 English words) of narration, the board usually shows only 2–8 characters (1–4 words).
 - No more than about 12 characters of new text appear in one shot at the same time; formulas and worked derivations are exempt.
 
 ### Lines and shapes
@@ -65,8 +65,8 @@ The bottom 150px of the screen is reserved for captions; when there are chapters
 
 ### Cover
 Many platforms use the **first frame of the video** as the cover by default, so every video makes one with `b.cover()`: the first frame is the complete cover, which holds for about 1.3 seconds, then fades out into the whiteboard.
-- **Title**: the question or topic the video answers, **12 characters or fewer**, with the keyword in red (`{red:…}`). An overlong title is automatically shrunk, but then it no longer stands out.
-- **Subtitle** (optional): one sentence on "what you get from watching", 16 characters or fewer.
+- **Title**: the question or topic the video answers, **12 Chinese characters / 6 English words or fewer**, with the keyword in red (`{red:…}`). An overlong title is automatically shrunk, but then it no longer stands out.
+- **Subtitle** (optional): one sentence on "what you get from watching", 16 Chinese characters / 10 English words or fewer.
 - **Tag** (optional): a small sticky note in the top-left with the category, e.g. "Physics · Science", "How-to · Home cooking".
 - **Key visual**: 1–2 recognizable things, such as the core illustration or a character, placed in `cover.area` below the title, drawn with `hud: true, at: 0, dur: 0` and then handed to `cover.add()`.
 - **How to check**: shrink `out/cover.png` to the size it would have in a phone feed (about 1/4); the title should still be readable at a glance and the key visual still recognizable.
@@ -80,6 +80,7 @@ Many platforms use the **first frame of the video** as the cover by default, so 
 
 ### Fonts
 - Defaults: Chinese handwriting uses 霞鹜文楷 (LXGW WenKai), English handwriting uses Excalifont (Excalidraw's handwriting font), captions use the system sans-serif (Hei).
+- Video language: `WB.board({ lang: 'en' })` (any language not written in Chinese / Japanese / Korean characters) makes Excalifont the default handwriting, so you don't need `font: 'en'` on every text; `new.mjs --lang en` sets this already. Without `lang` (Chinese video), use `font: 'en'` for English words and sentences.
 - Load order: **installed locally → downloaded on demand online (only the glyphs used) → fallback font**. If the user doesn't have it installed and is offline, rendering proceeds normally with the fallback font, **without errors**, and the render log prints a notice.
 - Fonts are personal taste: if the user wants a different one, change it in `WB.board({ fonts: { hand: '"Some Font", "LXGW WenKai", cursive', en: '...', caption: '...' } })`, keeping the original font as fallback.
 - All glyphs used in the video are loaded once before layout; no manual preloading needed.
@@ -247,7 +248,7 @@ Extra requirements in the whiteboard style:
 - Key step in a red box `boxAround`; final answer in green + `underline({double:true})`; common mistakes on sticky notes.
 
 **Word explanation** (`paper: 'plain'` or `lined`):
-- The word large and centered (`font: 'en'`, size 88–110) → split syllables with vertical bars → below, use `brace` to break out roots and affixes, writing the Chinese meaning of each part → draw a small mnemonic illustration beside it → highlight the word in the example sentence → at the end, show the word together with its Chinese meaning once more.
+- The word large and centered (`font: 'en'`, size 88–110) → split syllables with vertical bars → below, use `brace` to break out roots and affixes, writing the meaning of each part in the viewer's language → draw a small mnemonic illustration beside it → highlight the word in the example sentence → at the end, show the word together with its meaning once more.
 
 **Story / historical tale** (`paper: 'plain'`):
 - For background use a horizontal timeline (`line` + `dot` + years); for the big picture use a minimal map (mountains as polylines, spheres of influence as dashed loops, place names at label size).

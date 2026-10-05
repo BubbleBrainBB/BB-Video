@@ -594,7 +594,11 @@
   class Board {
     constructor(opts = {}) {
       this.T = opts.T;
-      this.fonts = { ...FONTS, ...(opts.fonts || {}) };
+      // lang: the video's language. Unless it is written in Chinese / Japanese / Korean characters, handwriting defaults to the
+      // English handwriting font. Symbols Excalifont lacks (≈ → × …) fall back to LXGW WenKai, which fonts.css loads on every
+      // machine, so the layout doesn't depend on which system fonts are installed
+      const cjk = !opts.lang || /^(zh|ja|ko)/i.test(opts.lang);
+      this.fonts = { ...FONTS, ...(cjk ? {} : { hand: '"Excalifont", "LXGW WenKai", cursive' }), ...(opts.fonts || {}) };
       this.W = opts.width || 1920;
       this.H = opts.height || 1080;
       this.stage = opts.stage || document.getElementById('stage');
