@@ -48,6 +48,7 @@ for (const f of files) {
   else if (!VID.test(f)) console.log(`  skipped ${f} (unrecognized format)`);
 }
 for (const [name, d] of Object.entries(clipDefs)) {
+  if (!/^[\w-][\w.-]*$/.test(name)) { console.error(`clips.json entry "${name}": names may only use letters, digits, _ - .`); process.exit(1); }
   if (!files.includes(d.src)) { console.error(`clips.json entry "${name}": ${d.src} is not in assets/src/`); process.exit(1); }
   jobs.push({ kind: 'clip', name, src: d.src, from: d.from ?? 0, dur: d.dur, width: d.width });
 }

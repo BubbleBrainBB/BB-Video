@@ -21,11 +21,12 @@ def ensure_edge_tts():
         return
     except ImportError:
         pass
-    # look for a nearby .venv and re-exec this script with it
+    # look for a nearby .venv and re-exec this script with it (only one you own: never run a .venv someone else
+    # planted in a shared parent directory such as /tmp)
     here = Path.cwd().resolve()
     for d in [here, *here.parents, Path(__file__).resolve().parent]:
         py = d / ".venv" / "bin" / "python"
-        if py.exists() and Path(sys.prefix).resolve() != (d / ".venv").resolve():
+        if py.exists() and (d / ".venv").stat().st_uid == os.getuid() and Path(sys.prefix).resolve() != (d / ".venv").resolve():
             os.execv(str(py), [str(py), *sys.argv])
     sys.exit("edge-tts not found. Install it first: python3 -m venv .venv && .venv/bin/pip install edge-tts")
 

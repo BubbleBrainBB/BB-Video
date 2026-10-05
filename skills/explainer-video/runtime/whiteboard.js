@@ -476,7 +476,7 @@
       this.label = latex;
       div.style.fontSize = (o.size ?? 56) + 'px';
       div.style.color = col(o.color);
-      window.katex.render(o.inline ? latex : '\\displaystyle ' + latex, div, { displayMode: !!o.display, throwOnError: false, trust: true, strict: false, output: 'html' });
+      window.katex.render(o.inline ? latex : '\\displaystyle ' + latex, div, { displayMode: !!o.display, throwOnError: false, trust: (c) => c.command === '\\htmlClass', strict: false, output: 'html' });
       const w = div.offsetWidth, h = div.offsetHeight;
       const x = o.x ?? 960, y = o.y ?? 540, anchor = o.anchor || o.align || 'left', valign = o.valign || 'top';
       const left = anchor === 'center' ? x - w / 2 : anchor === 'right' ? x - w : x;

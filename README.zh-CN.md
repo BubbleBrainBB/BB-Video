@@ -74,6 +74,12 @@ index.html（作画代码，renderFrame(t)）──► render.mjs ──► Chro
 
 因为每一帧都是时间的纯函数，渲染结果是确定的、可以并行；Agent 也可以在渲染整片之前，先截任意时刻的画面检查。
 
+## 隐私与安全
+
+- **旁白文字会发送到微软的在线语音服务**（edge-tts 就是这样工作的），不要把机密内容写进旁白。
+- 网络字体从 jsDelivr / unpkg 下载，版本是固定的，只下载字体文件，不加载脚本。除此之外不联网：没有数据上报，不需要 API Key，不需要注册账号。
+- `render.mjs` 会用无界面 Chrome 打开项目的 `index.html`，并允许读取本地文件，等于运行这个项目里的代码。只渲染你自己或你的 Agent 做的项目，和运行任何别的代码一样。
+
 ## 许可
 
 [MIT](LICENSE)。打包的第三方代码：[KaTeX](https://katex.org)（MIT，见 `skills/explainer-video/runtime/katex/LICENSE`）。字体从公共 CDN 加载，遵循各自的许可（霞鹜文楷 LXGW WenKai、Excalifont、Noto Sans/Serif SC、Oswald，均为 SIL OFL 1.1）。

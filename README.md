@@ -71,6 +71,12 @@ index.html  (drawing code, renderFrame(t)) ──► render.mjs ──► Chrome
 
 Because each frame is a pure function of time, renders are deterministic and can run in parallel, and the agent can review any moment as a still before rendering the whole video.
 
+## Privacy & security
+
+- **Narration text is sent to Microsoft's online speech service** (that is how edge-tts works). Don't put confidential material in the narration.
+- Web fonts are downloaded from jsDelivr / unpkg at pinned versions (font files only, no scripts). Nothing else goes over the network: no telemetry, no API keys, no accounts.
+- `render.mjs` opens a project's `index.html` in headless Chrome with local file access, which means running that project's code. Render only projects you or your agent made, the same as running any other code.
+
 ## License
 
 [MIT](LICENSE). Bundled third-party code: [KaTeX](https://katex.org) (MIT, see `skills/explainer-video/runtime/katex/LICENSE`). Fonts are loaded from public CDNs under their own licenses (LXGW WenKai, Excalifont, Noto Sans/Serif SC, Oswald — all SIL OFL 1.1).
