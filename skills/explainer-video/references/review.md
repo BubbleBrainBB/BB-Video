@@ -1,56 +1,56 @@
-# 自检清单
+# Self-review checklist
 
-先运行自动检查 `node scripts/render.mjs <项目> --check`，**没有错误**、每条提醒都确认过，再做下面的人工检查。
-自动检查负责"时间和位置"类问题（没画完就擦、停留太短、画在镜头外、压字幕、边画边移镜头、重叠）；
-人工检查负责它判断不了的"好不好看、讲没讲清楚"。
+First run the lint check `node scripts/render.mjs <project> --check`; only when there are **no errors** and every warning has been checked, do the manual review below.
+The lint check covers "timing and position" problems (erased before finished drawing, held too briefly, drawn outside the camera, covering captions, moving the camera while drawing, overlap);
+the manual review covers what it cannot judge: "does it look good, is it explained clearly".
 
-渲染总览图：`node scripts/render.mjs <项目> --sheet`，然后用 Read 查看 `review/sheet.png`
-（每格是一句旁白结束后 0.3 秒的画面，顺序见 `review/sheet.txt`）。
-需要看细节时，用 `--stills 12.5,30` 导出全尺寸截图。
+Render the overview: `node scripts/render.mjs <project> --sheet`, then view `review/sheet.png` with Read
+(each cell is the frame 0.3 s after a narration line ends; order listed in `review/sheet.txt`).
+For details, export full-size screenshots with `--stills 12.5,30`.
 
-孔版印刷风格还要看 `styles/riso/STYLE.md` 最后的"自检要点"。
+For the risograph style, also check "Self-check points" at the end of `styles/riso/STYLE.md`.
 
-逐项检查，发现问题就修改 index.html，再重新出总览图，直到全部通过：
+Check item by item; whenever you find a problem, fix index.html and regenerate the overview, until everything passes:
 
-**内容**
-- [ ] 题目讲解：答案已经用 Python 验算过；截图题的转写已经给用户确认过
-- [ ] 新闻解读 / 数据：每个数字都有来源和日期（或标了"示意数据"），图表纵轴从 0 开始
-- [ ] 画面上的文字、公式、数字和旁白一致，没有错别字
-- [ ] 每句旁白结束时，画面上已经出现和这句话对应的东西
+**Content**
+- [ ] Problem walkthrough: the answer has been verified with Python; for screenshot problems, the user has confirmed the transcription
+- [ ] News explainer / data: every number has a source and date (or is labeled "illustrative data"), chart y-axes start at 0
+- [ ] On-screen text, formulas and numbers match the narration, with no typos
+- [ ] When each narration line ends, something corresponding to that line is already on screen
 
-**版面**
-- [ ] 没有元素重叠、没有文字互相压住（特别注意标签和线条、便签和图）
-- [ ] 没有内容被画面边缘裁掉，也没有内容压在底部字幕区里
-- [ ] 字号不小于 36（镜头拉远的全貌镜头除外）
-- [ ] 每一格画面都有明确的视觉焦点，留白足够，不拥挤
-- [ ] 颜色含义全片一致
+**Layout**
+- [ ] No overlapping elements, no text covering other text (watch labels vs. lines, sticky notes vs. drawings)
+- [ ] Nothing is cropped by the frame edge, and nothing sits in the caption area at the bottom
+- [ ] Font size at least 36 (except zoomed-out overview shots)
+- [ ] Every frame has a clear visual focus, enough whitespace, not crowded
+- [ ] Color meanings are consistent across the whole video
 
-**封面**（看 `out/cover.png`，或 `--cover` 单独导出）
-- [ ] 第一帧就是完整的封面：标题 12 字以内、关键词标红，有一个能认出主题的主视觉
-- [ ] 缩小到约 1/4 大小时，标题仍然一眼能看清
+**Cover** (look at `out/cover.png`, or export it alone with `--cover`)
+- [ ] The first frame is the complete cover: headline of 12 characters or fewer, keywords in red, and one key visual that makes the topic recognizable
+- [ ] Shrunk to about 1/4 size, the headline is still readable at a glance
 
-**动画过程**（用 `--strip 开始,结束` 看，总览图看不出来）
-- [ ] 每一处擦除之前，被擦的东西都完整画出来、并停留了足够时间
-- [ ] 角色的动作（出场、指向、换表情）完整、自然，手臂和身体连在一起
-- [ ] 移动的物体（下落、平移）轨迹正确，没有穿过其他元素
+**Animation process** (view with `--strip start,end`; the overview can't show this)
+- [ ] Before every erase, the thing being erased has been fully drawn and held long enough
+- [ ] Character actions (entrance, pointing, expression changes) are complete and natural, with arm and body connected
+- [ ] Moving objects (falling, sliding) follow correct paths and don't pass through other elements
 
-**节奏**
-- [ ] 没有长时间空白的画面（超过 3 秒没有新东西，旁白却在讲）
-- [ ] 没有一次冒出一大堆东西；元素一个一个画出
-- [ ] 镜头移动之后才开始画新内容
-- [ ] 结尾有拉远的全貌，或者回扣开头
-- [ ] 镜头每次只移到相邻区域，画面里没有"串"进上一段的内容
-- [ ] 打开 `out/board.png` 看一眼：整块白板作为一张知识地图，布局清楚、没有重叠；①②③ 的顺序标注和实际讲解顺序一致
-- [ ] 有章节时：章节切换和画面转场同步，章节标题准确概括这一段
+**Pacing**
+- [ ] No long stretches of static picture (more than 3 seconds with nothing new while the narration keeps talking)
+- [ ] Nothing pops up all at once in a big pile; elements are drawn one by one
+- [ ] New content starts drawing only after the camera has finished moving
+- [ ] The ending has a zoomed-out overview, or calls back to the opening
+- [ ] Each camera move goes only to an adjacent region, and no content from the previous section "leaks" into the frame
+- [ ] Take a look at `out/board.png`: the whole board as a knowledge map has a clear layout with no overlaps; the ①②③ order labels match the actual order of explanation
+- [ ] With chapters: chapter changes are in sync with visual transitions, and chapter titles accurately summarize their section
 
-**字幕**（`node scripts/render.mjs <项目> --captions` 列出全部字幕分段）
-- [ ] 没有词被拆到两屏（英文单词、数字、专有名词）
-- [ ] 没有只有一两个字、一闪而过的字幕
+**Captions** (`node scripts/render.mjs <project> --captions` lists all caption segments)
+- [ ] No word is split across two screens (English words, numbers, proper nouns)
+- [ ] No captions of just one or two characters that flash by
 
-**声音**（看成片时听一遍）
-- [ ] 配乐风格和内容相符（历史用 `history`、题目用 `calm`……），没有盖过人声
-- [ ] 英文、专有名词的读音正确
+**Sound** (listen once while watching the final video)
+- [ ] The music style fits the content (`history` for history, `calm` for problems...) and doesn't drown out the voice
+- [ ] English words and proper nouns are pronounced correctly
 
-**技术**
-- [ ] 渲染输出里没有"页面异常"或 console.error
-- [ ] 在浏览器预览里拖动进度条，任意时间点画面都正常（renderFrame 是纯函数）
+**Technical**
+- [ ] The render output has no page exceptions or console.error
+- [ ] Dragging the progress bar in the browser preview, the picture is correct at every point in time (renderFrame is a pure function)

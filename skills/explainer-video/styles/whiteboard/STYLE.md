@@ -1,97 +1,97 @@
-# 手绘白板风格（whiteboard）
+# Hand-drawn whiteboard style (whiteboard)
 
-像一位好老师站在白板前，边讲边画。**画面永远只画"正在讲的那句话"**，
-白板是一张无限大的纸，讲到哪画到哪，镜头跟着笔走。
+Like a good teacher at a whiteboard, drawing while talking. **The frame only ever shows "the sentence being spoken right now"**:
+the whiteboard is an infinitely large sheet of paper, you draw wherever the explanation has reached, and the camera follows the pen.
 
-## 1. 风格规则（必须遵守）
+## 1. Style rules (mandatory)
 
-### 色彩：颜色 = 概念
-| 名字 | 用途 |
+### Color: color = concept
+| Name | Use |
 |---|---|
-| `ink` 黑 | 默认：正文、结构线、坐标轴 |
-| `blue` 蓝 | 主角概念 / 已知量 / 正确推导 |
-| `red` 红 | 强调、关键结论、易错点、圈画 |
-| `green` 绿 | 结果、正确、答案 |
-| `orange` / `purple` | 第二、第三个概念（需要时才用） |
-| 荧光笔 `yellow` `pink` `green` `blue` | 只用来标关键词，一屏最多 1–2 处 |
+| `ink` black | Default: body text, structural lines, axes |
+| `blue` blue | The main concept / known quantities / correct derivation |
+| `red` red | Emphasis, key conclusions, common mistakes, circling |
+| `green` green | Results, correct, answers |
+| `orange` / `purple` | Second and third concepts (only when needed) |
+| Highlighter `yellow` `pink` `green` `blue` | Only for marking keywords, at most 1–2 per screen |
 
-- 一条视频最多用 **3 种墨水色 + 1 种荧光色**。人物多于 3 个时按阵营 / 立场分色，不是一人一色（见 `references/modes.md` 典故一节）。
-- **某个概念第一次用了什么颜色，全片都用这个颜色**（比如"重力"用红色，之后所有重力箭头、"重力"两个字都是红色）。这是观众追踪概念的线索。
-- 用 `{red:文字}` 给一句话里的局部上色。
+- One video uses at most **3 ink colors + 1 highlighter color**. With more than 3 characters, color them by camp / side, not one color per person (see the stories section of `references/modes.md`).
+- **Whatever color a concept gets the first time, it keeps for the whole video** (e.g. if "gravity" is red, every gravity arrow and every occurrence of the word "gravity" afterwards is red). This is the viewer's cue for tracking concepts.
+- Use `{red:text}` to color part of a sentence.
 
-### 字号（1920×1080 画布，zoom=1 时）
-| 层级 | 字号 | 用途 |
+### Font sizes (1920×1080 canvas, at zoom=1)
+| Level | Size | Use |
 |---|---|---|
-| 标题 | 80–96 | 开场问题、单词本身 |
-| 主文字 | 56–64 | 关键句、公式 |
-| 标注 | 40–48 | 图上的标签、便签、推导旁注 |
-| 最小 | 36 | 再小就看不清了，禁止 |
+| Headline | 80–96 | Opening question, the word itself |
+| Main text | 56–64 | Key sentences, formulas |
+| Label | 40–48 | Labels on drawings, sticky notes, side notes on derivations |
+| Minimum | 36 | Anything smaller is unreadable; forbidden |
 
-屏幕底部 150px 留给字幕；有章节时，屏幕顶部 105px 留给章节进度条。内容不要放进这两块（镜头拉远时除外）。
+The bottom 150px of the screen is reserved for captions; when there are chapters, the top 105px is reserved for the chapter progress bar. Keep content out of these two bands (except when the camera is zoomed out).
 
-### 文字量
-- 白板上写的是**关键词**，不是旁白原文。旁白 20 个字，白板上一般只写 2–8 个字。
-- 一个画面同时出现的新文字不超过约 12 个字；公式和解题推导除外。
+### Amount of text
+- The whiteboard shows **keywords**, not the narration verbatim. For 20 characters of narration, the board usually shows only 2–8 characters.
+- No more than about 12 characters of new text appear in one shot at the same time; formulas and worked derivations are exempt.
 
-### 线条和图形
-- 默认笔宽 5；强调线 6–7；细节 3–4。
-- 人物用 `b.character()`（见第 4 节）。其他插画（苹果、地球、容器、工具……）用 `b.sketch()` 自己画 SVG 路径：**轮廓简单、有识别度、少细节**，像老师 3 秒能画完的样子。填色用浅色（`fill`），轮廓用对应的深色。
-- 不用 emoji，也不用图片素材。
+### Lines and shapes
+- Default pen width 5; emphasis lines 6–7; details 3–4.
+- Draw characters with `b.character()` (see section 4). Draw other illustrations (apple, Earth, container, tool...) yourself as SVG paths with `b.sketch()`: **simple outline, recognizable, few details**, something a teacher could draw in 3 seconds. Use a light fill (`fill`) and the matching dark color for the outline.
+- No emoji, no image assets.
 
-### 运动语言
-- 所有东西都是被"画出来""写出来"的，不能凭空淡入。例外只有便签（贴上去）和圆点（点出来）。
-- 画的时机跟着旁白：**说到"苹果"时苹果开始画**，用 `T.word('id', '苹果')`。
-- 画完一个东西以后要有停顿，给观众看的时间，不要一直在画。
-- 镜头移动：`ease.inOut`，1–1.5 秒；**画新内容之前先把镜头移过去**，不要边画边大幅移动。
-- 结尾：用 `b.overview({ at })` 拉远看全貌，让观众看到整张白板的"知识地图"。它会按章节顺序在各区域旁标出 ①②③……，用虚线箭头串起来，并在顶部进度条的章节名前加上同样的编号；导出的全貌图上方也会有一行图例。序号会自动找不压内容的空位（画面四周按屏幕像素留出空白，缩得再小也不会被裁掉）。一章里镜头停过几个不同位置时，按停留顺序标成 2-1、2-2、2-3……，看得出章内的讲解路线。标完序号后画面至少停留 `hold` 秒（默认 3），视频会自动加长、音轨用静音补齐，不用手动调 `tail`。**`overview` 放在 build 的最后调用**。
-- 结尾的总结要**写在白板的空地上**，不要用 `hud: true` 固定在屏幕中央：全貌镜头里它会挡住内容（自动检查会提醒），而写在白板上的总结还会出现在导出的全貌图里。
+### Motion language
+- Everything is "drawn" or "written" into place; nothing fades in out of nowhere. The only exceptions are sticky notes (stuck on) and dots (dotted on).
+- Drawing timing follows the narration: **the apple starts being drawn when "apple" is spoken**, using `T.word('id', 'apple')`.
+- After drawing something, pause to give the viewer time to look; don't draw nonstop.
+- Camera moves: `ease.inOut`, 1–1.5 seconds; **move the camera there before drawing new content**, don't make big moves while drawing.
+- Ending: use `b.overview({ at })` to zoom out to the board overview so the viewer sees the whole whiteboard's "knowledge map". It labels the regions ①②③... in chapter order, links them with dashed arrows, and adds the same numbers in front of the chapter names in the top progress bar; the exported board overview also gets a legend row at the top. Number badges automatically find empty spots that don't cover content (a margin in screen pixels is kept around the frame, so they are never cropped however far it zooms out). When the camera held at several different positions within one chapter, they are numbered 2-1, 2-2, 2-3... in hold order, showing the route of the explanation within the chapter. After the badges are drawn, the frame holds for at least `hold` seconds (default 3); the video is lengthened automatically and the audio track padded with silence, so you don't need to adjust `tail` by hand. **Call `overview` last in build**.
+- Write the closing summary **in an empty spot on the whiteboard**; don't pin it to the center of the screen with `hud: true`: in the overview shot it would cover content (the lint check warns about this), and a summary written on the board also appears in the exported board overview.
 
-### 时间安排（自动检查会逐条核对）
-- **先移镜头，再画**：新区域的第一笔，要等镜头移动结束之后再开始。
-- **一组连续的笔画用 `at: 上一个元素` 串起来**，不要各自手写时间，这样前一个变慢时后一个会跟着顺延。
-- **擦除必须在画完之后**，而且画完后至少停留 0.6 秒；需要被"读"的内容（文字、图示）停留 1 秒以上。
-- 有意为之的情况要标出来，自动检查就会放过：
-  - `crop: true`：有意只露出一部分（比如只画出地球的上半部分）。它会被裁成"画它时那个镜头"的画面范围，之后镜头拉远也不会突然变完整
-  - `overlap: true`：有意叠放（比如挂在树上的苹果）
+### Timing (the lint check verifies each item)
+- **Move the camera first, then draw**: the first stroke in a new region must wait until the camera move has finished.
+- **Chain a sequence of strokes with `at: previousElement`** instead of hand-writing each time, so that when one gets slower the next is pushed back with it.
+- **Erasing must come after drawing finishes**, with at least 0.6 seconds of hold after drawing; content meant to be "read" (text, diagrams) holds 1 second or more.
+- Mark intentional cases and the lint check will let them pass:
+  - `crop: true`: intentionally show only part (e.g. draw only the top half of the Earth). It is clipped to the frame of "the camera at the time it was drawn", so it won't suddenly become complete when the camera later zooms out
+  - `overlap: true`: intentional stacking (e.g. an apple hanging on a tree)
 
-### 构图
-- 白板是无限画布，按"区域"规划，一个区域对应一段内容（通常就是一章）。
-- **区域按镜头路线依次排开，每次只移到相邻区域**：比如一行从左到右，或者 S 形（右 → 下 → 左 → 下）。镜头移动途中不能扫过第三个区域，否则观众会看到上一段内容"串"进画面。
-- 相邻区域之间至少隔 **150 像素的空白**；镜头拉远（zoom < 1）的区域，间距要按 1/zoom 放大。
-- 确实需要跨过别的区域时，用 `b.camera(at, 目标, 0)` 直接切过去，不要平移。
-- 自动检查会找出：镜头停下后画面边缘露出半截旧内容、镜头移动途中扫过别的区域。
-- 每个区域留白 ≥ 30%，元素之间至少 60px 间距。
-- 讲解推导时从上往下、从左往右写，符合阅读顺序。
+### Composition
+- The whiteboard is an infinite canvas, planned in "regions"; one region holds one segment of content (usually one chapter).
+- **Lay regions out in camera-route order and only ever move to an adjacent region**: e.g. one row left to right, or an S-shape (right → down → left → down). A camera move must never sweep across a third region, or the viewer sees earlier content "bleed" into the frame.
+- Leave at least **150 pixels of blank space** between adjacent regions; for regions where the camera is zoomed out (zoom < 1), scale the gap by 1/zoom.
+- When you really have to cross another region, cut straight there with `b.camera(at, target, 0)` instead of panning.
+- The lint check catches: half of old content showing at the frame edge after the camera stops, and camera moves that sweep across another region.
+- Each region keeps ≥ 30% blank space, with at least 60px between elements.
+- Write derivations top to bottom, left to right, following reading order.
 
-### 封面
-很多平台默认拿**视频第一帧**当封面，所以每条视频都要用 `b.cover()` 做一张：第一帧就是完整的封面，停留约 1.3 秒后淡出，进入白板。
-- **标题**：就是视频要回答的那个问题或主题，**12 个字以内**，关键词标红（`{red:…}`）。标题太长会自动缩小字号，但缩小了就不醒目了。
-- **副标题**（可选）：一句话说清"看完能得到什么"，16 个字以内。
-- **标签**（可选）：左上角的小便签，写分类，比如"物理 · 科普""做法 · 家常菜"。
-- **主视觉**：1–2 个有辨识度的东西，比如核心插画、人物角色，放在标题下方的 `cover.area` 里，用 `hud: true, at: 0, dur: 0` 画好后交给 `cover.add()`。
-- **检验方法**：把 `out/cover.png` 缩小到手机信息流里的大小（约 1/4），标题还能一眼看清、主视觉还能认出来。
-- 用了封面，`script.json` 的 `lead_in` 要调到约 1.9 秒，让旁白在封面收起后再开始（自动检查会提醒）；正片的第一笔从 `cover.end` 开始画。
+### Cover
+Many platforms use the **first frame of the video** as the cover by default, so every video makes one with `b.cover()`: the first frame is the complete cover, which holds for about 1.3 seconds, then fades out into the whiteboard.
+- **Title**: the question or topic the video answers, **12 characters or fewer**, with the keyword in red (`{red:…}`). An overlong title is automatically shrunk, but then it no longer stands out.
+- **Subtitle** (optional): one sentence on "what you get from watching", 16 characters or fewer.
+- **Tag** (optional): a small sticky note in the top-left with the category, e.g. "Physics · Science", "How-to · Home cooking".
+- **Key visual**: 1–2 recognizable things, such as the core illustration or a character, placed in `cover.area` below the title, drawn with `hud: true, at: 0, dur: 0` and then handed to `cover.add()`.
+- **How to check**: shrink `out/cover.png` to the size it would have in a phone feed (about 1/4); the title should still be readable at a glance and the key visual still recognizable.
+- With a cover, set `lead_in` in `script.json` to about 1.9 seconds so the narration starts after the cover is put away (the lint check reminds you); the first stroke of the main content starts at `cover.end`.
 
-### 章节进度条
-- 在 `script.json` 的句子上写 `"chapter": "章节名"` 就会自动出现，不需要写任何画面代码。
-- 样式：顶部一条虚线引导线，一支铅笔沿着它把进度线"画"出来；每章开头有一个刻度，章节名写在线下方。讲过的章节是黑色，当前章节加粗，没讲到的是灰色；进入新章节时标题轻轻跳一下。
-- 章节在上一句话讲完时切换，所以**换章节时的镜头转场，应该放在两句话之间的停顿里**（`T.end(上一句)` 之后）。
-- 不想要时 `WB.board({ chapters: false })`；位置可以用 `chapters: { top, margin }` 调整。
+### Chapter progress bar
+- Writing `"chapter": "Chapter name"` on sentences in `script.json` makes it appear automatically; no drawing code needed.
+- Look: a dashed guide line at the top, along which a pencil "draws" the progress line; each chapter start has a tick, with the chapter name written below the line. Finished chapters are black, the current chapter is bold, upcoming ones are gray; when a new chapter begins its title does a small bounce.
+- The chapter switches when the previous sentence finishes, so **put the camera transition for a chapter change in the pause between the two sentences** (after `T.end(prevSentence)`).
+- To turn it off: `WB.board({ chapters: false })`; adjust its position with `chapters: { top, margin }`.
 
-### 字体
-- 默认：中文手写用霞鹜文楷，英文手写用 Excalifont（Excalidraw 的手写体），字幕用系统黑体。
-- 加载顺序：**本机已安装 → 联网按需下载（只下载用到的字）→ 备用字体**。用户没装、也没联网时会自动用备用字体照常渲染，**不报错**，渲染日志里会有一行提示。
-- 字体是个人喜好：用户想换就在 `WB.board({ fonts: { hand: '"某字体", "LXGW WenKai", cursive', en: '...', caption: '...' } })` 里改，保留原来的字体当备用。
-- 视频用到的所有字会在排版前一次性加载完，不需要手动预加载。
+### Fonts
+- Defaults: Chinese handwriting uses 霞鹜文楷 (LXGW WenKai), English handwriting uses Excalifont (Excalidraw's handwriting font), captions use the system sans-serif (Hei).
+- Load order: **installed locally → downloaded on demand online (only the glyphs used) → fallback font**. If the user doesn't have it installed and is offline, rendering proceeds normally with the fallback font, **without errors**, and the render log prints a notice.
+- Fonts are personal taste: if the user wants a different one, change it in `WB.board({ fonts: { hand: '"Some Font", "LXGW WenKai", cursive', en: '...', caption: '...' } })`, keeping the original font as fallback.
+- All glyphs used in the video are loaded once before layout; no manual preloading needed.
 
-## 2. 纸面
-`WB.board({ paper })`：
-- `plain` 空白白板：现象科普、单词讲解
-- `grid` 方格纸：数学题、物理题、画图题
-- `dots` 点阵：设计、结构类
-- `lined` 横线本：语言类、笔记类
+## 2. Paper
+`WB.board({ paper })`:
+- `plain` blank whiteboard: science explainers, word explanations
+- `grid` grid paper: math problems, physics problems, drawing problems
+- `dots` dot grid: design, structure topics
+- `lined` lined notebook: language topics, notes
 
-## 3. API 速查
+## 3. API quick reference
 
 ```js
 EV.composition({
@@ -99,158 +99,158 @@ EV.composition({
   fonts: ['56px "LXGW WenKai"', '56px "Noteworthy"'],
   build: async ({ T }) => {
     const b = WB.board({ T, paper: 'grid', seed: 'slug' });
-    // ... 画面代码 ...
+    // ... drawing code ...
     return b;
   },
 });
 ```
 
-### 时间
-| 写法 | 含义 |
+### Time
+| Syntax | Meaning |
 |---|---|
-| `T.start('id')` / `T.end('id')` | 某句旁白的开始 / 结束时间 |
-| `T.word('id', '苹果')` | 这句里"苹果"开始被念出来的时间（第 3 个参数 n 表示第 n+1 次出现） |
-| `T.wordEnd('id', '苹果')` | "苹果"念完的时间 |
-| `T.at('id', 0.5)` | 这句话进行到一半的时间 |
-| `b.at(t)` | 把"笔"移到时间 t：之后没写 `at` 的元素从这里开始，一个接一个画 |
-| `b.wait(s)` | 笔停 s 秒 |
+| `T.start('id')` / `T.end('id')` | Start / end time of a narration sentence |
+| `T.word('id', 'apple')` | Time when "apple" starts being spoken in this sentence (a 3rd argument n means the (n+1)-th occurrence) |
+| `T.wordEnd('id', 'apple')` | Time when "apple" finishes being spoken |
+| `T.at('id', 0.5)` | Time halfway through this sentence |
+| `b.at(t)` | Move the "pen" to time t: subsequent elements without `at` start here and are drawn one after another |
+| `b.wait(s)` | Pen pauses for s seconds |
 
-每个元素都接受：`at`（开始时间，也可以传另一个元素表示"它画完之后"）、`delay`、`dur`（画多久，默认按长度自动算）、`color`、`width`、`hud: true`（固定在屏幕上，不随镜头动）。
-返回的元素有 `.start` `.end` `.box`（世界坐标 {x,y,w,h}），以及：
-- `.erase(at, dur)` 擦掉
-- `.pulse(at)` 放大一下再回来，用来强调
-- `.move(at, dx, dy, dur, ease)` 平移。比如苹果下落：`apple.move(t, 0, 260, 0.7, EV.ease.in)`（`ease.in` 是加速，像真的在下落）
-- `.transform(at, { dx, dy, rotate, scale, origin }, dur, ease)` 通用变换动画：绕 `origin`（世界坐标，默认元素当时的中心）旋转 `rotate` 度（正数顺时针）、缩放 `scale` 倍（数字，或 `[sx, sy]`，`[-1, 1]` 是左右翻转），再平移 `dx, dy`。多次调用按时间叠加。线宽在缩放时保持不变（`scaleStroke: true` 则跟着缩放）。
-  例：演示"两个图形能重合"——在 B 处复制一份虚线副本，`ghost.transform(t, { rotate: -θ, origin: B的中心, dx, dy }, 1.4)` 落到 A 上；演示"放大"——`ghost.transform(t, { scale: 2, origin }, 1.4)`。
+Every element accepts: `at` (start time; can also be another element, meaning "after it finishes drawing"), `delay`, `dur` (how long to draw; computed automatically from length by default), `color`, `width`, `hud: true` (pinned to the screen, doesn't move with the camera).
+Returned elements have `.start` `.end` `.box` (world coordinates {x,y,w,h}), plus:
+- `.erase(at, dur)` erase
+- `.pulse(at)` scale up briefly and back, for emphasis
+- `.move(at, dx, dy, dur, ease)` translate. E.g. an apple falling: `apple.move(t, 0, 260, 0.7, EV.ease.in)` (`ease.in` accelerates, like something really falling)
+- `.transform(at, { dx, dy, rotate, scale, origin }, dur, ease)` general transform animation: around `origin` (world coordinates, defaults to the element's center at that moment) rotate by `rotate` degrees (positive is clockwise), scale by `scale` (a number, or `[sx, sy]`; `[-1, 1]` is a horizontal flip), then translate by `dx, dy`. Multiple calls stack over time. Stroke width stays constant when scaling (with `scaleStroke: true` it scales too).
+  Examples: to show "two shapes coincide", make a dashed copy at B and land it on A with `ghost.transform(t, { rotate: -θ, origin: centerOfB, dx, dy }, 1.4)`; to show "enlarging", `ghost.transform(t, { scale: 2, origin }, 1.4)`.
 
-注意：`.box` 永远是元素的**原始位置**，移动之后再去圈、标注它，要用 `el.boxAt(t)` 取 t 时刻的外框。
+Note: `.box` is always the element's **original position**; to circle or annotate it after it has moved, use `el.boxAt(t)` to get its bounding box at time t.
 
-### 文字和公式
+### Text and formulas
 ```js
-b.text('为什么{red:苹果}会掉下来？', { x: 960, y: 200, size: 88, align: 'center' });
-// align: left|center|right（x 是左边/中心/右边）；valign: top|middle|bottom
-// font: 'hand'(默认，霞鹜文楷) | 'en'(英文手写 Excalifont) | 'ui' | 'mono'
-// maxWidth: 自动换行；speed: 每秒写几个字（中文默认 8，英文 18）
+b.text('Why does the {red:apple} fall down?', { x: 960, y: 200, size: 88, align: 'center' });
+// align: left|center|right (x is the left edge / center / right edge); valign: top|middle|bottom
+// font: 'hand' (default, 霞鹜文楷 / LXGW WenKai) | 'en' (English handwriting, Excalifont) | 'ui' | 'mono'
+// maxWidth: auto-wrap; speed: characters written per second (Chinese default 8, English 18)
 b.math('F = G\\frac{\\htmlClass{m}{m_1 m_2}}{r^2}', { x: 300, y: 400, size: 64 });
-// 默认 displaystyle；inline: true 用行内样式。\htmlClass{名字}{…} 标记的部分可用 eq.part('名字') 取坐标框
-b.note('易错：{red:单位}要统一', { x: 1300, y: 600, w: 460, color: 'yellow', rotate: -2 });
-b.bubble('我不是跑，是去{blue:追人}', { x: 1400, y: 340, anchor: 'right', color: 'green', tail: 'right' });
-// 对话气泡：先画框再写字。框线用说话人的颜色；tail: 'left' | 'right' | 'none' | [x, y]（尾巴尖指向的点）
-// 返回 { shape, text, box, end, erase, move, pulse }；多句对话可以像聊天记录一样，新句子进来时旧气泡整体 move 上移
+// displaystyle by default; inline: true uses inline style. Parts marked with \htmlClass{name}{…} can be located with eq.part('name')
+b.note('Common mistake: keep {red:units} consistent', { x: 1300, y: 600, w: 460, color: 'yellow', rotate: -2 });
+b.bubble("I'm not running away, I'm {blue:chasing someone}", { x: 1400, y: 340, anchor: 'right', color: 'green', tail: 'right' });
+// Speech bubble: the frame is drawn first, then the text. Frame line uses the speaker's color; tail: 'left' | 'right' | 'none' | [x, y] (the point the tail tip points to)
+// Returns { shape, text, box, end, erase, move, pulse }; multi-line dialogue can work like a chat log, moving old bubbles up as a group with move when a new line comes in
 ```
 
-### 线条和形状
+### Lines and shapes
 ```js
 b.line(x1, y1, x2, y2, { dash: [16, 12] });
-b.arrow(x1, y1, x2, y2, { bend: 0.2, double: false, head: 24 });   // bend 正负控制弯向
+b.arrow(x1, y1, x2, y2, { bend: 0.2, double: false, head: 24 });   // sign of bend controls which way it curves
 b.rect(x, y, w, h);  b.circle(cx, cy, r);  b.ellipse(cx, cy, rx, ry, { fill: '#FFB8D2' });
-// 圆默认有手绘的"收尾多画一点"；画轨道这类精确的圆：{ turns: 1, drift: 0, rough: 0.3, startAngle: 0 }
-// turns 为负数则逆时针画（角度 0 在正右方，y 轴朝下）
-b.polyline([[x, y], ...], { closed: true });  b.curve([[x, y], ...]);   // 折线 / 平滑曲线
+// Circles have a hand-drawn "overshoot at the end" by default; for precise circles such as orbits: { turns: 1, drift: 0, rough: 0.3, startAngle: 0 }
+// Negative turns draw counterclockwise (angle 0 points right, y axis points down)
+b.polyline([[x, y], ...], { closed: true });  b.curve([[x, y], ...]);   // polyline / smooth curve
 b.sketch([ 'M0,0 C…Z', { d: 'M…', color: 'green', fill: '#B8F0A6', width: 4 } ], { x, y, scale });
 b.dot(x, y, { r: 10, color: 'red' });
-b.brace(x1, x2, y, { dir: 'down' });  b.vbrace(y1, y2, x, { dir: 'right' });  // 返回值有 .tip 尖端坐标
+b.brace(x1, x2, y, { dir: 'down' });  b.vbrace(y1, y2, x, { dir: 'right' });  // return value has .tip, the tip coordinates
 b.check(x, y);  b.cross(x, y);
 ```
-`sketch` 里每个子路径必须用**大写 M**（绝对坐标）开头。路径坐标是插画自己的坐标系，用 `x, y, scale` 放到白板上。
+Every subpath in `sketch` must start with an **uppercase M** (absolute coordinates). Path coordinates are in the illustration's own coordinate system; place it on the board with `x, y, scale`.
 
-### 几何标注（点都是 `[x, y]`）
+### Geometry annotations (points are `[x, y]`)
 ```js
-b.angleMark(V, P1, P2, { n: 2, r: 40, gap: 10 });   // 顶点 V、两边指向 P1/P2 的角：n 道弧（1–3，区分不同的角）
-b.angleMark(V, P1, P2, { right: true });            // 直角符号
-b.tickMark(P, Q, { n: 1 });                         // 线段 PQ 上的等长短杠（1–3 道，区分不同的边）
-b.vertexLabels([A, B, C], ['A', 'B', 'C']);         // 顶点字母，自动放在外角平分线方向，不压线
-b.sideLabels([A, B, C], ['5', '6', '4']);           // 边 AB、BC、CA 的中点外侧写标注；null 跳过
+b.angleMark(V, P1, P2, { n: 2, r: 40, gap: 10 });   // angle at vertex V with sides toward P1/P2: n arcs (1–3, to tell angles apart)
+b.angleMark(V, P1, P2, { right: true });            // right-angle mark
+b.tickMark(P, Q, { n: 1 });                         // equal-length tick marks on segment PQ (1–3, to tell sides apart)
+b.vertexLabels([A, B, C], ['A', 'B', 'C']);         // vertex letters, placed automatically along the exterior angle bisector, not over lines
+b.sideLabels([A, B, C], ['5', '6', '4']);           // labels outside the midpoints of sides AB, BC, CA; null skips
 ```
-几何图要用坐标**精确计算**（先写一个"图形 → 屏幕坐标"的函数，所有顶点都从它算）。
-同一段视频里：相等的边用相同道数的短杠，相等的角用相同道数的弧，全片统一。
+Geometry figures must be **computed precisely** from coordinates (first write a "figure → screen coordinates" function and compute every vertex from it).
+Within one video: equal sides get the same number of tick marks and equal angles the same number of arcs, consistently throughout.
 
-### 封面
+### Cover
 ```js
-const cover = b.cover({ title: '为什么{red:苹果}会往下掉？', subtitle: '从一个苹果，讲到月亮', tag: '物理 · 科普', hold: 1.3 });
-const A = cover.area;   // 标题下方留给主视觉的区域 {x, y, w, h}
+const cover = b.cover({ title: 'Why does the {red:apple} fall?', subtitle: 'From an apple to the Moon', tag: 'Physics · Science', hold: 1.3 });
+const A = cover.area;   // area below the title reserved for the key visual {x, y, w, h}
 cover.add(b.sketch(APPLE, { hud: true, at: 0, dur: 0, x: A.x + 300, y: A.y + 60, scale: 2 }));
-cover.add(b.character(CAST.某人, { hud: true, at: 0, dur: 0, x: A.x + A.w * 0.72, y: 1008, size: 460, expr: 'think', blink: false }));
-b.at(cover.end);        // 正片从封面收起后开始
+cover.add(b.character(CAST.someone, { hud: true, at: 0, dur: 0, x: A.x + A.w * 0.72, y: 1008, size: 460, expr: 'think', blink: false }));
+b.at(cover.end);        // main content starts after the cover is put away
 ```
 
-### 一堆、一把、时长、档位
+### Piles, sprinkles, durations, levels
 ```js
-// 区域 area：{ x, y, w, h } 矩形 | { cx, cy, r } 或 { cx, cy, rx, ry } 圆 / 椭圆 | { shape: 'mound', cx, cy, w, h } 小山（(cx, cy) 是底边中点）
-b.pile({ shape: 'mound', cx: 400, cy: 600, w: 360, h: 160 }, { count: 14, size: 36, shape: 'chunk', color: 'red', fill: '#F59A9A' });  // 一堆，互不重叠
-b.sprinkle({ x: 300, y: 500, w: 260, h: 80 }, { count: 16, size: 14, shape: 'ring', color: 'green', fill: '#B8F0A6' });               // 撒一把，逐个出现
-// shape：chunk 块 · blob 团 · grain 颗粒 · ring 小圈 · dot 实心点 · dash 短线；也可以 make: (x, y, size, r, i) => ({ d, color, fill }) 自己画
-b.timer(x, y, { label: '2 分钟', r: 40 });                          // 小钟 + 时长，分针转一圈
-b.level(x, y, { icon: 'flame', level: 2, max: 3, label: '中火' });   // 档位：flame 火苗 | bar 柱 | star 星
-WB.scatterPoints(area, { count, gap, seed })                        // 只要点的坐标时用：可复现、点间距 ≥ gap
+// area: { x, y, w, h } rectangle | { cx, cy, r } or { cx, cy, rx, ry } circle / ellipse | { shape: 'mound', cx, cy, w, h } mound ((cx, cy) is the midpoint of the base)
+b.pile({ shape: 'mound', cx: 400, cy: 600, w: 360, h: 160 }, { count: 14, size: 36, shape: 'chunk', color: 'red', fill: '#F59A9A' });  // a pile, no overlaps
+b.sprinkle({ x: 300, y: 500, w: 260, h: 80 }, { count: 16, size: 14, shape: 'ring', color: 'green', fill: '#B8F0A6' });               // a sprinkle, appearing one by one
+// shape: chunk · blob · grain · ring (small ring) · dot (solid dot) · dash (short line); or draw your own with make: (x, y, size, r, i) => ({ d, color, fill })
+b.timer(x, y, { label: '2 min', r: 40 });                           // small clock + duration, minute hand turns one full circle
+b.level(x, y, { icon: 'flame', level: 2, max: 3, label: 'medium heat' });   // level: flame | bar | star
+WB.scatterPoints(area, { count, gap, seed })                        // when you only need point coordinates: reproducible, spacing ≥ gap
 ```
-`timer`、`level` 返回的是一组元素，可以整体 `erase`、`pulse`、`move`。
+`timer` and `level` return a group of elements that can be `erase`d, `pulse`d and `move`d as a whole.
 
-### 标注已有元素（传元素或 {x,y,w,h}）
+### Annotating existing elements (pass an element or {x,y,w,h})
 ```js
-b.highlight(el, { color: 'yellow' });     // 荧光笔刷过
+b.highlight(el, { color: 'yellow' });     // highlighter swipe
 b.underline(el, { double: true, wavy: false });
-b.circleAround(el);  b.boxAround(el);     // 默认红色
+b.circleAround(el);  b.boxAround(el);     // red by default
 b.strike(el);  b.strike(el, { cross: true });
 ```
 
-### 图片和视频（照片、截图、录屏）
-素材先整理：把图片、视频放进项目的 `assets/src/`，运行 `node scripts/assets.mjs videos/<名字>`（见 SKILL.md）。素材名 = 文件名去掉扩展名。
-视频写成 `{ clip: '名字', from: 0, rate: 2, to: 10 }`：从片段第 `from` 秒开始、以 `rate` 倍速播放、播到 `to` 秒停住（默认播到结尾）；元素出现前停在第一帧，播完停在最后一帧，`play: 秒` 可以指定开始播放的时间。视频还没播完就被擦掉 / 翻页时，自动检查会提醒。
+### Images and video (photos, screenshots, screen recordings)
+Prepare assets first: put images and videos in the project's `assets/src/` and run `node scripts/assets.mjs videos/<name>` (see SKILL.md). Asset name = file name without extension.
+Write a video as `{ clip: 'name', from: 0, rate: 2, to: 10 }`: start at second `from` of the clip, play at `rate`× speed, stop at second `to` (plays to the end by default); before the element appears it sits on the first frame, and after playback it holds on the last frame; `play: seconds` sets when playback starts. The lint check warns when a video is erased / paged away before it finishes playing.
 ```js
-const ph = b.photo('login', { x: 120, y: 200, w: 800, rotate: -1.5, caption: '登录页', at: T.word('l3', '登录') });
-b.circleAround({ x: ph.imgBox.x + 200, y: ph.imgBox.y + 180, w: 380, h: 80 }, { at: ... });   // 在照片上圈重点
-b.photo({ clip: 'demo', rate: 2 }, { x: 1000, y: 260, w: 900, caption: '演示', at: ... });
+const ph = b.photo('login', { x: 120, y: 200, w: 800, rotate: -1.5, caption: 'Login page', at: T.word('l3', 'log in') });
+b.circleAround({ x: ph.imgBox.x + 200, y: ph.imgBox.y + 180, w: 380, h: 80 }, { at: ... });   // circle the key point on the photo
+b.photo({ clip: 'demo', rate: 2 }, { x: 1000, y: 260, w: 900, caption: 'Demo', at: ... });
 ```
-- 像用胶带贴在白板上的照片：白边、阴影、两条纸胶带，从上方落下贴上。选项：`x, y, w`、`anchor: 'left'|'center'|'right'`、`valign`、`rotate`（默认 -1.2 度）、`caption`（照片下方的手写说明）、`tape: false`、`border`（白边宽）、`aspect`（强制宽高比，图片按 `focus: '50% 30%'` 裁切）、`hud`、`at`、`play`
-- `ph.imgBox` 是图片本身的区域（不含白边和说明），在照片上标注时用它算坐标
-- **画在照片范围内的线条、圈注、箭头会自动放到照片上面**，不用手动调图层
-- 照片参加重叠检查；照片旁边的文字要避开照片
+- Like a photo taped onto the whiteboard: white border, shadow, two strips of washi tape, drops in from above and sticks. Options: `x, y, w`, `anchor: 'left'|'center'|'right'`, `valign`, `rotate` (default -1.2 degrees), `caption` (handwritten note below the photo), `tape: false`, `border` (white border width), `aspect` (force an aspect ratio; the image is cropped per `focus: '50% 30%'`), `hud`, `at`, `play`
+- `ph.imgBox` is the area of the image itself (excluding the white border and caption); use it to compute coordinates when annotating on the photo
+- **Lines, circle annotations and arrows drawn within the photo's area are automatically placed above the photo**; no manual layer adjustment needed
+- Photos take part in the overlap check; text next to a photo must avoid it
 
-### 坐标系和函数图像
+### Axes and function graphs
 ```js
 const ax = b.axes({ x: 200, y: 200, w: 800, h: 500, xRange: [0, 5], yRange: [0, 25], xLabel: 't', yLabel: 'h' });
 ax.plot((x) => x * x, { from: 0, to: 5, color: 'blue' });
 ax.point(3, 9, { color: 'red' });
-const [sx, sy] = ax.toScreen(3, 9);   // 数据坐标 → 白板坐标，用来放标注
+const [sx, sy] = ax.toScreen(3, 9);   // data coordinates → board coordinates, for placing labels
 ```
 
-### 镜头
+### Camera
 ```js
-b.camera(at, { x, y, zoom }, dur);             // 画面中心对准世界坐标 (x,y)
-b.focus(el 或 [el, el] 或 box, { at, dur, pad, zoom });   // 自动取景
-b.overview({ at: T.start('last') - 0.2, dur: 2 });        // 结尾全貌 + 顺序编号；numbers: false 只拉远不编号；hold: 标完后停留秒数；margin: 四周留白（屏幕像素）；放在 build 最后
+b.camera(at, { x, y, zoom }, dur);             // center the frame on world coordinates (x,y)
+b.focus(el or [el, el] or box, { at, dur, pad, zoom });   // automatic framing
+b.overview({ at: T.start('last') - 0.2, dur: 2 });        // closing board overview + order numbers; numbers: false only zooms out without numbers; hold: seconds to hold after numbering; margin: blank margin around the edges (screen pixels); put it last in build
 ```
 
-### 擦除和转场
+### Erasing and transitions
 ```js
-el.erase(at, 0.4);                     // 单个
-b.erase([a, b2, c], at);               // 一组
-b.erase('all', at);                    // 擦掉此前画的全部（整块换页）
+el.erase(at, 0.4);                     // single element
+b.erase([a, b2, c], at);               // a group
+b.erase('all', at);                    // erase everything drawn so far (full page change)
 ```
-换话题有两种方式：**镜头平移到白板空白处**（推荐，保留前文，结尾拉远还能看到）或者**擦掉重来**（内容完全无关时用）。
+There are two ways to change topic: **pan the camera to a blank area of the whiteboard** (recommended: keeps earlier content, which is still visible in the closing zoom-out) or **erase and start over** (when the content is completely unrelated).
 
-## 4. 角色
-需要人物时用 `b.character(规格, {...})`，设计方法、参数和表演原则见 `references/characters.md`。
-在白板风格里的额外要求：
-- 角色的墨线、强调色要和白板的配色体系一致（强调色优先从白板的墨水色里选）。
-- 角色放在当前区域的边缘，底边贴着区域底部或者字幕上方；不能挡住正在画的内容。
-- 镜头移到新区域时，角色可以留在原处（成为白板的一部分），也可以在新区域再画一个小一点的同一个角色。
+## 4. Characters
+When you need people, use `b.character(spec, {...})`; for the design method, parameters and acting principles see `references/characters.md`.
+Extra requirements in the whiteboard style:
+- The character's ink lines and accent color must match the whiteboard's color scheme (prefer picking the accent color from the whiteboard's ink colors).
+- Place the character at the edge of the current region, its bottom edge on the region's bottom or just above the captions; it must not cover what is being drawn.
+- When the camera moves to a new region, the character can stay where it was (becoming part of the whiteboard), or you can draw a smaller copy of the same character in the new region.
 
-## 5. 常见布局
+## 5. Common layouts
 
-**现象科普**：开场问题写在第一块区域顶部 → 每讲一个机制，镜头移到新区域画一张图 → 结尾拉远，全部区域连成一张"知识地图"。
+**Science explainer**: write the opening question at the top of the first region → for each mechanism explained, move the camera to a new region and draw a diagram → at the end zoom out, all regions joined into one "knowledge map".
 
-**题目讲解**（`paper: 'grid'`）：
-- 左侧 40% 放题目（关键条件用荧光笔标出）和重画的题图；右侧 60% 从上往下写推导。
-- 推导长了，镜头向下平移，题目区用 `hud: true` 固定在屏幕左侧，或者每写几步重新 `focus` 到题目。
-- 关键一步用红框 `boxAround`；最终答案绿色 + `underline({double:true})`；易错点用便签。
+**Problem walkthrough** (`paper: 'grid'`):
+- Left 40% holds the problem (key conditions marked with highlighter) and the redrawn problem figure; right 60% holds the derivation written top to bottom.
+- When the derivation gets long, pan the camera down and pin the problem area to the left of the screen with `hud: true`, or re-`focus` on the problem every few steps.
+- Key step in a red box `boxAround`; final answer in green + `underline({double:true})`; common mistakes on sticky notes.
 
-**单词讲解**（`paper: 'plain'` 或 `lined`）：
-- 单词大字居中（`font: 'en'`，88–110 号）→ 音节用竖线分开 → 下方 `brace` 拆出词根词缀，每部分写中文含义 → 旁边画一个帮助记忆的小插画 → 例句里的这个单词用荧光笔标出 → 结尾单词和中文意思一起再出现一次。
+**Word explanation** (`paper: 'plain'` or `lined`):
+- The word large and centered (`font: 'en'`, size 88–110) → split syllables with vertical bars → below, use `brace` to break out roots and affixes, writing the Chinese meaning of each part → draw a small mnemonic illustration beside it → highlight the word in the example sentence → at the end, show the word together with its Chinese meaning once more.
 
-**典故 / 历史故事**（`paper: 'plain'`）：
-- 背景用一条横向时间轴（`line` + `dot` + 年份），大局用极简地图（山用折线、势力范围用虚线圈、地名用标注字号）。
-- 人物出场时画角色，旁边写名字（角色的强调色）和一个身份关键词。
-- 对话场景：两个角色分站区域左右两边、面对面（右边的 `flip: true`），中间从上往下排聊天气泡，靠左的是左边人物的话、靠右的是右边人物的话。
-- 动作场景（追赶、出发、进攻）：用 `sketch` 画简单的道具和场景（马、船、城墙），角色胸像放在上面，一起 `move`；加几条速度线。
+**Story / historical tale** (`paper: 'plain'`):
+- For background use a horizontal timeline (`line` + `dot` + years); for the big picture use a minimal map (mountains as polylines, spheres of influence as dashed loops, place names at label size).
+- When a character enters, draw the character and write the name beside it (in the character's accent color) plus one identity keyword.
+- Dialogue scenes: two characters stand on the left and right of the region facing each other (the right one with `flip: true`), with chat bubbles stacked top to bottom between them; left-aligned bubbles are the left character's lines, right-aligned bubbles the right character's.
+- Action scenes (chasing, setting out, attacking): draw simple props and scenery with `sketch` (horse, boat, city wall), put the character bust on top, and `move` them together; add a few speed lines.

@@ -1,168 +1,168 @@
-# 内容模式：怎么讲
+# Content modes: how to tell it
 
-风格决定"长什么样"，模式决定"怎么讲"。两者可以任意组合。
-先判断用户的输入属于哪种模式（A 现象、B 题目、C 单词、D 概念、E 典故 / 历史故事、F 做法 / 教程、G 新闻解读 / 数据干货）；拿不准就按"概念讲解"处理。
-
----
-
-## A. 现象科普：为什么……？
-例子："天空为什么是蓝色的""苹果为什么会掉下来""为什么冬天呼气会有白雾"
-
-**结构（60–120 秒）**
-1. **钩子**（5–8 秒）：把问题抛出来，最好配一个具体画面。可以先说出一个大家都会想到、但不完整的答案。
-2. **直觉**：用生活里的类比建立感觉（"就像……"）。
-3. **机制**：讲清楚真正的原因。只讲一条主线，旁支一律删掉。
-4. **证据 / 推论**：用这个原理再解释一个相关现象（"所以日落是红色的"），证明它真的成立。
-5. **回扣**：回到开头的画面，一句话总结。
-
-**要点**
-- 一个镜头只讲一个意思。
-- 每个抽象概念都要落到一幅图上（光 → 波浪线，力 → 箭头，分子 → 小圆点）。
-- 数字要有参照物（"比头发丝细一千倍"比"0.1 微米"好懂）。
+The style decides "what it looks like"; the mode decides "how it is told". Any style can be combined with any mode.
+First decide which mode the user's input belongs to (A phenomenon, B problem, C word, D concept, E allusion / historical story, F how-to / tutorial, G news explainer / data-driven); if unsure, treat it as a "concept explainer".
 
 ---
 
-## B. 题目讲解：一道题 / 一张题目截图
-例子：数学、物理、化学计算题，几何题，应用题
+## A. Phenomenon explainer: why...?
+Examples: "Why is the sky blue?" "Why do apples fall?" "Why does your breath turn into white mist in winter?"
 
-**第 0 步：先把题做对（必须做，不能跳过）**
-1. 如果是截图：仔细读图，把题目文字、数字、图中标注完整转写下来。**转写结果先给用户确认**（数字看错一个，整条视频就废了）。
-2. 自己完整解一遍题，写进 `brief.md`。
-3. **用 Python 独立验算**：能算数值就算数值，能用 sympy 就用 sympy；选择题逐个选项检查；几何题用坐标法验证。验算和解题结果不一致时，找到原因再继续。
-4. 如果有多种解法，选**最符合题目所在年级、最自然**的那种讲，其余方法最多在结尾提一句。
+**Structure (60–120 seconds)**
+1. **Hook** (5–8 seconds): pose the question, ideally with a concrete image. You may first state an answer most people would think of but that is incomplete.
+2. **Intuition**: build a feel with an everyday analogy ("It's like...").
+3. **Mechanism**: explain the real cause. Stick to one main thread; cut every side branch.
+4. **Evidence / consequence**: use the principle to explain a related phenomenon ("so that's why sunsets are red"), proving it really holds.
+5. **Callback**: return to the opening image and sum up in one sentence.
 
-**结构（1–3 分钟，由题目决定）**
-1. **读题**：把题目写 / 画在白板上，边读边用荧光笔标出关键条件。
-2. **理清已知和所求**：列出"已知""求"。
-3. **思路**：**这一步是讲解的灵魂**。讲清楚"为什么会想到这个方法"——看到什么条件，联想到什么定理 / 模型。不要一上来就列式子。
-4. **分步推导**：一步一行，每一步旁边用小字注明依据（"代入①""两边同除以 2"）。关键一步用红框。
-5. **答案**：绿色写出，双下划线。能验算的当场验算一下（代回去 / 看单位 / 看数量级）。
-6. **总结**：这类题的通用方法 + 一个易错点（用便签）。
-
-**要点**
-- 题图必须用代码精确重画（坐标、角度、比例要对），不要"差不多"。
-- 公式用 `b.math()`；推导里同一个量颜色保持一致。
-- 旁白要口语化地"讲"式子，而不是一个符号一个符号地念。比如说"两边同时除以二"，不要说"x 等于 y 除以 2"。
+**Key points**
+- One idea per shot.
+- Every abstract concept must land on a picture (light → wavy line, force → arrow, molecules → small dots).
+- Numbers need a reference point ("a thousand times thinner than a hair" is easier to grasp than "0.1 micrometers").
 
 ---
 
-## C. 单词讲解：一个英文单词
-例子："serendipity""procrastinate""ambiguous"
+## B. Problem walkthrough: one problem / one screenshot of a problem
+Examples: math, physics and chemistry calculation problems, geometry problems, word problems
 
-**结构（30–60 秒）**
-1. **单词 + 发音**：大字写出单词和音标；这一句用英文声音念单词（`"voice": "en-US-AvaNeural"`）。
-2. **拆解**：音节 / 词根词缀拆开，每部分标出含义（例如 pro- 向前 + crastin 明天 → 拖到明天）。有可靠词源故事就讲一句；**不确定的词源不要编**。
-3. **核心含义**：一句话中文释义 + 一幅帮助记忆的小插画。
-4. **例句**：1–2 个贴近生活的例句，句子里的这个单词用荧光笔标出；英文句子用英文声音念，再用中文解释一次。
-5. **辨析或搭配**（可选）：一组近义词的区别，或者 2–3 个常用搭配。
-6. **收尾**：单词和中文意思一起再出现一次。
+**Step 0: get the problem right first (mandatory, cannot be skipped)**
+1. If it is a screenshot: read the image carefully and transcribe the problem text, numbers and labels in the figure completely. **Have the user confirm the transcription first** (misread a single number and the whole video is wasted).
+2. Solve the problem completely yourself and write it into `brief.md`.
+3. **Verify independently with Python**: compute numeric values where possible, use sympy where possible; for multiple choice, check every option; for geometry, verify with coordinates. If the verification and the solution disagree, find the cause before continuing.
+4. If there are several methods, explain the one that is **most natural and best fits the problem's grade level**; mention the others at most in one sentence at the end.
 
-**要点**
-- 音标、词性、释义要准确；拿不准就少讲，不要编。
-- 英文部分在 script.json 里单独成句，并指定英文声音；中文句子里夹的英文单词，中文声音也能念，但发音不如英文声音地道。
+**Structure (1–3 minutes, depending on the problem)**
+1. **Read the problem**: write / draw the problem on the whiteboard, highlighting key conditions with a highlighter while reading.
+2. **Sort out givens and unknowns**: list "Given" and "Find".
+3. **Approach**: **this step is the soul of the explanation**. Explain "why you would think of this method" — which condition you saw and which theorem / model it reminded you of. Don't start by writing equations.
+4. **Step-by-step derivation**: one step per line, with a small note beside each step giving its justification ("substitute ①", "divide both sides by 2"). Put a red box around the key step.
+5. **Answer**: written in green, double-underlined. Where possible, check it on the spot (plug it back in / check units / check the order of magnitude).
+6. **Summary**: the general method for this type of problem + one common pitfall (on a sticky note).
 
----
-
-## D. 概念讲解：什么是……？
-例子："什么是复利""什么是熵""什么是注意力机制"
-
-**结构**：一句话定义 → 一个具体例子 → 拆开讲组成部分 / 过程 → 常见误解 → 一句话总结。
-复杂流程用"箭头 + 方框"的流程图；对比类用左右两栏（T 字表）；随时间变化的用坐标系画曲线。
-
----
-
-## E. 典故 / 历史故事：一个成语、典故、历史事件的来龙去脉
-例子："萧何月下追韩信""纸上谈兵""破釜沉舟""哥白尼和日心说"
-
-**第 0 步：先把史实查清楚（必须做）**
-1. 找到**出处原文**（如《史记》某篇），把人物、时间、地点、关键原话整理进 `brief.md`。
-2. 区分**史实**和**后世演绎**（戏曲、小说、民间传说加上去的情节），视频里要说清楚哪部分是后来加的。
-3. 年份、官职、人物关系拿不准的，查证或者不讲，**不要编**。
-
-**结构（1.5–3 分钟）**
-1. **钩子**：写出典故名；用一个反常的冲突把问题抛出来（"堂堂丞相，为什么要去追一个小官？"）。
-2. **背景**：时间（时间轴上一个点）、大局（一张极简地图或势力对比）、主要人物登场。
-3. **起因 → 经过 → 高潮**：按时间顺序讲；高潮一般是一段对话或一个决定，**原话里最有力的一句**（如"国士无双"）大字写出来。
-4. **结果**：事件带来了什么（时间轴往后延伸）。
-5. **含义**：这个典故今天比喻什么；有相关成语 / 俗语就带出来。
-6. **回扣**：回到开头的冲突，一句话收尾。
-
-**要点**
-- 人物用角色（`references/characters.md`），每个人一个强调色，**人物的名字、台词、相关箭头都用他的颜色**。
-- **人物超过 3 个时，按阵营分色，不按人分色**（白板最多 3 种墨水色）：同一阵营的人共用一个颜色（例如楚营蓝、汉营红），
-  再留一个颜色给"典故含义 / 成语"。同阵营的人靠剪影（冠、发型、胡子）和头顶的名字区分。没有明显阵营时，只给主角和对手上色，其余人物用黑色。
-- 对话写成左右两边的聊天气泡：说话的人一边一个，每句台词只写关键词；说话时角色 `say` 对应片段。
-- 旁白里的台词用口语转述，不要大段念文言文；原文里的名句（四字左右）可以原样写在白板上。
-- 事件多的时候，用一条贯穿的时间轴串起来。
+**Key points**
+- The problem's figure must be redrawn precisely in code (coordinates, angles, proportions correct), not "roughly".
+- Use `b.math()` for formulas; keep the same quantity in the same color throughout the derivation.
+- The narration should "talk through" the equations conversationally, not read them symbol by symbol. For example, say "divide both sides by two", not "x equals y divided by 2".
 
 ---
 
-## F. 做法 / 教程：怎么做一件事
-例子："番茄炒蛋怎么做""怎么系领带""怎么给自行车补胎""Excel 怎么做数据透视表"
+## C. Word explainer: one English word
+Examples: "serendipity" "procrastinate" "ambiguous"
 
-**第 0 步：先把步骤理准（必须做）**
-1. 把完整步骤、每一步的关键参数（时间、温度、火候、用量、力度）整理进 `brief.md`。
-2. 找出**最容易做错的 1–2 个点**，和**顺序为什么不能换**。这些是视频的价值所在，照着菜谱念一遍没有意义。
-3. 涉及安全的（刀、明火、热油、电），要单独提醒一句。
+**Structure (30–60 seconds)**
+1. **Word + pronunciation**: write the word and its phonetic transcription in large letters; have this line read by an English voice (`"voice": "en-US-AvaNeural"`).
+2. **Breakdown**: split it into syllables / roots and affixes, labeling the meaning of each part (e.g. pro- forward + crastin tomorrow → push to tomorrow). If there is a reliable etymology story, tell it in one sentence; **never invent an uncertain etymology**.
+3. **Core meaning**: a one-sentence Chinese definition + a small illustration to help remember it.
+4. **Example sentences**: 1–2 everyday example sentences, with the word highlighted in each; read the English sentence with an English voice, then explain it once in Chinese.
+5. **Distinctions or collocations** (optional): the difference between a set of synonyms, or 2–3 common collocations.
+6. **Wrap-up**: show the word together with its Chinese meaning once more.
 
-**结构（60–120 秒）**
-1. **常见疑问**：用一个大多数人都有的疑问开场（"番茄和鸡蛋，到底先放谁？"），先给结论。
-2. **流程总览**：用"方框 + 箭头"画出全部步骤（一般 3–5 步），每步只写 2–4 个字，编号 ①②③。观众先看到全貌，再看细节。
-3. **按步骤展开**：每一步一个区域（通常就是一章），都讲清楚两件事：
-   - **做什么**：画出动作和状态的变化（切块、下锅、变色、起泡……）。
-   - **为什么**：一句话讲原理或目的（"先炒蛋，是为了让蛋保持嫩"）。只讲动作不讲原因，观众记不住。
-4. **常见错误**：把错误做法和正确做法左右对比，错的打叉 ✗，对的打勾 ✓。
-5. **口诀收尾**：把全部步骤压缩成一句好记的口诀，写在便签上。
+**Key points**
+- Phonetic transcription, part of speech and definition must be accurate; if unsure, say less rather than make things up.
+- Put English parts in their own lines in script.json with an English voice specified; English words embedded in Chinese sentences can be read by the Chinese voice, but the pronunciation is less natural than with an English voice.
 
-**固定的表现方式**
-- **时长**：`b.timer(x, y, { label: '2 分钟' })`。所有"要等多久 / 做多久"的信息都用它，小钟画完后分针会转一圈。
-- **火候 / 力度 / 难度这类"第几档"**：`b.level(x, y, { icon: 'flame', level: 2, label: '中火' })`；`icon` 可选 `flame`（火苗）、`bar`（柱状）、`star`（星星）。
-- **一堆材料**（切好的块、豆子、米粒……）：`b.pile(...)`；**撒一把**（葱花、盐、芝麻……）：`b.sprinkle(...)`。
-- **步骤编号**：流程图和每个步骤区域的标题都用同一套编号 ①②③，颜色一致。
-- **状态变化**（生 → 熟、液体 → 凝固）：同一个位置先画"之前"，再用 `transform` 或擦掉重画成"之后"，旁边用箭头标出变化。
+---
 
-## G. 新闻解读 / 数据干货：一件事的来龙去脉，或一组数字背后的原因
-例子："鸡蛋为什么突然涨价""延迟退休到底怎么算""为什么年轻人不爱买房了""一生要花多少时间在手机上"
+## D. Concept explainer: what is...?
+Examples: "What is compound interest?" "What is entropy?" "What is the attention mechanism?"
 
-**第 0 步：先把事实和数字核实清楚（必须做）**
-1. 每个数字、日期、政策条款都要有来源：记下**来源、发布日期、统计口径**，写进 `brief.md`。
-2. 找不到可靠来源的数字不要用；只是为了演示的数据，画面上必须标"示意数据"。
-3. 区分**事实**和**解读**：旁白里说清楚哪些是公开数据、哪些是分析和推测（"一般认为""可能是因为"）。
-4. 涉及时效的内容，在画面上写明数据截至的时间。
+**Structure**: one-sentence definition → one concrete example → break down the components / process → common misconceptions → one-sentence summary.
+Use "arrow + box" flowcharts for complex processes; two columns (a T-chart) for comparisons; a coordinate system with curves for things that change over time.
 
-**结构（60–120 秒）**
-1. **一个数字 / 一个变化**开场：大号数字或一张对比图（"三个月，涨了三成"）。
-2. **拆原因**：一般 2–4 个，编号并列，每个原因一个图形 + 一句话。
-3. **影响 / 和你有什么关系**：落到观众自己身上。
-4. **接下来会怎样**：有依据的判断，并说明不确定性。
-5. **一句话总结**。
+---
 
-**要点**
-- 图表要诚实：纵轴从 0 开始，不截断、不夸大；单位、时间范围写清楚。
-- 语气克制，不用"震惊""暴涨"这类情绪化的词。
-- 推荐风格：`riso` 的 `news` 配色；配乐用 `calm`。
+## E. Allusion / historical story: the full story behind an idiom, allusion or historical event
+Examples: "Xiao He chases Han Xin by moonlight", "armchair strategy" (Zhao Kuo's idiom), "breaking the cauldrons and sinking the boats", "Copernicus and heliocentrism"
 
-## 通用：画面风格
-每种模式都能用任何风格，没指定时按题材推荐（详见 SKILL.md 的"选风格"）：
-- A 现象、D 概念：理科推导多的用 `whiteboard`；生活化、心理、社会类用 `riso`（`lively` / `mind` / `nature` 等配色）。
-- B 题目：`whiteboard`。
-- C 单词：两种都可以，`riso` 更活泼。
-- E 典故 / 历史故事：`whiteboard`（古代题材不适合 `riso`）。
-- F 做法 / 教程：`whiteboard`，或 `riso` 的 `food` 配色。
-- G 新闻解读 / 数据干货：`riso` 的 `news` 配色。
+**Step 0: get the historical facts straight first (mandatory)**
+1. Find the **original source text** (e.g. a chapter of the *Records of the Grand Historian*) and organize the characters, dates, places and key original quotes into `brief.md`.
+2. Separate **historical fact** from **later embellishment** (plot added by operas, novels, folk legends); the video must make clear which parts were added later.
+3. If unsure about years, official titles or relationships between people, verify them or leave them out; **never make things up**.
 
-## 通用：章节
-上面每种结构的"大段"就是章节（例如现象科普：提出问题 / 直觉 / 原理 / 推论）。
-- 在每章第一句上写 `"chapter"`；3–6 章，标题 2–6 个字，像目录一样让观众一眼看懂"讲到哪了"。
-- 30 秒以内的短视频可以不分章节。
+**Structure (1.5–3 minutes)**
+1. **Hook**: write the allusion's name; pose the question through a surprising conflict ("Why would the chancellor himself chase after a minor official?").
+2. **Background**: the time (a point on a timeline), the big picture (a minimal map or comparison of powers), the main characters entering.
+3. **Cause → development → climax**: tell it in chronological order; the climax is usually a dialogue or a decision, and **the most powerful line from the original quotes** (e.g. "peerless among the state's men") is written large.
+4. **Outcome**: what the event led to (extend the timeline forward).
+5. **Meaning**: what the allusion is used to mean today; bring in related idioms / sayings if any.
+6. **Callback**: return to the opening conflict and close with one sentence.
 
-## 通用：配乐
-`script.json` 的 `"bgm"` 按模式选：A 现象、D 概念 → `bright`；B 题目、G 新闻解读 → `calm`；C 单词、F 做法 → `playful`；E 典故 / 历史 → `history`。
-内容情绪和模式不一致时按情绪选（比如一个轻松的历史趣闻也可以用 `playful`）。配乐由代码合成，详见 SKILL.md。
+**Key points**
+- Represent people with characters (`references/characters.md`), each with an accent color; **the person's name, lines and related arrows all use their color**.
+- **With more than 3 people, color by faction, not by person** (the whiteboard has at most 3 ink colors): people in the same faction share a color (e.g. Chu camp blue, Han camp red),
+  and one color is reserved for the "meaning of the allusion / idiom". People in the same faction are distinguished by silhouette (guan, hairstyle, beard) and the name above their heads. When there are no clear factions, color only the protagonist and the antagonist and draw everyone else in black.
+- Write dialogue as chat bubbles on the left and right: one speaker on each side, only keywords for each line; the character `say`s the corresponding span while speaking.
+- Relay lines in the narration conversationally; don't read long passages of classical Chinese; famous phrases from the original (around four characters) can be written on the whiteboard as-is.
+- When there are many events, string them together with one continuous timeline.
 
-## 通用：旁白写作
-- 中文 edge-tts 语速约每秒 4–5 个字。60 秒 ≈ 250–300 字。
-- 每句 8–30 个字，一句一个意思。句子太长，字幕和画面都不好配合。
-- 像跟朋友聊天，多用"你""我们"，少用书面语；可以设问。
-- 句子的 id 起有意义的名字（`hook`、`why1`、`step3`），写画面代码时好找。
-- 需要让画面"喘口气"的地方加停顿：`"pause_after": 0.8`，或者单独一行 `{"id": "beat1", "silence": 1.2}`。
+---
+
+## F. How-to / tutorial: how to do something
+Examples: "How to make tomato and egg stir-fry", "How to tie a tie", "How to patch a bike tire", "How to make a pivot table in Excel"
+
+**Step 0: get the steps exactly right first (mandatory)**
+1. Organize the full steps and the key parameters of each step (time, temperature, heat level, quantity, force) into `brief.md`.
+2. Identify **the 1–2 points that are easiest to get wrong**, and **why the order can't be changed**. These are where the video's value lies; reading out a recipe is pointless.
+3. For anything involving safety (knives, open flames, hot oil, electricity), give a separate warning.
+
+**Structure (60–120 seconds)**
+1. **Common question**: open with a question most people have ("Tomatoes or eggs — which goes in first?") and give the conclusion first.
+2. **Process overview**: draw all the steps with "box + arrow" (usually 3–5 steps), 2–4 characters per step, numbered ①②③. Viewers see the whole picture first, then the details.
+3. **Step-by-step**: one region per step (usually one chapter), each making two things clear:
+   - **What to do**: draw the actions and the state changes (cutting into chunks, into the pan, changing color, bubbling...).
+   - **Why**: one sentence on the principle or purpose ("Scramble the eggs first so they stay tender"). Actions without reasons don't stick.
+4. **Common mistakes**: compare the wrong way and the right way side by side, with a cross ✗ on the wrong one and a check ✓ on the right one.
+5. **Mnemonic wrap-up**: compress all the steps into one catchy mnemonic, written on a sticky note.
+
+**Standard ways to show things**
+- **Duration**: `b.timer(x, y, { label: '2 min' })`. Use it for every "how long to wait / how long to do it"; after the small clock is drawn, the minute hand makes one full turn.
+- **"Which level" things such as heat / force / difficulty**: `b.level(x, y, { icon: 'flame', level: 2, label: 'medium heat' })`; `icon` options are `flame`, `bar` (bars) and `star`.
+- **A pile of ingredients** (chopped chunks, beans, rice grains...): `b.pile(...)`; **a sprinkle** (scallions, salt, sesame...): `b.sprinkle(...)`.
+- **Step numbers**: the flowchart and every step region's title use the same ①②③ numbering, in the same colors.
+- **State changes** (raw → cooked, liquid → solid): at the same position, draw "before" first, then use `transform` or erase and redraw it as "after", with an arrow beside it marking the change.
+
+## G. News explainer / data-driven explainer: the story behind an event, or the reasons behind a set of numbers
+Examples: "Why did egg prices suddenly rise?", "How is delayed retirement actually calculated?", "Why don't young people buy homes anymore?", "How much of your life is spent on your phone?"
+
+**Step 0: verify facts and numbers first (mandatory)**
+1. Every number, date and policy clause needs a source: record the **source, publication date and statistical basis** in `brief.md`.
+2. Don't use numbers without a reliable source; data used purely for demonstration must be labeled "illustrative data" on screen.
+3. Separate **fact** from **interpretation**: the narration must make clear what is public data and what is analysis and speculation ("it is generally believed", "possibly because").
+4. For time-sensitive content, state on screen the date the data is current to.
+
+**Structure (60–120 seconds)**
+1. Open with **one number / one change**: a large number or a comparison chart ("Up 30% in three months").
+2. **Break down the causes**: usually 2–4, numbered side by side, each with one graphic + one sentence.
+3. **Impact / what it means for you**: bring it down to the viewer's own life.
+4. **What happens next**: a well-founded judgment, with the uncertainty stated.
+5. **One-sentence summary**.
+
+**Key points**
+- Charts must be honest: y-axis starts at 0, no truncation, no exaggeration; state units and time ranges clearly.
+- Keep the tone restrained; avoid emotional words like "shocking" or "skyrocketing".
+- Recommended style: `riso` with the `news` palette; music: `calm`.
+
+## General: visual style
+Every mode can use any style; when none is specified, recommend by topic (see "Pick a style" in SKILL.md):
+- A phenomenon, D concept: `whiteboard` for science with heavy derivation; `riso` for everyday, psychology and social topics (palettes such as `lively` / `mind` / `nature`).
+- B problem: `whiteboard`.
+- C word: either works; `riso` is livelier.
+- E allusion / historical story: `whiteboard` (ancient topics don't suit `riso`).
+- F how-to / tutorial: `whiteboard`, or `riso` with the `food` palette.
+- G news explainer / data-driven: `riso` with the `news` palette.
+
+## General: chapters
+The "major sections" of each structure above are the chapters (e.g. phenomenon explainer: the question / intuition / mechanism / consequence).
+- Put `"chapter"` on the first line of each chapter; 3–6 chapters, titles of 2–6 Chinese characters (a few words), so viewers can see at a glance "where we are", like a table of contents.
+- Short videos under 30 seconds can skip chapters.
+
+## General: background music
+Choose `"bgm"` in `script.json` by mode: A phenomenon, D concept → `bright`; B problem, G news explainer → `calm`; C word, F how-to → `playful`; E allusion / history → `history`.
+When the mood of the content doesn't match the mode, choose by mood (e.g. a light-hearted historical anecdote can also use `playful`). The music is synthesized in code; see SKILL.md.
+
+## General: writing narration
+- Chinese edge-tts speaks about 4–5 characters per second. 60 seconds ≈ 250–300 characters.
+- 8–30 characters per line, one idea per line. If lines are too long, captions and visuals are hard to sync.
+- Talk like chatting with a friend: use "you" and "we" a lot, avoid formal written language; rhetorical questions are fine.
+- Give lines meaningful ids (`hook`, `why1`, `step3`) so they are easy to find when writing the drawing code.
+- Where the visuals need "a breather", add a pause: `"pause_after": 0.8`, or a separate line `{"id": "beat1", "silence": 1.2}`.

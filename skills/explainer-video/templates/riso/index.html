@@ -19,15 +19,15 @@
 EV.composition({
   audio: 'audio/narration.m4a',
   build: async ({ T }) => {
-    // palette：lively（活泼）/ news（报刊）/ food / tech / mind / nature，见 styles/riso/STYLE.md
+    // palette: lively / news (newspaper) / food / tech / mind / nature; see styles/riso/STYLE.md
     const b = RISO.board({ T, palette: 'lively', seed: '__SLUG__' });
 
-    // ===== 封面 =====
-    const cover = b.cover({ title: '在这里写{accent:标题}', kicker: '栏目名' });
+    // ===== Cover =====
+    const cover = b.cover({ title: 'Write the {accent:title} here', kicker: 'Section name' });
 
-    // ===== 第 1 页 =====
+    // ===== Page 1 =====
     b.page(cover.hold);
-    b.title('在这里写开场问题', { x: 110, y: 200 });
+    b.title('Write the opening question here', { x: 110, y: 200 });
 
     return b;
   },

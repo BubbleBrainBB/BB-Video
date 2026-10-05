@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// bgm.mjs：用代码合成背景音乐（不依赖任何音乐文件或库）。
-// 音乐按时间轴编排：封面时轻轻起音；每一章从新的乐句开始，换一套和弦走向和琶音；
-// 讲完后回到主和弦收尾、淡出。有人说话时音乐自动压低（按逐句时间），停顿和转场时抬起来。
-// 音量按旁白的响度自动匹配。
+// bgm.mjs: synthesizes background music in code (no music files or libraries needed).
+// The music is arranged along the timeline: it enters softly on the cover; each chapter starts a new phrase with a different chord progression and arpeggio;
+// after the narration ends it returns to the tonic chord, resolves and fades out. The music ducks automatically while someone is speaking (per-line timing) and comes back up during pauses and transitions.
+// The volume is matched automatically to the loudness of the narration.
 //
-// 在 render.mjs 里自动调用。单独试听：
-//   node bgm.mjs <项目目录>                  按 script.json 的 bgm 生成整条配乐 → audio/bgm.wav
-//   node bgm.mjs <项目目录> --demo          每种风格各 30 秒试听（不压低）→ review/bgm-<风格>.m4a
-//   node bgm.mjs <项目目录> --style history 临时换一种风格
+// Called automatically by render.mjs. To audition it on its own:
+//   node bgm.mjs <project dir>                  generate the full background music from bgm in script.json → audio/bgm.wav
+//   node bgm.mjs <project dir> --demo          a 30-second preview of each style (no ducking) → review/bgm-<style>.m4a
+//   node bgm.mjs <project dir> --style history switch to another style for this run
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,44 +15,44 @@ import { fileURLToPath } from 'node:url';
 
 const SR = 44100;
 
-// ---------- 风格 ----------
-// 和弦写成 [根音相对主音的半音数, 和弦类型]；每一章从 progs 里轮流取一套
+// ---------- styles ----------
+// Chords are written as [root in semitones above the tonic, chord type]; each chapter takes the next progression from progs in turn
 const CHORDS = { maj: [0, 4, 7], min: [0, 3, 7], maj7: [0, 4, 7, 11], min7: [0, 3, 7, 10], sus2: [0, 2, 7], add9: [0, 4, 7, 14], open: [0, 7, 14] };
 export const STYLES = {
-  // 现象 / 概念科普：温暖的铺底 + 马林巴琶音 + 很轻的 lo-fi 节拍
+  // Phenomenon / concept explainers: warm pad + marimba arpeggio + a very light lo-fi beat
   bright: {
-    name: '轻快科普', tempo: 86, key: 60, pad: 0.8, bass: 1, arp: 'marimba', rate: 2, drums: 'lofi', bell: true,
+    name: 'Light Science', tempo: 86, key: 60, pad: 0.8, bass: 1, arp: 'marimba', rate: 2, drums: 'lofi', bell: true,
     progs: [[[0, 'maj'], [7, 'maj'], [9, 'min'], [5, 'maj']], [[9, 'min'], [5, 'maj'], [0, 'maj'], [7, 'maj']], [[5, 'maj7'], [7, 'maj'], [4, 'min'], [9, 'min']], [[0, 'add9'], [9, 'min7'], [5, 'maj7'], [7, 'sus2']]],
     pats: [[0, 1, 2, 3, 2, 1, 2, 3], [0, 2, 1, 3, 0, 2, 1, 3], [0, null, 2, 1, 3, null, 2, 1], [3, 2, 1, 0, 1, 2, 3, 2]],
   },
-  // 题目讲解：只有慢铺底和稀疏的钢琴音，不打扰思考
+  // Problem walkthroughs: just a slow pad and sparse piano notes, so it doesn't get in the way of thinking
   calm: {
-    name: '安静专注', tempo: 64, key: 62, pad: 1, bass: 0.6, arp: 'piano', rate: 1, drums: null, bell: false,
+    name: 'Calm Focus', tempo: 64, key: 62, pad: 1, bass: 0.6, arp: 'piano', rate: 1, drums: null, bell: false,
     progs: [[[0, 'maj7'], [5, 'maj7']], [[9, 'min7'], [5, 'maj7'], [0, 'maj7'], [7, 'sus2']], [[2, 'min7'], [7, 'sus2'], [0, 'maj7'], [9, 'min7']]],
     pats: [[0, 2, 1, 3], [0, null, 2, null], [1, 3, 2, null], [0, 1, null, 2]],
   },
-  // 典故 / 历史：五声音阶（宫商角徵羽）+ 古筝式拨弦 + 低沉的鼓
+  // Classical allusions / history: pentatonic scale (gong, shang, jue, zhi, yu) + guzheng-style plucks + a deep drum
   history: {
-    name: '古风叙事', tempo: 72, key: 62, pad: 0.8, bass: 0.9, arp: 'zheng', rate: 2, drums: 'drum', bell: true, penta: true,
+    name: 'Ancient Tale', tempo: 72, key: 62, pad: 0.8, bass: 0.9, arp: 'zheng', rate: 2, drums: 'drum', bell: true, penta: true,
     progs: [[[0, 'open'], [9, 'min'], [2, 'open'], [7, 'open']], [[9, 'min'], [7, 'open'], [0, 'open'], [0, 'open']], [[2, 'open'], [9, 'min'], [7, 'open'], [0, 'open']]],
     pats: [[0, null, 2, 1, null, 3, 2, null], [0, 1, 2, 4, 3, null, 2, 1], [4, 3, 2, null, 1, 2, 0, null], [0, 2, null, 3, 4, null, 3, 2]],
   },
-  // 单词 / 做法教程：明亮的拨弦，节奏稍快，沙锤
+  // Vocabulary / how-to tutorials: bright plucks, slightly faster tempo, shaker
   playful: {
-    name: '明快活泼', tempo: 104, key: 65, pad: 0.6, bass: 1, arp: 'pluck', rate: 2, drums: 'shaker', bell: true,
+    name: 'Bright Playful', tempo: 104, key: 65, pad: 0.6, bass: 1, arp: 'pluck', rate: 2, drums: 'shaker', bell: true,
     progs: [[[0, 'maj'], [5, 'maj'], [7, 'maj'], [5, 'maj']], [[0, 'maj'], [9, 'min'], [5, 'maj'], [7, 'maj']], [[5, 'maj'], [0, 'maj'], [7, 'maj'], [0, 'maj']]],
     pats: [[0, 1, 2, 1, 3, 1, 2, 1], [0, 2, 3, 2, 1, 2, 3, 2], [0, null, 1, 2, null, 2, 3, 2]],
   },
 };
 const PENTA = [0, 2, 4, 7, 9];
 
-// ---------- 小工具 ----------
+// ---------- helpers ----------
 function rng(seed) {
   let a = typeof seed === 'number' ? seed : [...String(seed)].reduce((h, c) => (Math.imul(h ^ c.charCodeAt(0), 2654435761) >>> 0), 7);
   return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
-// 柔和的锯齿波表（只保留低次谐波）
+// Soft sawtooth wavetable (low harmonics only)
 const TABLE = (() => {
   const n = 4096, t = new Float32Array(n);
   for (let i = 0; i < n; i++) { let v = 0; for (let k = 1; k <= 8; k++) v += Math.sin((2 * Math.PI * k * i) / n) / Math.pow(k, 1.6); t[i] = v * 0.7; }
@@ -63,9 +63,9 @@ class Mix {
   constructor(dur) {
     this.n = Math.ceil(dur * SR);
     this.L = new Float32Array(this.n); this.R = new Float32Array(this.n);
-    this.wL = new Float32Array(this.n); this.wR = new Float32Array(this.n); // 混响发送
+    this.wL = new Float32Array(this.n); this.wR = new Float32Array(this.n); // reverb send
   }
-  // 把一个单声道音符 buf 放到 t 秒处；pan -1..1；send 为混响量
+  // Place a mono note buf at t seconds; pan -1..1; send is the reverb amount
   put(buf, t, gain, pan = 0, send = 0.2) {
     const s0 = Math.round(t * SR), gl = gain * Math.cos(((pan + 1) * Math.PI) / 4), gr = gain * Math.sin(((pan + 1) * Math.PI) / 4);
     const end = Math.min(buf.length, this.n - s0);
@@ -77,7 +77,7 @@ class Mix {
   }
 }
 
-// ---------- 乐器（每个返回一段单声道 Float32Array） ----------
+// ---------- instruments (each returns a mono Float32Array) ----------
 const env = (i, a, len, rel) => { const t = i / SR; return Math.min(1, t / a) * (t > len ? Math.max(0, 1 - (t - len) / rel) : 1); };
 function pad(f, len, r) {
   const a = 0.9, rel = 1.4, n = Math.ceil((len + rel) * SR), out = new Float32Array(n);
@@ -86,7 +86,7 @@ function pad(f, len, r) {
   for (let i = 0; i < n; i++) {
     let v = 0;
     for (let k = 0; k < 2; k++) { const p = (ph[k] + (f * det[k] * i) / SR) % 1; v += TABLE[(p * 4096) | 0]; }
-    lp += (v - lp) * 0.08; // 低通：让铺底更"软"
+    lp += (v - lp) * 0.08; // low-pass: makes the pad "softer"
     out[i] = lp * env(i, a, len, rel) * 0.5;
   }
   return out;
@@ -106,7 +106,7 @@ function piano(f) {
   for (let i = 0; i < n; i++) { const t = i / SR; let v = 0; for (let k = 1; k <= 6; k++) v += (Math.sin(2 * Math.PI * f * k * 1.0007 * t) / Math.pow(k, 1.4)) * Math.exp(-t * (0.9 + k * 0.7)); out[i] = v * Math.min(1, t / 0.004) * 0.6; }
   return out;
 }
-// 拨弦（Karplus-Strong）：bright 越大越亮，decay 越接近 1 余音越长
+// Plucked string (Karplus-Strong): higher bright = brighter; decay closer to 1 = longer ring
 function pluck(f, r, bright = 0.6, decay = 0.996, len = 2) {
   const N = Math.max(2, Math.round(SR / f)), buf = new Float32Array(N), n = Math.ceil(len * SR), out = new Float32Array(n);
   let lp = 0;
@@ -136,7 +136,7 @@ function noise(r, len, dec, hp = 0.5, lpK = 1) {
   return out;
 }
 
-// ---------- 混响（Schroeder：4 个梳状 + 2 个全通） ----------
+// ---------- reverb (Schroeder: 4 combs + 2 all-passes) ----------
 function reverb(inp, offset) {
   const out = new Float32Array(inp.length);
   for (const ms of [29.7, 37.1, 41.1, 43.7]) {
@@ -152,7 +152,7 @@ function reverb(inp, offset) {
   return out;
 }
 
-// ---------- 编曲 ----------
+// ---------- arrangement ----------
 // o: { duration, lines: [{start,end,silence}], chapters: [{start,end}], style, seed, duck: true }
 export function compose(o) {
   const S = STYLES[o.style] || STYLES.bright;
@@ -162,21 +162,21 @@ export function compose(o) {
   const spoken = (o.lines || []).filter((l) => !l.silence && l.end > l.start);
   const first = spoken.length ? spoken[0].start : Math.min(2, dur * 0.1);
   const last = spoken.length ? spoken[spoken.length - 1].end : dur - 3;
-  // 段落：开场（封面）→ 每一章 → 收尾
+  // Sections: intro (cover) → each chapter → outro
   const cuts = [...new Set([first, ...(o.chapters || []).map((c) => c.start).filter((t) => t > first + 2 && t < last - 2)])].sort((a, b) => a - b);
   const sections = cuts.map((t0, i) => ({ t0, t1: i + 1 < cuts.length ? cuts[i + 1] : last + 0.4, idx: i }));
   const outroAt = last + 0.4;
   const scale = S.penta ? PENTA : [0, 2, 4, 5, 7, 9, 11];
 
   const voice = (root, type) => CHORDS[type].map((s) => root + s);
-  // 开场：主和弦铺底淡入 + 一声铃
+  // Intro: tonic-chord pad fades in + one bell
   if (first > 0.5) {
     for (const m of voice(0, S.progs[0][0][1])) mix.put(pad(hz(key - 12 + m), first + 0.2, r), 0, 0.10 * S.pad, (r() - 0.5) * 0.6, 0.35);
     if (S.bell) mix.put(bell(hz(key + 12 + scale[scale.length > 5 ? 4 : 3])), Math.min(0.3, first / 3), 0.16, 0.25, 0.5);
   }
   for (const sec of sections) {
     const prog = S.progs[sec.idx % S.progs.length], pat = S.pats[(sec.idx * 3 + 1) % S.pats.length];
-    // 换章：高音区一个三音小动机，提示"新的一段开始了"
+    // Chapter change: a short three-note motif in the high register, signaling "a new section starts here"
     if (S.bell && sec.idx > 0) {
       const top = key + 12, motif = [scale[scale.length - 1] - 12, scale[2], scale[0] + 12].map((d) => top + d);
       if (sec.idx % 2) motif.reverse();
@@ -186,15 +186,15 @@ export function compose(o) {
     for (let t = sec.t0; t < sec.t1 - 0.05; t += bar, k++) {
       const [root, type] = prog[k % prog.length], len = Math.min(bar, sec.t1 - t);
       const tones = voice(root, type);
-      // 铺底
+      // pad
       for (const m of tones) mix.put(pad(hz(key - 12 + m), len, r), t, 0.085 * S.pad, (r() - 0.5) * 0.7, 0.35);
-      // 低音
+      // bass
       if (S.bass) {
         const bm = key - 24 + (root > 6 ? root - 12 : root);
         mix.put(bass(hz(bm), Math.min(len, bar * 0.5) - 0.05), t, 0.28 * S.bass, 0, 0);
         if (S.drums && len > bar * 0.6) mix.put(bass(hz(bm), Math.min(len - bar * 0.5, bar * 0.5) - 0.05), t + bar * 0.5, 0.22 * S.bass, 0, 0);
       }
-      // 琶音：和弦音在一个半八度里展开；五声音阶风格混入音阶音
+      // Arpeggio: chord tones spread over an octave and a half; the pentatonic style mixes in scale tones
       const pool = [...new Set([...tones, ...(S.penta ? PENTA.filter((d) => tones.some((x) => Math.abs(((x - d) % 12 + 12) % 12) <= 2)) : [])])].map((x) => ((x % 12) + 12) % 12).sort((a, b) => a - b);
       const reg = [...pool, ...pool.map((x) => x + 12)].map((x) => key + x);
       const step = beat / S.rate, steps = Math.floor(len / step + 1e-6);
@@ -208,7 +208,7 @@ export function compose(o) {
         else if (S.arp === 'zheng') mix.put(pluck(hz(m), r, 0.55, 0.9975, 2.4), at, 0.22 * vel, pan, 0.4);
         else mix.put(pluck(hz(m), r, 0.8, 0.994, 1.2), at, 0.2 * vel, pan, 0.25);
       }
-      // 节拍（每章第一小节不打，先"喘口气"）
+      // Beat (not played in the first bar of each chapter, to "take a breath" first)
       if (S.drums && k > 0) {
         for (let b = 0; b < 4; b++) {
           const tb = t + b * beat;
@@ -229,23 +229,23 @@ export function compose(o) {
       }
     }
   }
-  // 收尾：回到主和弦，长音 + 一声铃，然后淡出
+  // Outro: back to the tonic chord, a long note + one bell, then fade out
   const tail = Math.max(1, dur - outroAt);
   for (const m of voice(0, S.progs[0][0][1])) mix.put(pad(hz(key - 12 + m), tail, r), outroAt, 0.10 * S.pad, (r() - 0.5) * 0.7, 0.4);
   if (S.bass) mix.put(bass(hz(key - 24), Math.min(tail, 3)), outroAt, 0.22 * S.bass, 0, 0);
   if (S.bell) [scale[scale.length > 5 ? 4 : 3], scale[2], 0].forEach((d, i) => mix.put(bell(hz(key + 12 + d)), outroAt + 0.2 + i * beat * 0.75, 0.13, 0.25, 0.55));
 
-  // 混响
+  // reverb
   const rl = reverb(mix.wL, 0), rr = reverb(mix.wR, 23);
   const L = mix.L, R = mix.R;
   for (let i = 0; i < mix.n; i++) { L[i] += rl[i] * 0.9; R[i] += rr[i] * 0.9; }
-  // 响度：以旁白为参照，停顿时比人声低 o.gapDb（默认 11）分贝，说话时再压低 o.duckDb（默认 8）分贝
+  // Loudness: relative to the narration, o.gapDb (default 11) dB below the voice during pauses, ducked a further o.duckDb (default 8) dB while speaking
   let sum = 0, cnt = 0;
   for (let i = Math.round(first * SR); i < Math.min(mix.n, Math.round(last * SR)); i += 7) { sum += L[i] * L[i] + R[i] * R[i]; cnt += 2; }
   const rms = Math.sqrt(sum / Math.max(1, cnt)) || 1e-6;
   const target = (o.voiceRms ?? 0.07) * Math.pow(10, -(o.gapDb ?? 11) / 20) * (o.volume ?? 1);
   const g = target / rms, duck = Math.pow(10, -(o.duckDb ?? 8) / 20);
-  // 控制包络：每 10 毫秒一个点，压低 0.15 秒、恢复 0.5 秒
+  // Control envelope: one point every 10 ms; duck over 0.15 s, recover over 0.5 s
   const cr = 100, nc = Math.ceil(dur * cr), want = new Float32Array(nc).fill(1);
   if (o.duck !== false) for (const l of spoken) for (let c = Math.max(0, Math.floor((l.start - 0.12) * cr)); c < Math.min(nc, Math.ceil((l.end + 0.2) * cr)); c++) want[c] = duck;
   const gainC = new Float32Array(nc);
@@ -255,7 +255,7 @@ export function compose(o) {
   for (let i = 0; i < mix.n; i++) {
     const t = i / SR, c = Math.min(nc - 1, (t * cr) | 0);
     let v = g * gainC[c] * Math.min(1, t / fadeIn) * Math.min(1, (dur - t) / fadeOut);
-    L[i] = Math.tanh(L[i] * v * 1.5) / 1.5; R[i] = Math.tanh(R[i] * v * 1.5) / 1.5; // 软限幅
+    L[i] = Math.tanh(L[i] * v * 1.5) / 1.5; R[i] = Math.tanh(R[i] * v * 1.5) / 1.5; // soft clipping
   }
   return { L, R, style: S.name };
 }
@@ -272,7 +272,7 @@ export function writeWav(file, L, R) {
   fs.writeFileSync(file, buf);
 }
 
-// 旁白说话部分的平均响度（RMS），用来给配乐定音量
+// Average loudness (RMS) of the spoken parts of the narration, used to set the music volume
 export function voiceRms(narration, lines) {
   const p = spawnSync('ffmpeg', ['-v', 'error', '-i', narration, '-f', 's16le', '-ac', '1', '-ar', '8000', '-'], { maxBuffer: 1 << 30 });
   if (p.status !== 0 || !p.stdout.length) return 0.07;
@@ -282,16 +282,16 @@ export function voiceRms(narration, lines) {
   return c ? Math.sqrt(s / c) : 0.07;
 }
 
-// script.json 的 bgm 字段：缺省 = 'bright'；false = 不要配乐；字符串 = 风格名；对象 = { style, volume, key, tempo, seed }
+// The bgm field in script.json: omitted = 'bright'; false = no music; string = style name; object = { style, volume, key, tempo, seed }
 export function bgmConfig(script) {
   const b = script.bgm;
   if (b === false || b === 'none') return null;
   const c = typeof b === 'object' && b ? { ...b } : { style: b || 'bright' };
-  if (!STYLES[c.style]) throw new Error(`没有这种配乐风格："${c.style}"，可用：${Object.keys(STYLES).join('、')}`);
+  if (!STYLES[c.style]) throw new Error(`No such background music style: "${c.style}"; available: ${Object.keys(STYLES).join(', ')}`);
   return c;
 }
 
-// 为项目生成整条配乐（render.mjs 调用）；返回 wav 路径，或 null（不要配乐）
+// Generate the full background music for a project (called by render.mjs); returns the wav path, or null (no music)
 export function makeProjectBgm(proj, duration, override = {}) {
   const script = JSON.parse(fs.readFileSync(path.join(proj, 'script.json'), 'utf8'));
   const cfg = bgmConfig({ ...script, ...(override.style ? { bgm: { ...(typeof script.bgm === 'object' ? script.bgm : {}), style: override.style } } : {}) });
@@ -305,13 +305,13 @@ export function makeProjectBgm(proj, duration, override = {}) {
   return { file: out, style: cfg.style, name: style };
 }
 
-// ---------- 命令行 ----------
+// ---------- command line ----------
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   const args = process.argv.slice(2);
   const proj = args.find((a) => !a.startsWith('--'));
   const opt = (k) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : undefined; };
-  if (!proj) { console.error('用法：node bgm.mjs <项目目录> [--style 风格] [--demo]'); process.exit(1); }
+  if (!proj) { console.error('Usage: node bgm.mjs <project dir> [--style <style>] [--demo]'); process.exit(1); }
   const dir = path.resolve(proj);
   if (args.includes('--demo')) {
     fs.mkdirSync(path.join(dir, 'review'), { recursive: true });
@@ -322,12 +322,12 @@ if (isMain) {
       writeWav(wav, L, R);
       spawnSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-c:a', 'aac', '-b:a', '192k', m4a]);
       fs.rmSync(wav);
-      console.log(`${s.name}（${k}）：${m4a}`);
+      console.log(`${s.name} (${k}): ${m4a}`);
     }
   } else {
     const tl = JSON.parse(fs.readFileSync(path.join(dir, 'timeline.json'), 'utf8'));
     const t0 = Date.now();
     const r = makeProjectBgm(dir, Number(opt('seconds') || tl.duration), { style: opt('style') });
-    console.log(r ? `配乐：${r.name}（${r.style}）→ ${r.file}（用时 ${((Date.now() - t0) / 1000).toFixed(1)} 秒）` : 'script.json 里 bgm 为 false，不生成配乐');
+    console.log(r ? `Background music: ${r.name} (${r.style}) → ${r.file} (took ${((Date.now() - t0) / 1000).toFixed(1)} s)` : 'bgm is false in script.json; no background music generated');
   }
 }

@@ -1,10 +1,10 @@
-// character.js：Notion 风格的参数化角色（黑白粗墨线 + 一个强调色）
-// 角色 = 一份"规格"（脸型、发型、胡子、眼镜、帽子、衣服、年龄……）+ 可选的自定义部件。
-// 所有角色共用同一套骨架、表情参数和动作；不针对任何具体人物写代码。
+// character.js: Notion-style parametric characters (thick black ink lines + one accent color)
+// Character = a "spec" (face shape, hairstyle, facial hair, glasses, hat, outfit, age...) + optional custom parts.
+// All characters share the same skeleton, expression parameters and actions; no code is written for any specific person.
 //
-// 局部坐标系（画自定义部件时用）：脸的中心为 (0,0)，脸宽约 140，
-// 头顶约 y=-100，下巴约 y=95，眼睛在 (±26,-2)，嘴在 (0,56)，脖子根 y≈128，
-// 胸像底边 y=230，左右肩膀外缘 x=±150。
+// Local coordinate system (used when drawing custom parts): the face center is (0,0), face width about 140,
+// top of head about y=-100, chin about y=95, eyes at (±26,-2), mouth at (0,56), base of neck y≈128,
+// bottom edge of the bust y=230, outer edges of the shoulders x=±150.
 (function () {
   const { clamp, lerp, ease, rng, progress } = window.EV;
   const { Item, svgEl, col, smoothD, samplePathD } = window.WB._;
@@ -12,20 +12,20 @@
   const INK = '#111111';
   const STROKE = 5;
 
-  // ---------- 规格默认值 ----------
+  // ---------- Spec defaults ----------
   const DEFAULT = {
     face: 'oval',          // oval | round | long | square | heart
     age: 'adult',          // kid | adult | elder
     skin: '#FFFFFF',
     nose: 'hook',          // hook | small | round | long | button
     hair: { style: 'side-part', length: 'short', texture: 'straight', color: 'black' },
-    facialHair: [],        // mustache | walrus | beard | goatee | stubble | wisp（细长的三绺须）
+    facialHair: [],        // mustache | walrus | beard | goatee | stubble | wisp (long thin three-strand beard)
     glasses: 'none',       // none | round | square | sunglasses
-    hat: 'none',           // none | top-hat | cap | beret | bow | headband | guan（发髻上的小冠）| mian（冕旒，帝王）
+    hat: 'none',           // none | top-hat | cap | beret | bow | headband | guan (small crown on a topknot) | mian (beaded crown, emperor)
     earrings: false,
-    outfit: { style: 'tshirt', color: 'white' }, // tshirt | vneck | collar | suit | cravat | turtleneck | hoodie | labcoat | scoop | robe（交领长袍，trim 为领缘颜色）
+    outfit: { style: 'tshirt', color: 'white' }, // tshirt | vneck | collar | suit | cravat | turtleneck | hoodie | labcoat | scoop | robe (cross-collar long robe; trim is the collar-edge color)
     accent: '#D6342C',
-    parts: [],             // 自定义部件 [{ layer, d, fill, stroke, width }]
+    parts: [],             // custom parts [{ layer, d, fill, stroke, width }]
   };
   const HAIR_COLORS = { black: '#141414', brown: '#5B3A29', gray: '#BDBDBD', white: '#FFFFFF', blonde: '#EACB7A', red: '#B5533C' };
 
@@ -37,7 +37,7 @@
     heart: { W: 72, top: -98, jawW: 40, jawY: 64, chinY: 98, chinR: 8 },
   };
 
-  // ---------- 表情：全部是数值参数，可以互相插值 ----------
+  // ---------- Expressions: all numeric parameters, so they can be interpolated ----------
   const NEUTRAL = { eyeOpen: 1, eyeSize: 1, lookX: 0, lookY: 0, happyEyes: 0, browL: 0, browR: 0, browTilt: 0, mouthCurve: 0.25, mouthOpen: 0, mouthWidth: 1, mouthShift: 0, tilt: 0 };
   const EXPRESSIONS = {
     neutral: {},
@@ -53,10 +53,10 @@
     excited: { eyeSize: 1.2, browL: 0.8, browR: 0.8, mouthCurve: 1, mouthOpen: 0.6, mouthWidth: 1.2, tilt: 2 },
   };
 
-  // ---------- 几何工具 ----------
+  // ---------- Geometry helpers ----------
   const ptsOf = (d) => samplePathD(d)[0].pts;
 
-  // 沿外缘法线方向加纹理（直、波浪、卷、乱、小卷）
+  // Add texture along the outer edge's normal (straight, wavy, curly, messy, coily)
   function texture(pts, kind, center, seed, scale = 1) {
     if (!kind || kind === 'straight') return pts;
     const r = rng(seed);
@@ -84,7 +84,7 @@
   const closedD = (pts) => smoothD(pts, true) + 'Z';
   const polyD = (pts) => 'M' + pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('L') + 'Z';
 
-  // 乱发 / 刺猬头：沿外缘做尖角（谷底贴着轮廓，尖端向外），返回稀疏点列，用折线连接
+  // Messy hair / spiky hair: make spikes along the outer edge (valleys on the outline, tips pointing out); returns a sparse point list joined as a polyline
   function spikes(pts, center, seed, scale = 1, period = 22) {
     const r = rng(seed);
     let s = 0;
@@ -112,13 +112,13 @@
     return out;
   }
 
-  // 椭圆上半部分：从左端点经过顶部到右端点，返回三次贝塞尔路径片段（不含 M）
+  // Upper half of an ellipse: from the left endpoint over the top to the right endpoint; returns a cubic Bézier path fragment (without M)
   function ellipseArc(cx, cy, rx, ry) {
     const k = 0.552;
     return `C${cx - rx},${cy - ry * k} ${cx - rx * k},${cy - ry} ${cx},${cy - ry} C${cx + rx * k},${cy - ry} ${cx + rx},${cy - ry * k} ${cx + rx},${cy}`;
   }
 
-  // ---------- 各部件的形状 ----------
+  // ---------- Shapes of each part ----------
   function faceD(F) {
     const { W, top, jawW, jawY, chinY, chinR } = F;
     return `M0,${top} C${W * 0.62},${top} ${W},${top * 0.55} ${W},-20 C${W},20 ${jawW + 8},${jawY - 18} ${jawW},${jawY} ` +
@@ -141,7 +141,7 @@
     button: 'M-5,24 C-5,32 7,32 7,24',
   };
 
-  // 发际线（前发的内缘），从右太阳穴画到左太阳穴
+  // Hairline (inner edge of the front hair), drawn from the right temple to the left temple
   function hairline(style, F) {
     const W = F.W + 6;
     switch (style) {
@@ -166,7 +166,7 @@
     const style = h.style;
     const afro = style === 'afro';
 
-    // 后发：长度决定下缘
+    // Back hair: length determines the lower edge
     const ends = { none: null, short: 8, medium: 80, shoulder: 140, long: 200 };
     const yEnd = afro ? 70 : ends[h.length] ?? null;
     if (yEnd !== null && style !== 'bald' && style !== 'receding') {
@@ -177,12 +177,12 @@
       if (!afro && tex === 'messy') add('back', polyD([...spikes(outer, [0, cy], seed, 1), ...bottom]));
       else add('back', closedD([...texture(outer, afro ? 'coily' : tex, [0, cy], seed, afro ? 1.2 : 1), ...bottom]));
     }
-    // 马尾
+    // Ponytail
     if (style === 'ponytail') {
       const W = F.W;
       add('back', closedD(texture(ptsOf(`M${W - 12},-46 C${W + 62},-40 ${W + 74},60 ${W + 40},130 C${W + 30},84 ${W + 18},30 ${W - 16},4`), tex === 'straight' ? 'wavy' : tex, [W + 20, 40], seed + 5, 0.7)));
     }
-    // 前发（发顶 + 发际线）
+    // Front hair (crown + hairline)
     if (style === 'receding') {
       for (const sgn of [1, -1]) {
         const W = F.W;
@@ -200,7 +200,7 @@
         ? polyD([...spikes(outer, [0, capY - 20], seed + 11, style === 'spiky' ? 1.5 : 1), ...inner.slice(1, -1)])
         : closedD([...texture(outer, ttype, [0, capY - 20], seed + 11, afro ? 1.2 : 1), ...inner.slice(1, -1)]);
       add('front', capD, style === 'buzz' ? { fill: light ? fill : '#555555' } : {});
-      // 浅色头发加几根发丝线，增加质感
+      // Light-colored hair gets a few strand lines for texture
       if (light && style !== 'buzz') {
         const sl = style === 'middle-part' ? [`M-8,-70 C-24,-58 -40,-50 -52,-30`, `M8,-70 C24,-58 40,-50 52,-30`] : [`M-20,-74 C0,-70 24,-58 44,-34`, `M-34,-64 C-44,-56 -52,-46 -58,-30`];
         sl.forEach((d) => parts.front.push({ d, fill: 'none', stroke: INK, width: 3, clip: capD }));
@@ -229,7 +229,7 @@
         out.push({ d: dots.join(' '), fill: INK, width: 1.2 });
       }
       if (k === 'wisp') {
-        // 三绺须：两撇细长的八字胡 + 下巴一绺长须（古代文人、长者）
+        // Three-strand beard: two long thin drooping mustache strands + one long strand on the chin (ancient scholars, elders)
         out.push({ d: 'M-2,41 C-12,37 -26,39 -31,49 C-34,57 -34,66 -33,76 C-29,65 -28,55 -24,49 C-17,44 -8,45 -2,45 Z M2,41 C12,37 26,39 31,49 C34,57 34,66 33,76 C29,65 28,55 24,49 C17,44 8,45 2,45 Z', fill });
         out.push({ d: `M-13,${F.chinY - 12} C-16,${F.chinY + 26} -8,${F.chinY + 56} 0,${F.chinY + 80} C8,${F.chinY + 56} 16,${F.chinY + 26} 13,${F.chinY - 12} C6,${F.chinY - 6} -6,${F.chinY - 6} -13,${F.chinY - 12} Z`, fill });
       }
@@ -253,12 +253,12 @@
     if (kind === 'beret') return [{ d: `M-86,${t + 6} C-90,${t - 40} 60,${t - 56} 88,${t - 6} C70,${t + 14} -50,${t + 22} -86,${t + 6} Z M0,${t - 34} L4,${t - 52}`, fill: accent }];
     if (kind === 'bow') return [{ d: `M40,${t + 2} L78,${t - 22} L80,${t + 22} Z M40,${t + 2} L4,${t - 20} L2,${t + 24} Z`, fill: accent }, { d: `M34,${t - 6} a8,8 0 1,0 12,0 a8,8 0 1,0 -12,0 Z`, fill: accent }];
     if (kind === 'guan') return [
-      // 小冠：罩在头顶发髻上，一根横插的簪子
+      // Small crown: sits over the topknot, with a hairpin pushed through horizontally
       { d: `M-22,${t + 10} L-26,${t - 34} C-14,${t - 48} 14,${t - 48} 26,${t - 34} L22,${t + 10} Z`, fill: accent },
       { d: `M-46,${t - 16} L46,${t - 16}`, fill: 'none', width: 5 },
     ];
     if (kind === 'mian') {
-      // 冕旒：平顶的冕板，前后垂下成串的珠子
+      // Beaded crown (mian): a flat-topped board with strings of beads hanging front and back
       const beads = [];
       for (let x = -78; x <= 78; x += 26) beads.push(`M${x},${t - 30} L${x},${t + 18} M${x - 4},${t + 22} a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 Z`);
       return [
@@ -299,10 +299,10 @@
         add('M-26,128 L-50,172 L-6,226 M26,128 L50,172 L6,226', 'none', { width: 4 });
         add('M70,190 L108,190 L106,226 L72,226 Z M84,190 L84,172', 'none', { width: 3 }); break;
       case 'robe': {
-        // 交领右衽：两片领缘（trim，默认强调色）绕过后颈，在胸前交叉成 "y" 字，观众看的右襟压在上面
+        // Cross collar, right-over-left: two collar edges (trim, accent color by default) go around the back of the neck and cross on the chest in a "y" shape, with the viewer's right panel on top
         const trim = o.trim ? c(o.trim) : accent;
         add('M-30,126 L30,126 L0,168 Z', '#FFFFFF');
-        add('M-52,134 L-30,126 L0,162 L-17,176 Z', trim);  // 里襟：只露到外襟边缘
+        add('M-52,134 L-30,126 L0,162 L-17,176 Z', trim);  // inner panel: only visible up to the edge of the outer panel
         add('M52,134 L30,126 L-58,232 L-90,232 Z', trim);
         break;
       }
@@ -311,18 +311,18 @@
     return { body, det };
   }
 
-  // 手：食指沿 +x 方向
+  // Hand: index finger points along +x
   const HAND_D = 'M-22,-16 C-28,-4 -26,12 -18,17 L6,18 C14,18 15,10 13,6 C19,4 20,-2 17,-6 L46,-6 C53,-8 53,-17 46,-18 L2,-18 C-8,-21 -16,-20 -22,-16 Z';
   const KNUCKLE_D = 'M-2,-4 L13,-4 M-2,7 L12,7';
 
-  // ---------- 角色元素 ----------
+  // ---------- Character item ----------
   class Character extends Item {
     constructor(board, spec = {}, o = {}) {
       const root = svgEl('g', {}, o.hud ? board.hudSvg : o.layer === 'top' ? board.topSvg : board.inkSvg);
       super(board, o, root);
       const S = { ...DEFAULT, ...spec, hair: { ...DEFAULT.hair, ...(spec.hair || {}) }, outfit: { ...DEFAULT.outfit, ...(spec.outfit || {}) } };
       this.spec = S;
-      this.kind = '角色';
+      this.kind = 'character';
       const F = { ...(FACES[S.face] || FACES.oval) };
       if (S.age === 'kid') { F.top += 6; F.chinY -= 8; F.jawY -= 6; }
       this.F = F;
@@ -338,7 +338,7 @@
       const place = svgEl('g', { transform: `translate(${this.X},${this.Y - 230 * this.s}) scale(${this.s * this.flip},${this.s})` }, root);
       this.box = { x: this.X - 150 * this.s, y: this.Y - 400 * this.s, w: 300 * this.s, h: 400 * this.s };
 
-      // 图层（从后到前）
+      // Layers (back to front)
       this.gBack = svgEl('g', {}, place);
       const gBody = svgEl('g', {}, place);
       this.gBody = gBody;
@@ -346,7 +346,7 @@
       this.gArm = svgEl('g', {}, place);
       const clipId = 'cc' + board.nextSeed();
       const cp = svgEl('clipPath', { id: clipId }, place);
-      svgEl('rect', { x: -3000, y: -3000, width: 6000, height: 3232 }, cp); // 只裁掉胸像底边以下（手放下时藏起来）
+      svgEl('rect', { x: -3000, y: -3000, width: 6000, height: 3232 }, cp); // clip only below the bottom edge of the bust (hides the hand when lowered)
       this.gArm.setAttribute('clip-path', `url(#${clipId})`);
 
       const hair = buildHair(S, F, seed);
@@ -355,7 +355,7 @@
       const longHair = ['shoulder', 'long'].includes(S.hair.length) && !['ponytail', 'bun', 'receding', 'bald'].includes(S.hair.style);
       const custom = (layer) => (S.parts || []).filter((p) => (p.layer || 'top') === layer);
 
-      // 每个静态部件：{ group, d, fill, strokeD, width }；出场时按 order 顺序描线
+      // Each static part: { group, d, fill, strokeD, width }; on entrance, strokes are drawn in order
       this.parts = [];
       const mk = (group, list, order) => list.forEach((p) => this.addPart(group, p, order));
       mk(this.gBack, [...hair.back, ...custom('hairBack')], 3);
@@ -375,17 +375,17 @@
       this.parts.sort((a, b) => a.order - b.order);
       this.total = this.parts.reduce((a, p) => a + p.len, 0);
 
-      // 五官（每帧更新）
+      // Facial features (updated every frame)
       const f = this.gFeat;
       const E = (k) => svgEl('ellipse', { fill: INK }, f);
       const P = (w) => svgEl('path', { fill: 'none', stroke: INK, 'stroke-width': w, 'stroke-linecap': 'round' }, f);
       this.el = { eyeL: E(), eyeR: E(), lidL: P(4.5), lidR: P(4.5), browL: P(6), browR: P(6), mouthLine: P(5), mouthFill: svgEl('path', { fill: INK, stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round' }, f) };
 
-      // 手臂（指向动作）
-      // 手臂 = 肩 → 肘 → 腕 两段，粗墨线描边 + 衣服颜色的袖子，叠在身体前面
+      // Arm (pointing action)
+      // Arm = two segments shoulder → elbow → wrist, thick ink outline + sleeve in the outfit color, layered in front of the body
       this.arm = svgEl('path', { fill: 'none', stroke: INK, 'stroke-width': 46, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, this.gArm);
       this.armIn = svgEl('path', { fill: 'none', stroke: body[0].fill, 'stroke-width': 36, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, this.gArm);
-      this.gProp = svgEl('g', {}, this.gArm); // 手里的道具：画在手的下面，手"握"在道具上
+      this.gProp = svgEl('g', {}, this.gArm); // prop in hand: drawn beneath the hand, so the hand "grips" the prop
       this.hand = svgEl('g', {}, this.gArm);
       svgEl('path', { d: HAND_D, fill: S.skin, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, this.hand);
       svgEl('path', { d: KNUCKLE_D, fill: 'none', stroke: INK, 'stroke-width': 3, 'stroke-linecap': 'round' }, this.hand);
@@ -398,7 +398,7 @@
       this.points = [];
       this.nods = [];
       if (o.expr) this.expr(this.start, o.expr, 0.01);
-      // 眨眼时间表（固定种子，可复现）
+      // Blink schedule (fixed seed, reproducible)
       const r = rng(seed + 99);
       this.blinks = [];
       if (o.blink !== false) for (let t = this.start + 1.2 + r() * 2; t < this.start + 900; t += 2.2 + r() * 2.6) this.blinks.push(t);
@@ -420,31 +420,31 @@
       const len = strokeEl.getTotalLength() || 1;
       strokeEl.style.strokeDasharray = `${len} ${len + 10}`;
       strokeEl.style.strokeDashoffset = len;
-      // 浅色填充（脸、白衣服）一开始画就不透明，深色填充（头发、深色衣服）在描线快完成时再"上墨"
+      // Light fills (face, white clothes) are opaque as soon as drawing starts; dark fills (hair, dark clothes) are "inked" when the outline is nearly finished
       const m = /^#([0-9a-f]{6})$/i.exec(fill);
       const lum = m ? [0, 2, 4].reduce((a, i, k) => a + parseInt(m[1].substr(i, 2), 16) * [0.299, 0.587, 0.114][k], 0) / 255 : 0;
       this.parts.push({ strokeEl, fillEl, len, order, light: lum > 0.8 });
     }
 
-    // ---------- 动作 API ----------
-    // 切换表情：name 为预设名，或者 {参数: 值} 的局部覆盖（如 {lookX: 1}）
+    // ---------- Action API ----------
+    // Switch expression: name is a preset name, or a partial override {param: value} (e.g. {lookX: 1})
     expr(at, name, dur = 0.3) {
       const params = typeof name === 'string' ? EXPRESSIONS[name] : name;
-      if (!params) throw new Error(`没有这个表情："${name}"，可用：${Object.keys(EXPRESSIONS).join('、')}`);
+      if (!params) throw new Error(`Unknown expression: "${name}". Available: ${Object.keys(EXPRESSIONS).join(', ')}`);
       this.exprs.push({ at, dur, reset: typeof name === 'string', params });
       this.exprs.sort((a, b) => a.at - b.at);
       return this;
     }
     look(at, x, y, dur = 0.25) { return this.expr(at, { lookX: x, lookY: y }, dur); }
-    // 让角色"说"时间轴里的某几句台词：嘴巴跟着逐词时间开合
-    // o.from / o.to：只说这句里从某个词到某个词的部分（旁白转述角色原话时用）
+    // Make the character "say" some narration lines from the timeline: the mouth opens and closes with per-word timing
+    // o.from / o.to: say only the part of the line from one word to another (used when the narration quotes the character's own words)
     say(ids, o = {}) {
       const T = this.b.T;
       for (const id of [].concat(ids)) {
         const l = T(id);
         const t0 = o.from ? T.word(id, o.from) : -Infinity, t1 = o.to ? T.wordEnd(id, o.to) : Infinity;
         const ws = (l.words && l.words.length ? l.words : [{ text: l.text, start: l.start, end: l.end }]).filter((w) => w.start >= t0 - 0.01 && w.end <= t1 + 0.01);
-        if (!ws.length) (this.sayWarn = this.sayWarn || []).push(`say('${id}') 没有匹配到任何词，嘴不会动`);
+        if (!ws.length) (this.sayWarn = this.sayWarn || []).push(`say('${id}') matched no words; the mouth will not move`);
         ws.forEach((w) => {
           const latin = /^[A-Za-z'’\-]+$/.test(w.text);
           const n = latin ? Math.max(1, Math.round(w.text.length / 3)) : Math.max(1, w.text.replace(/[^一-鿿\w]/g, '').length);
@@ -455,17 +455,17 @@
       return this;
     }
     nod(at, dur = 0.5) { this.nods.push({ at, dur }); return this; }
-    // 抬手指向白板上的某个点（世界坐标），hold 秒后放下。
-    // o.prop：手里拿的道具，和 b.sketch 一样的部件列表（字符串或 {d, fill, stroke, width}），
-    //   用世界尺寸（像素）画，坐标原点 = 握手的位置，+x 方向 = 指向目标的方向（剑身、教鞭、火把都朝 +x 画）。
-    // 上一次指向还没放下时，新的指向从当前姿势直接转过去（挥剑、换方向指），不会先放下再抬起。
+    // Raise the hand to point at a spot on the whiteboard (world coordinates), lowering it after hold seconds.
+    // o.prop: prop held in the hand, a part list like b.sketch (strings or {d, fill, stroke, width}),
+    //   drawn at world size (pixels); origin = the grip position, +x = the direction toward the target (draw sword blades, pointers, torches along +x).
+    // If the previous point hasn't been lowered yet, the new point turns directly from the current pose (sword swing, pointing in a new direction) instead of lowering and raising again.
     point(at, x, y, o = {}) {
       const p = { at, x, y, hold: o.hold ?? 1.5, dur: o.dur ?? 0.35, prop: o.prop ? this.buildProp(o.prop, o) : null };
       this.points.push(p);
       this.points.sort((a, b) => a.at - b.at);
       return this;
     }
-    // 拿着道具指向 (x, y)：point 的简写
+    // Point at (x, y) holding a prop: shorthand for point
     hold(at, x, y, prop, o = {}) { return this.point(at, x, y, { ...o, prop }); }
     buildProp(parts, o) {
       const WBcol = window.WB._.col, col = (v) => WBcol(v === 'accent' ? this.spec.accent : v);
@@ -477,7 +477,7 @@
       return g;
     }
 
-    // ---------- 渲染 ----------
+    // ---------- Rendering ----------
     draw(p) {
       let budget = clamp(p / 0.82) * this.total;
       for (const part of this.parts) {
@@ -509,7 +509,7 @@
 
     animate(t) {
       const st = this.state(t);
-      // 说话：每个字一次开合
+      // Speaking: one open-close per character
       let talk = 0;
       for (const w of this.talks) {
         if (t < w.start) break;
@@ -522,10 +522,10 @@
         }
       }
       const open = Math.max(st.mouthOpen, talk);
-      // 眨眼
+      // Blinking
       let blink = 1;
       for (const b of this.blinks) { if (b > t) break; const q = (t - b) / 0.16; if (q < 1) blink = 1 - Math.sin(Math.PI * q); }
-      // 头部：表情倾斜 + 点头 + 呼吸 + 说话时轻微晃动
+      // Head: expression tilt + nodding + breathing + slight sway while speaking
       let nod = 0;
       for (const n of this.nods) { const q = clamp((t - n.at) / n.dur); if (q > 0 && q < 1) nod += 7 * Math.sin(Math.PI * q); }
       const bob = Math.sin((2 * Math.PI * t) / 3.6 + this.seed) * 1.6;
@@ -558,16 +558,16 @@
           lid.setAttribute('d', '');
         }
       }
-      // 眉毛：raise 上下移动，tilt>0 内端向下（生气），<0 内端向上（难过）
+      // Eyebrows: raise moves up/down; tilt>0 inner ends down (angry), <0 inner ends up (sad)
       for (const [sgn, el, raise] of [[-1, e.browL, st.browL], [1, e.browR, st.browR]]) {
         const cx = sgn * ex, cy = ey - 27 - raise * 10 + (kid ? -2 : 0);
         const a = st.browTilt * 0.35;
         const dx = 11 * Math.cos(a), dy = 11 * Math.sin(a);
-        // 内端 = 靠近中线的一端
+        // inner end = the end nearer the midline
         const inner = [cx - sgn * dx, cy + dy], outer = [cx + sgn * dx, cy - dy];
         el.setAttribute('d', `M${outer[0]},${outer[1]} L${inner[0]},${inner[1]}`);
       }
-      // 嘴
+      // Mouth
       const mx = st.mouthShift, my = 56 - (kid ? 4 : 0), w = 17 * st.mouthWidth * (open > 0.1 ? 0.88 : 1), c = st.mouthCurve;
       const yc = my - c * 7;
       if (open > 0.08) {
@@ -579,7 +579,7 @@
       }
     }
 
-    // t 时刻手臂的姿势（角色自己的坐标系）；没有抬手时返回 null
+    // Arm pose at time t (in the character's own coordinates); returns null when the hand isn't raised
     armAt(t) {
       let i = -1;
       this.points.forEach((p, k) => { if (t >= p.at && t < p.at + p.dur * 2 + p.hold) i = k; });
@@ -589,7 +589,7 @@
       const down = ease.in(clamp((t - (pt.at + pt.dur + pt.hold)) / pt.dur));
       const e = Math.max(0, up * (1 - down));
       const g = this.armPose(pt);
-      // 起点：上一次指向还举着时从那个姿势转过来，否则从垂在胸像下方的放松姿势抬起
+      // Start: if the previous point is still raised, turn from that pose; otherwise raise from the relaxed pose hanging below the bust
       const prev = i > 0 ? this.points[i - 1] : null;
       const held = prev && pt.at < prev.at + prev.dur + prev.hold;
       const g0 = held ? this.armPose(prev) : null;
@@ -600,7 +600,7 @@
       const base = upOnly && t >= pt.at + pt.dur + pt.hold ? { hand: [g.side * 110, 300], ang: -Math.PI / 2 } : from;
       const hand = [lerp(base.hand[0], g.hand[0], q), lerp(base.hand[1], g.hand[1], q)];
       const ang = lerp(base.ang, g.ang, clamp(q));
-      // 连续的指向（中间没放下手）一直拿着最近一次给的道具
+      // Consecutive points (without lowering the hand in between) keep holding the most recently given prop
       let carried = null;
       for (let j = i; j > 0 && !carried; j--) {
         const a = this.points[j - 1], b = this.points[j];
@@ -610,8 +610,8 @@
       return { pt, g, hand, ang, e: upOnly ? 1 - down : e, carried };
     }
 
-    // t 时刻手在白板上的位置和朝向（世界坐标，angle 为弧度，指向手指 / 道具的方向）；没有抬手时返回 null。
-    // 用来把别的元素放到手上，例如手里递出去的东西、从手里射出的线
+    // Position and orientation of the hand on the whiteboard at time t (world coordinates; angle in radians, in the direction of the finger / prop); returns null when the hand isn't raised.
+    // Used to place other items at the hand, e.g. something being handed over, or a line shooting out of the hand
     handAt(t) {
       const a = this.armAt(t);
       if (!a) return null;
@@ -632,7 +632,7 @@
       this.armIn.setAttribute('d', d);
       const flipHand = Math.cos(ang) < 0;
       this.hand.setAttribute('transform', `translate(${hand[0]},${hand[1]}) rotate(${(ang * 180) / Math.PI}) scale(1.4${flipHand ? ',-1.4' : ''})`);
-      // 道具：跟着手走；抬手过程中淡入、放下时淡出（放松姿势是手朝上的，不能让道具在胸前露出来）
+      // Prop: follows the hand; fades in while raising and out while lowering (the relaxed pose has the hand pointing up, so the prop must not show in front of the chest)
       const prop = a.pt.prop || a.carried;
       if (prop) {
         const tr = `translate(${hand[0]},${hand[1]}) rotate(${(ang * 180) / Math.PI})${flipHand ? ' scale(1,-1)' : ''}`;
@@ -646,13 +646,13 @@
     lint(add) {
       for (const w of this.sayWarn || []) add('warn', this.start, this, w);
       for (const p of this.points) {
-        if (p.at < this.end) add('warn', p.at, this, '角色还没画完就开始指向');
+        if (p.at < this.end) add('warn', p.at, this, 'character starts pointing before it finishes drawing');
         const r = this.b.project({ x: p.x, y: p.y, w: 1, h: 1 }, p.at + p.dur, this.o.hud);
-        if (r.x < 0 || r.y < 0 || r.x > this.b.W || r.y > this.b.H) add('warn', p.at, this, `指向的目标 (${Math.round(p.x)}, ${Math.round(p.y)}) 在画面外`);
+        if (r.x < 0 || r.y < 0 || r.x > this.b.W || r.y > this.b.H) add('warn', p.at, this, `pointing target (${Math.round(p.x)}, ${Math.round(p.y)}) is outside the frame`);
       }
     }
 
-    // 指向姿势：肩膀在身体外侧，手伸向目标方向（目标在下方时改为水平指）
+    // Pointing pose: shoulder on the outer side of the body, hand reaching toward the target (points horizontally when the target is below)
     armPose(pt) {
       const lx = ((pt.x - this.X) / this.s) * this.flip, ly = (pt.y - (this.Y - 230 * this.s)) / this.s;
       const side = lx >= 0 ? 1 : -1;
@@ -667,7 +667,7 @@
       return { side, shoulder, hand, ang };
     }
 
-    // 两段手臂的肘部位置（上臂、前臂各长 L），肘部朝外下方弯
+    // Elbow position of the two-segment arm (upper arm and forearm each of length L), elbow bending outward and down
     elbow(s, w, side) {
       const L = 64;
       const dx = w[0] - s[0], dy = w[1] - s[1];

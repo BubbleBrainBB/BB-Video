@@ -1,6 +1,6 @@
-// whiteboard.js：手绘白板风格的绘图工具包（自写，零第三方动画库）
-// 所有元素在 build 阶段一次性创建，每帧由 board.render(t) 按时间更新状态。
-// 坐标系：世界坐标，单位像素；镜头 zoom=1、中心(960,540) 时世界坐标就等于屏幕坐标。
+// whiteboard.js: drawing toolkit for the hand-drawn whiteboard style (self-written, zero third-party animation libraries)
+// All items are created once during build; each frame, board.render(t) updates their state from the time.
+// Coordinates: world coordinates in pixels; with camera zoom=1 centered at (960,540), world coordinates equal screen coordinates.
 (function () {
   const { clamp, lerp, ease, rng, progress } = window.EV;
   const NS = 'http://www.w3.org/2000/svg';
@@ -8,9 +8,9 @@
   const COLORS = { ink: '#1F2328', blue: '#1E5BC6', red: '#D6342C', green: '#1E8A4C', orange: '#E07B00', purple: '#6B45C2', gray: '#8A8F98', white: '#FFFFFF' };
   const HL = { yellow: '#FFE45C', pink: '#FFB8D2', green: '#B8F0A6', blue: '#B9DDFF', orange: '#FFD29E' };
   const NOTE = { yellow: '#FFF1A8', pink: '#FFD9E6', green: '#D8F5CB', blue: '#D9ECFF', orange: '#FFE4C4' };
-  // 字体：列表里从前往后找，第一个可用的生效。前两个（霞鹜文楷、Excalifont）由 fonts.css 负责
-  // "本机 → 网络按需下载"；都拿不到时自动落到后面的备用字体，不影响渲染。
-  // 每个视频可以用 WB.board({ fonts: { hand: '...', en: '...' } }) 换成自己喜欢的字体。
+  // Fonts: the list is searched front to back and the first available one wins. The first two (LXGW WenKai, Excalifont) are handled by fonts.css
+  // ("local install → on-demand network download"); if neither is available it falls back to the later fonts, and rendering still works.
+  // Each video can swap in its own fonts with WB.board({ fonts: { hand: '...', en: '...' } }).
   const FONTS = {
     hand: '"LXGW WenKai", "Hannotate SC", "Kaiti SC", "STKaiti", "KaiTi", cursive',
     en: '"Excalifont", "Noteworthy", "Segoe Print", "LXGW WenKai", cursive',
@@ -28,14 +28,14 @@
     return e;
   }
 
-  // ---------- 几何工具 ----------
+  // ---------- Geometry helpers ----------
   const fmt = (n) => Math.round(n * 10) / 10;
-  // 2D 仿射矩阵 [a, b, c, d, e, f]：x' = a·x + c·y + e，y' = b·x + d·y + f
+  // 2D affine matrix [a, b, c, d, e, f]: x' = a·x + c·y + e, y' = b·x + d·y + f
   const M_ID = [1, 0, 0, 1, 0, 0];
   const mMul = (A, B) => [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3], A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
   const mApply = (M, x, y) => [M[0] * x + M[2] * y + M[4], M[1] * x + M[3] * y + M[5]];
 
-  // Catmull-Rom 样条：把点列连成平滑路径
+  // Catmull-Rom spline: joins a point list into a smooth path
   function smoothD(pts, closed) {
     if (pts.length < 2) return '';
     if (pts.length === 2) return `M${fmt(pts[0][0])},${fmt(pts[0][1])}L${fmt(pts[1][0])},${fmt(pts[1][1])}`;
@@ -50,14 +50,14 @@
     return d;
   }
 
-  // 平滑噪声：用于手抖
+  // Smooth noise: used for hand jitter
   function noise1(seed) {
     const r = rng(seed);
     const comps = [1, 2, 3].map((i) => ({ f: (0.006 + r() * 0.01) * i, ph: r() * Math.PI * 2, a: 1 / i }));
     return (s) => comps.reduce((v, c) => v + c.a * Math.sin(s * c.f + c.ph), 0) / 1.83;
   }
 
-  // 沿路径法线方向加入手抖 + 整体微弯
+  // Adds hand jitter along the path normal, plus a slight overall bow
   function wobble(pts, amp, seed, bow = 0) {
     if (amp <= 0 && !bow) return pts;
     const n = noise1(seed);
@@ -74,7 +74,7 @@
   }
 
   let measurer = null;
-  // 把任意 SVG path（绝对坐标命令）拆成子路径并采样成点列
+  // Splits any SVG path (absolute-coordinate commands) into subpaths and samples each into a point list
   function samplePathD(d) {
     if (!measurer) {
       const s = svgEl('svg', { width: 1, height: 1, style: 'position:absolute;left:-9999px;top:-9999px' }, document.body);
@@ -112,9 +112,9 @@
 
   const boxOf = (t) => (t && t.box ? t.box : t);
 
-  // ---------- 散布：在一块区域里取点（可复现；gap > 0 时点与点之间保持距离）----------
-  // area：{ x, y, w, h }（矩形）| { cx, cy, r } 或 { cx, cy, rx, ry }（圆 / 椭圆）
-  //       | { shape: 'mound', cx, cy, w, h }（底边中点在 (cx, cy) 的小山，越往上越窄）
+  // ---------- Scatter: pick points inside an area (reproducible; with gap > 0 points keep their distance) ----------
+  // area: { x, y, w, h } (rectangle) | { cx, cy, r } or { cx, cy, rx, ry } (circle / ellipse)
+  //       | { shape: 'mound', cx, cy, w, h } (a small mound whose base midpoint is at (cx, cy), narrowing toward the top)
   function areaOf(area) {
     const shape = area.shape || (area.cx === undefined ? 'rect' : 'ellipse');
     if (shape === 'rect') return { size: area.w * area.h, pick: (r) => [area.x + r() * area.w, area.y + r() * area.h] };
@@ -135,7 +135,7 @@
     }
     return pts;
   }
-  // 小形状：(x, y) 为中心、s 为外沿直径（约数）、r 为随机数；返回 { d } 等，供 pile / sprinkle / sketch 使用
+  // Small shapes: (x, y) is the center, s the approximate outer diameter, r the random generator; returns { d } etc., used by pile / sprinkle / sketch
   const circleD = (x, y, rr) => `M${x + rr},${y} A${rr},${rr} 0 1 0 ${x - rr},${y} A${rr},${rr} 0 1 0 ${x + rr},${y} Z`;
   const SHAPES = {
     chunk: (x, y, s, r) => { const a = r() * Math.PI / 2; const P = [0, 1, 2, 3].map((k) => [x + Math.cos(a + (k * Math.PI) / 2) * s * 0.5 * (0.9 + r() * 0.2), y + Math.sin(a + (k * Math.PI) / 2) * s * 0.5 * (0.9 + r() * 0.2)]); return { d: `M${P.map((p) => p.join(',')).join('L')}Z` }; },
@@ -150,7 +150,7 @@
     const x = Math.min(...boxes.map((b) => b.x)), y = Math.min(...boxes.map((b) => b.y));
     const r = Math.max(...boxes.map((b) => b.x + b.w)), btm = Math.max(...boxes.map((b) => b.y + b.h));
     return { x, y, w: r - x, h: btm - y };
-  };  // 把几个元素当成一个整体（时长、档位等复合图形用）：有 .start .end .box，可以一起 erase / pulse / move
+  };  // Treats several items as one unit (for compound graphics such as timer and level): has .start .end .box and can erase / pulse / move together
   const groupOf = (items, kind) => ({
     items, kind,
     get start() { return Math.min(...items.map((i) => i.start)); },
@@ -162,7 +162,7 @@
   });
 
 
-  // ---------- 元素基类 ----------
+  // ---------- Item base class ----------
   class Item {
     constructor(board, o, node) {
       this.b = board;
@@ -172,8 +172,8 @@
       if (start && typeof start === 'object') start = start.end;
       if (start === undefined || start === null) start = board.cursor;
       this.start = start + (o.delay || 0);
-      // 记录是 index.html 的哪一行创建了这个元素，自动检查报错时用
-      // 经过辅助函数创建时，同时给出辅助函数里的行和调用它的行
+      // Record which line of index.html created this item, for lint check reports
+      // When created through a helper function, give both the line inside the helper and the line that called it
       const frames = (new Error().stack || '').split('\n').filter((l) => /\.html:\d+/.test(l) && !/\/lib\//.test(l))
         .map((l) => /\/([^\/\s)]+\.html):(\d+)/.exec(l)).filter(Boolean).map((m) => `${m[1]}:${m[2]}`);
       this.src = [...new Set(frames)].slice(0, 2).join(' ← ');
@@ -184,31 +184,31 @@
       this._vis = null;
     }
     get end() { return this.start + this.dur; }
-    // 画完（含填色）的时间
+    // Time when drawing is finished (including the fill)
     get done() { return this.end + (this.hasFill && this.dur > 0 ? 0.35 : 0); }
     describe() {
       const b = this.box;
       const txt = this.label ? `"${this.label.slice(0, 14)}${this.label.length > 14 ? '…' : ''}"` : '';
-      return `${this.kind || '元素'}${txt}` + (b ? `（${Math.round(b.x + b.w / 2)}, ${Math.round(b.y + b.h / 2)}）` : '');
+      return `${this.kind || 'item'}${txt}` + (b ? ` (${Math.round(b.x + b.w / 2)}, ${Math.round(b.y + b.h / 2)})` : '');
     }
-    // 擦除（淡出）：at 秒开始，持续 dur 秒
+    // Erase (fade out): starts at second `at`, lasts `dur` seconds
     erase(at, dur = 0.4) { this.exits.push({ at: at ?? this.b.cursor, dur }); return this; }
-    // 强调：放大一下再回来
+    // Emphasis: scale up briefly, then back
     pulse(at, amt = 1.08, dur = 0.6) { this.pulses.push({ at, amt, dur }); return this; }
-    // 平移：at 秒开始，dur 秒内移动 (dx, dy)。e 为缓动（下落用 EV.ease.in）
+    // Translate: starting at `at`, move by (dx, dy) over `dur` seconds. e is the easing (use EV.ease.in for falling)
     move(at, dx, dy, dur = 0.8, e = ease.inOut) { return this.transform(at, { dx, dy }, dur, e); }
-    // 通用变换动画：at 秒开始，dur 秒内完成
-    //   dx, dy   平移
-    //   rotate   绕 origin 旋转的角度（度，正数顺时针）
-    //   scale    绕 origin 缩放：数字，或 [sx, sy]（[-1, 1] = 左右翻转）
-    //   origin   [x, y] 世界坐标；默认是元素在这次变换开始时的中心
-    // 多次调用按开始时间依次叠加。先旋转/缩放、再平移。
+    // General transform animation: starts at `at`, completes within `dur` seconds
+    //   dx, dy   translation
+    //   rotate   rotation angle around origin (degrees, positive = clockwise)
+    //   scale    scale around origin: a number, or [sx, sy] ([-1, 1] = horizontal flip)
+    //   origin   [x, y] in world coordinates; defaults to the item's center at the start of this transform
+    // Multiple calls stack in order of start time. Rotate/scale first, then translate.
     transform(at, o = {}, dur = 0.8, e = ease.inOut) {
       this.moves.push({ at, dur, e, ...o });
       this.moves.sort((a, b) => a.at - b.at);
       return this;
     }
-    // t 时刻元素的变换矩阵 [a, b, c, d, e, f]（和 SVG matrix 相同）
+    // The item's transform matrix at time t, [a, b, c, d, e, f] (same as SVG matrix)
     matrixAt(t) {
       let M = M_ID;
       const b = this.box;
@@ -226,7 +226,7 @@
       }
       return M;
     }
-    // t 时刻（含移动、旋转、缩放后）的外框；.box 永远是原始位置
+    // Bounding box at time t (after move, rotate, scale); .box is always the original position
     boxAt(t) {
       const b = this.box;
       if (!b || !this.moves.length) return b;
@@ -239,7 +239,7 @@
       let fade = 1;
       for (const x of this.exits) fade = Math.min(fade, 1 - progress(t, x.at, x.dur, ease.inOut));
       const visible = t >= this.start && fade > 0.001;
-      // 用 display 而不是 visibility：子元素自己设了 visibility:visible 时，父级的 hidden 会失效
+      // Use display rather than visibility: if a child sets visibility:visible itself, the parent's hidden has no effect
       if (visible !== this._vis) { this.node.style.display = visible ? '' : 'none'; this._vis = visible; }
       if (!visible) { this._p = -1; return; }
       this.node.style.opacity = fade < 1 ? fade : '';
@@ -258,7 +258,7 @@
       if (p !== this._p) { this.draw(p, t); this._p = p; }
       this.applyMatrix(M);
     }
-    // crop: true 的元素只保留"画它时那个镜头"里看得到的部分，镜头拉远时也不会突然变完整
+    // Items with crop: true keep only the part visible in "the camera view when it was drawn", so they don't suddenly become whole when the camera zooms out
     applyCrop() {
       this._cropped = true;
       const b = this.b, c = b.camAt(this.done);
@@ -282,7 +282,7 @@
         if (ident) this.node.removeAttribute('transform');
         else this.node.setAttribute('transform', `matrix(${M.join(' ')})`);
       } else {
-        // HTML 元素的 transform 以自身中心为原点：把世界坐标里的矩阵换算过去
+        // An HTML element's transform uses its own center as origin: convert the world-space matrix accordingly
         const b = this.box;
         let css = '';
         if (!ident && b) {
@@ -298,7 +298,7 @@
     draw() {}
   }
 
-  // 描线类元素：若干笔画按顺序画出，可选填色
+  // Stroke items: several strokes drawn in order, with optional fill
   class Strokes extends Item {
     // strokes: [{pts, closed, color, width, fill, dash}]
     constructor(board, strokes, o) {
@@ -328,7 +328,7 @@
         let dashPath = null, maskPath = null;
         const dash = s.dash ?? o.dash;
         if (dash) {
-          // 虚线：用遮罩实现描线生长
+          // Dashed lines: use a mask to make the stroke grow
           const id = 'm' + board.nextSeed();
           const mask = svgEl('mask', { id, maskUnits: 'userSpaceOnUse', x: -1e5, y: -1e5, width: 2e5, height: 2e5 }, g);
           maskPath = svgEl('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': w + 6, 'stroke-linecap': 'round' }, mask);
@@ -358,7 +358,7 @@
         for (const p of this.parts) if (p.fillPath) p.fillPath.setAttribute('opacity', f);
       }
     }
-    // 缩放动画时线宽保持不变（像用同一支笔画的）；o.scaleStroke = true 则线宽跟着缩放
+    // During scale animations the stroke width stays constant (as if drawn with the same pen); with o.scaleStroke = true the width scales too
     onMatrix(M) {
       const k = this.o.scaleStroke ? 1 : Math.sqrt(Math.abs(M[0] * M[3] - M[1] * M[2])) || 1;
       if (k === this._k) return;
@@ -380,14 +380,14 @@
     }
   }
 
-  // 手写文字：逐字"写"出来
+  // Handwritten text: "written" out character by character
   class TextItem extends Item {
     constructor(board, str, o, parentEl) {
       const div = document.createElement('div');
       div.className = 'wb-text';
       (parentEl || (o.hud ? board.hudHtml : board.html)).appendChild(div);
       super(board, o, div);
-      this.kind = '文字';
+      this.kind = 'text';
       this.label = str.replace(/\{(\w+|#[0-9a-fA-F]{3,8}):([^}]*)\}/g, '$2').replace(/\n/g, ' ');
       const size = o.size ?? 56;
       const s = div.style;
@@ -400,7 +400,7 @@
       if (o.align) s.textAlign = o.align;
       if (o.letterSpacing) s.letterSpacing = o.letterSpacing;
       this.chars = [];
-      // 支持 {red:文字} 局部上色
+      // Supports {red:text} for coloring part of the text
       const segs = [];
       str.replace(/\{(\w+|#[0-9a-fA-F]{3,8}):([^}]*)\}|([^{]+|\{)/g, (m, c, inner, plain) => {
         segs.push(c ? { color: col(c), text: inner } : { text: plain });
@@ -422,7 +422,7 @@
             c.style.visibility = 'hidden';
             const prev = this.chars.length ? this.chars[this.chars.length - 1].el : null;
             if (holder === div && prev && NO_LINE_START.test(ch)) {
-              // 中文排版规则：逗号、冒号、右括号等标点不能出现在行首，和前一个字绑在一起不拆开
+              // Chinese typesetting rule: punctuation such as commas, colons and closing brackets must not start a line; glue it to the preceding character
               let glue = prev.parentElement;
               if (!glue.classList.contains('w')) {
                 glue = document.createElement('span');
@@ -465,14 +465,14 @@
     }
   }
 
-  // KaTeX 公式：从左到右"写"出来
+  // KaTeX formula: "written" out from left to right
   class MathItem extends Item {
     constructor(board, latex, o) {
       const div = document.createElement('div');
       div.className = 'wb-math';
       (o.hud ? board.hudHtml : board.html).appendChild(div);
       super(board, o, div);
-      this.kind = '公式';
+      this.kind = 'formula';
       this.label = latex;
       div.style.fontSize = (o.size ?? 56) + 'px';
       div.style.color = col(o.color);
@@ -488,10 +488,10 @@
       this.ease = ease.inOutSine;
       board.add(this);
     }
-    // 公式中 \htmlClass{名字}{...} 部分的世界坐标框，可用来圈、划、高亮某一项
+    // World-space box of the \htmlClass{name}{...} part of the formula; use it to circle, strike or highlight one term
     part(name) {
       const el = this.node.querySelector('.' + name);
-      if (!el) throw new Error(`公式里找不到 \\htmlClass{${name}}`);
+      if (!el) throw new Error(`\\htmlClass{${name}} not found in the formula`);
       const r = el.getBoundingClientRect(), R = this.node.getBoundingClientRect();
       const k = this.node.offsetWidth / R.width || 1;
       return { x: this.box.x + (r.left - R.left) * k, y: this.box.y + (r.top - R.top) * k, w: r.width * k, h: r.height * k };
@@ -501,14 +501,14 @@
     }
   }
 
-  // 便签：贴上去，再在上面写字
+  // Sticky note: stuck on, then written on
   class NoteItem extends Item {
     constructor(board, str, o) {
       const div = document.createElement('div');
       div.className = 'wb-note';
       (o.hud ? board.hudHtml : board.html).appendChild(div);
       super(board, o, div);
-      this.kind = '便签';
+      this.kind = 'sticky note';
       this.label = str.replace(/\{(\w+|#[0-9a-fA-F]{3,8}):([^}]*)\}/g, '$2').replace(/\n/g, ' ');
       div.style.background = NOTE[o.color || 'yellow'] || o.color;
       div.style.width = (o.w ?? 460) + 'px';
@@ -529,7 +529,7 @@
       board.add(this);
     }
     draw(p) {
-      const t = this.dur > 0 ? p * this.dur : 1e9; // dur: 0 = 一开始就是贴好、写好的样子
+      const t = this.dur > 0 ? p * this.dur : 1e9; // dur: 0 = already stuck on and written from the start
       const land = ease.out(clamp(t / this.landDur));
       this.baseTransform = `rotate(${this.rot}deg) translateY(${(1 - land) * -40}px) scale(${1 + (1 - land) * 0.06})`;
       this.node.style.transform = this.baseTransform;
@@ -539,7 +539,7 @@
     }
   }
 
-  // 荧光笔：从左到右刷过去
+  // Highlighter: swept from left to right
   class HighlightItem extends Item {
     constructor(board, box, o) {
       const g = svgEl('g', {}, o.hud ? board.hudSvg : board.hlSvg);
@@ -561,8 +561,8 @@
     draw(p) { this.clipRect.setAttribute('width', this.w * p); }
   }
 
-  // 圆点：弹出
-  // 一整屏的纸：画在屏幕固定层的最底下，用来做封面这类"盖住白板"的画面
+  // Dot: pops in
+  // A full-screen sheet of paper: drawn at the very bottom of the screen-fixed layer, for frames like the cover that "cover the whiteboard"
   class PanelItem extends Item {
     constructor(board, o) {
       const g = svgEl('g', {}, board.hudSvg);
@@ -570,7 +570,7 @@
       svgEl('rect', { x: 0, y: 0, width: board.W, height: board.H, fill: o.fill || board.bg }, g);
       this.box = { x: 0, y: 0, w: board.W, h: board.H };
       this.dur = 0;
-      this.kind = '封面底';
+      this.kind = 'cover backdrop';
       board.add(this);
     }
   }
@@ -590,7 +590,7 @@
     draw(p) { this.c.setAttribute('r', Math.max(0, this.r * p)); }
   }
 
-  // ---------- 白板 ----------
+  // ---------- Whiteboard ----------
   class Board {
     constructor(opts = {}) {
       this.T = opts.T;
@@ -624,7 +624,7 @@
       this.hudHtml = mk('wb-html', 'div', this.hud);
       this.setupPaper();
       if (opts.captions !== false && this.T && this.T.lines.length) this.setupCaptions(opts.captionMax || 20);
-      // 章节进度条：script.json 里定义了 2 个以上章节时自动出现；chapters: false 关闭，也可传 { top, margin }
+      // Chapter progress bar: appears automatically when script.json defines 2 or more chapters; chapters: false turns it off, or pass { top, margin }
       if (opts.chapters !== false && this.T && this.T.chapters.length >= 2) this.setupChapters(opts.chapters || {});
       this.applyCamera(this.cam0);
     }
@@ -645,11 +645,11 @@
       }
     }
 
-    // ---------- 镜头 ----------
-    // 在 at 秒把镜头移到 {x, y, zoom}（x,y 是画面中心对准的世界坐标）
+    // ---------- Camera ----------
+    // At `at` seconds, move the camera to {x, y, zoom} (x,y is the world coordinate the frame center aims at)
     camera(at, target, dur = 1.2) { this.moves.push({ at, dur, target }); this.moves.sort((a, b) => a.at - b.at); return this; }
-    // 让镜头对准某个元素 / 区域
-    // 取景时自动避开顶部章节进度条和底部字幕
+    // Point the camera at an item / area
+    // Framing automatically avoids the chapter progress bar at the top and the captions at the bottom
     focus(target, o = {}) {
       const b = Array.isArray(target) ? unionBox(target.map(boxOf)) : boxOf(target);
       const pad = o.pad ?? 120;
@@ -673,17 +673,17 @@
       this.world.style.transform = `translate(${W / 2}px, ${H / 2}px) scale(${c.zoom}) translate(${-c.x}px, ${-c.y}px)`;
       if (this.paperKind !== 'plain') {
         const g = this.gridSize * c.zoom;
-        // 镜头拉远、格子太密时，纸面纹理逐渐变淡，避免变成一片噪点
+        // When the camera zooms out and the grid gets too dense, the paper texture fades gradually so it doesn't turn into noise
         const fade = Math.round(clamp((g - 8) / 22) * 20) / 20;
         if (fade !== this._paperFade) { this._paperFade = fade; this.setupPaper(fade); }
         this.paper.style.backgroundSize = `${g}px ${g}px`;
         this.paper.style.backgroundPosition = `${W / 2 - c.x * c.zoom}px ${H / 2 - c.y * c.zoom}px`;
       }
     }
-    // 所有（或指定）元素的外框，用于结尾"拉远看全貌"
+    // Bounding box of all (or the given) items, for the ending "zoom out to see the whole board"
     bounds(items) { return unionBox((items || this.items.filter((i) => !i.o.hud)).map((i) => i.box)); }
 
-    // ---------- 字幕 ----------
+    // ---------- Captions ----------
     setupCaptions(max) {
       this.capEl = document.createElement('div');
       this.capEl.className = 'wb-caption';
@@ -694,11 +694,11 @@
       this.caps = [];
       for (const l of this.T.lines) {
         if (!l.text || l.silence) continue;
-        // 以"显示宽度"衡量长度：汉字算 1，英文字母 / 数字约 0.55，空格 0.3
+        // Measure length by "display width": a CJK character counts 1, a Latin letter / digit about 0.55, a space 0.3
         const text = l.text, words = l.words || [];
         const CJK = /[⺀-鿿豈-﫿＀-￯]/, LAT = /[A-Za-z0-9'’\-%]/;
         const wOf = (i, j) => { let w = 0; for (let k = i; k < j; k++) { const ch = text[k]; w += CJK.test(ch) ? 1 : ch === ' ' ? 0.3 : 0.55; } return w; };
-        // 允许断开的位置：标点和空格之后、配音逐词结果的词与词之间；英文单词、数字内部永远不断开
+        // Allowed break positions: after punctuation and spaces, and between words of the voiceover's word-level timing; never inside an English word or a number
         const wpos = [];
         const allowed = new Array(text.length + 1).fill(false);
         let from = 0;
@@ -709,7 +709,7 @@
           allowed[i] = allowed[i + w.text.length] = true;
           from = i + w.text.length;
         }
-        // 英文标点（. , : ; ! ?）只有后面是空白或在句尾时才算断句；夹在字母数字中间的（SKILL.md、3.5、1,000、3:30、a/b）是词的一部分
+        // English punctuation (. , : ; ! ?) only ends a clause when followed by whitespace or at the end of the sentence; when sandwiched between letters/digits (SKILL.md, 3.5, 1,000, 3:30, a/b) it is part of the word
         const AN = /[A-Za-z0-9]/;
         const inWord = (k) => LAT.test(text[k] || '') || (/[.,:;_\/]/.test(text[k] || '') && AN.test(text[k - 1] || '') && AN.test(text[k + 1] || ''));
         const isBreak = (k) => /[，。！？；：]/.test(text[k]) || (/[,.!?;:]/.test(text[k]) && !inWord(k) && (k + 1 >= text.length || /[\s，。！？；：”’)）]/.test(text[k + 1])));
@@ -718,7 +718,7 @@
           if (!words.length && CJK.test(text[i - 1]) && CJK.test(text[i])) allowed[i] = true;
           if (inWord(i - 1) && inWord(i)) allowed[i] = false;
         }
-        // 1) 按标点切成小句 2) 相邻小句合并到不超过 max 3) 仍然太长的，在允许的位置切成宽度相近的几段
+        // 1) split into clauses at punctuation 2) merge adjacent clauses up to max 3) split anything still too long, at allowed positions, into pieces of similar width
         const ranges = [];
         for (let i = 0, st = 0; i < text.length; i++) if (isBreak(i) && !isBreak(i + 1)) { ranges.push([st, i + 1]); st = i + 1; } else if (i === text.length - 1) ranges.push([st, text.length]);
         if (!ranges.length) ranges.push([0, text.length]);
@@ -728,7 +728,7 @@
           if (last && wOf(last[0], r[1]) <= max && !/[。！？.!?]\s*$/.test(text.slice(last[0], last[1]))) last[1] = r[1];
           else merged.push([...r]);
         }
-        // 太短的片段（不到上限的 30%）会一闪而过：并进前一段或后一段；合并后超长也没关系，下一步会在词与词之间重新均衡切分
+        // Pieces that are too short (under 30% of the limit) would flash by: merge them into the previous or next piece; being over-long after merging is fine, the next step re-splits evenly between words
         const ends = (r) => { const k = text.slice(0, r[1]).replace(/\s+$/, '').length - 1; return /[。！？]/.test(text[k]) || (/[.!?]/.test(text[k]) && isBreak(k)); };
         for (let i = 0; i < merged.length; i++) {
           const r = merged[i];
@@ -743,7 +743,7 @@
           const target = wOf(s0, e0) / n, out = [];
           let st = s0;
           for (let k = 1; k < n; k++) {
-            // 在目标宽度附近找最近的可断开位置
+            // Find the allowed break position closest to the target width
             let best = -1, bestD = Infinity;
             for (let i = st + 1; i < e0; i++) {
               if (!allowed[i]) continue;
@@ -757,7 +757,7 @@
           out.push([st, e0]);
           return out;
         });
-        // 每段的开始时间：这段里第一个被念到的词的开始时间
+        // Start time of each piece: the start time of the first spoken word in it
         const starts = split.map(([s0]) => {
           const k = wpos.findIndex((p) => p !== null && p >= s0);
           return k >= 0 ? words[k].start : lerp(l.start, l.end, s0 / Math.max(1, text.length));
@@ -768,13 +768,13 @@
         });
       }
     }
-    // ---------- 章节进度条：一支铅笔沿着屏幕顶部把进度线"画"出来 ----------
+    // ---------- Chapter progress bar: a pencil "draws" the progress line along the top of the screen ----------
     setupChapters(cfg) {
       const chs = this.T.chapters, W = this.W;
-      // 标题写在线下方，铅笔在线上方移动，两者不会互相遮挡；右边多留一些位置给铅笔尾巴
+      // Titles go below the line and the pencil moves above it, so they never cover each other; extra room on the right for the pencil's tail
       const x0 = cfg.margin ?? 64, x1 = W - (cfg.margin ?? 64) - 46, ly = (cfg.top ?? 0) + 58;
       this.chapterZone = ly + 46;
-      // 每章的宽度按时长分配，但至少能放下 3 个字
+      // Each chapter's width is proportional to its duration, but always fits at least 3 characters
       const avail = x1 - x0, total = chs[chs.length - 1].end - chs[0].start;
       const minW = Math.min(130, avail / chs.length);
       let ws = chs.map((c) => (avail * (c.end - c.start)) / total);
@@ -783,9 +783,9 @@
       ws = ws.map((w) => (w < minW ? minW : w - (extra * (w - minW)) / room));
       const g = svgEl('g', {}, this.hudSvg);
       this.chG = g;
-      // 还没画到的部分：浅灰虚线当"引导线"
+      // The part not yet drawn: a light gray dashed "guide line"
       svgEl('path', { d: `M${x0},${ly} L${x1},${ly}`, stroke: '#D3D5DA', 'stroke-width': 3, 'stroke-dasharray': '10 12', fill: 'none' }, g);
-      // 铅笔画出来的墨线：预先生成整条手抖线，按进度露出
+      // The ink line drawn by the pencil: the whole jittery line is generated up front and revealed by progress
       const pts = [];
       for (let x = x0; x <= x1; x += 10) pts.push([x, ly]);
       const ink = svgEl('path', { d: smoothD(wobble(pts, 2.4, this.nextSeed())), stroke: COLORS.ink, 'stroke-width': 6, 'stroke-linecap': 'round', fill: 'none' }, g);
@@ -797,14 +797,14 @@
         const w = ws[i];
         const tick = svgEl('path', { d: `M${x},${ly - 12} L${x + 1},${ly + 12}`, stroke: COLORS.ink, 'stroke-width': 4.5, 'stroke-linecap': 'round' }, g);
         const label = svgEl('text', { x: x + 10, y: ly + 36, 'font-size': 26, fill: COLORS.ink, style: `font-family:${this.fonts.hand}` }, g);
-        // 标题放不下就缩小字号，再放不下就截断
+        // If the title doesn't fit, shrink the font size; if it still doesn't fit, truncate
         let text = c.title, size = 26;
         label.textContent = text;
         const maxW = w - 22;
         if (label.getComputedTextLength() > maxW) { size = Math.max(16, (size * maxW) / label.getComputedTextLength()); label.setAttribute('font-size', size); }
         while (label.getComputedTextLength() > maxW && text.length > 1) { text = text.slice(0, -1); label.textContent = text + '…'; }
         const item = { ...c, x, w, tick, label, size, text: label.textContent, state: null };
-        // 全貌镜头时显示的"带序号"版本，同样按宽度缩放 / 截断
+        // The "numbered" version shown during the overview shot, also scaled / truncated to width
         let t2 = `${'①②③④⑤⑥⑦⑧⑨⑩⑪⑫'[i] || i + 1} ${c.title}`;
         label.textContent = t2;
         const s2 = label.getComputedTextLength() > maxW ? Math.max(16, (size * maxW) / label.getComputedTextLength()) : size;
@@ -817,7 +817,7 @@
       });
       this.chEndTick = svgEl('path', { d: `M${x1},${ly - 12} L${x1},${ly + 12}`, stroke: '#C9CCD1', 'stroke-width': 4.5, 'stroke-linecap': 'round' }, g);
       this.chLy = ly;
-      // 铅笔：笔尖在 (0,0)，沿 +x 方向依次是笔芯、木头、笔杆、金属箍、橡皮
+      // Pencil: tip at (0,0); along +x come the lead, the wood, the barrel, the metal ferrule and the eraser
       const pen = svgEl('g', {}, g);
       svgEl('path', { d: 'M0,0 L15,-6.5 L15,6.5 Z', fill: COLORS.ink }, pen);
       svgEl('path', { d: 'M15,-6.5 L36,-13 L36,13 L15,6.5 Z', fill: '#EBC9A0', stroke: COLORS.ink, 'stroke-width': 3, 'stroke-linejoin': 'round' }, pen);
@@ -836,7 +836,7 @@
       if (cur < 0) cur = this.chs.length - 1;
       const c = this.chs[cur];
       const hx = c.x + c.w * clamp((tt - c.start) / (c.end - c.start));
-      // 墨线画到铅笔尖的位置
+      // The ink line is drawn up to the pencil tip
       const { el, L, x0, x1 } = this.chInk;
       el.style.strokeDashoffset = L * (1 - (hx - x0) / (x1 - x0));
       for (const [i, ch] of this.chs.entries()) {
@@ -853,13 +853,13 @@
           ch.label.setAttribute('font-weight', state === 'cur' ? 700 : 400);
           ch.tick.setAttribute('stroke', state === 'todo' ? '#C9CCD1' : COLORS.ink);
         }
-        // 进入新章节时，标题轻轻跳一下
+        // When a new chapter starts, its title gives a small bounce
         const k = clamp((t - ch.start) / 0.45);
         const s = i === cur && i > 0 && k > 0 && k < 1 ? 1 + 0.14 * Math.sin(Math.PI * k) : 1;
         const lx = ch.x + 10, lyy = this.chLy + 27;
         ch.label.setAttribute('transform', s === 1 ? '' : `translate(${lx},${lyy}) scale(${s}) translate(${-lx},${-lyy})`);
       }
-      // 铅笔：笔尖停在进度处，写字时轻微晃动；全部讲完后抬笔，终点刻度变黑表示完成
+      // Pencil: tip rests at the progress point and wiggles slightly while writing; after everything is narrated it lifts, and the end tick turns black to show completion
       const drawing = t < last.end;
       const wig = drawing ? Math.sin(t * 9) : 0;
       const lift = drawing ? 0 : ease.out(clamp((t - last.end) / 0.4)) * 10;
@@ -877,14 +877,14 @@
       }
     }
 
-    // ---------- 绘图 API ----------
+    // ---------- Drawing API ----------
     text(str, o = {}) { return new TextItem(this, str, o); }
     math(latex, o = {}) { return new MathItem(this, latex, o); }
     note(str, o = {}) { return new NoteItem(this, str, o); }
-    // 对话气泡：先画圆角框和尾巴，再在里面写字。
-    //   x, y + anchor(left|center|right)：框的位置（y 为上边）；tail: 'left' | 'right' | 'none' | [x, y]（尾巴尖指向的世界坐标）
-    //   color：框线颜色（一般用说话人的颜色）；textColor；size；pad；fill（默认白色）
-    // 返回 { shape, text, box, start, end, erase, move, pulse }，可以作为下一个元素的 at
+    // Speech bubble: draws the rounded box and tail first, then writes the text inside.
+    //   x, y + anchor(left|center|right): box position (y is the top edge); tail: 'left' | 'right' | 'none' | [x, y] (world coordinate the tail tip points at)
+    //   color: outline color (usually the speaker's color); textColor; size; pad; fill (default white)
+    // Returns { shape, text, box, start, end, erase, move, pulse }; can be used as the next item's at
     bubble(str, o = {}) {
       const size = o.size ?? 48, pad = o.pad ?? 26;
       let t0 = o.at;
@@ -907,9 +907,9 @@
       }
       d += ` L${left + r},${bottom} Q${left},${bottom} ${left},${bottom - r} L${left},${top + r} Q${left},${top} ${left + r},${top} Z`;
       const shape = this.path([{ d, fill: o.fill ?? '#FFFFFF' }], { color: o.color, width: o.width ?? 4, at: t0, dur: shapeDur, hud: o.hud, overlap: true, rough: 0.6 });
-      shape.kind = '气泡';
+      shape.kind = 'speech bubble';
       shape.label = text.label;
-      shape.o.overlap = false;       // 气泡框参与重叠检查，里面的字不重复检查
+      shape.o.overlap = false;       // the bubble box takes part in the overlap check; the text inside is not checked again
       this.cursor = text.end + this.gap;
       const g = {
         shape, text, box: shape.box, start: shape.start,
@@ -927,7 +927,7 @@
     polyline(points, o = {}) {
       const pts = [];
       for (let i = 1; i < points.length; i++) pts.push(...linePts(...points[i - 1], ...points[i]).slice(i > 1 ? 1 : 0));
-      // 闭合：补上最后一条边（去掉和起点重合的最后一个点），否则样条会把最后一条边画成弯钩
+      // Closed: add the last edge (dropping its final point, which coincides with the start), otherwise the spline draws the last edge as a hook
       if (o.closed && points.length > 2) pts.push(...linePts(...points[points.length - 1], ...points[0]).slice(1, -1));
       return new Strokes(this, [{ pts, closed: !!o.closed }], o);
     }
@@ -935,8 +935,8 @@
       const d = smoothD(points, !!o.closed);
       return new Strokes(this, samplePathD(d + (o.closed ? 'Z' : '')), o);
     }
-    // 任意 SVG 路径（可传数组）。x,y,scale 把路径从自身坐标放到白板上。
-    // 路径里的每个子路径请用绝对坐标 M 开头；元素可写成 {d, color, width, fill, dash}
+    // Any SVG path (or an array of them). x, y, scale place the path from its own coordinates onto the whiteboard.
+    // Start every subpath with an absolute M; entries can be written as {d, color, width, fill, dash}
     path(ds, o = {}) {
       const list = Array.isArray(ds) ? ds : [ds];
       const sx = o.scale ?? 1, ox = o.x ?? 0, oy = o.y ?? 0;
@@ -993,7 +993,7 @@
     }
     circle(cx, cy, rad, o = {}) { return this.ellipse(cx, cy, rad, rad, o); }
 
-    // 圈出某个元素
+    // Circle an item
     circleAround(target, o = {}) {
       const b = boxOf(target), pad = o.pad ?? 18;
       return this.ellipse(b.x + b.w / 2, b.y + b.h / 2, b.w / 2 + pad * 1.4, b.h / 2 + pad, { color: 'red', ...o });
@@ -1014,7 +1014,7 @@
       if (o.double) strokes.push({ pts: linePts(x1 + 10, y + 15, x2 - 6, y + 10) });
       return new Strokes(this, strokes, { color: 'red', ...o });
     }
-    // 划掉（o.cross=true 画 ×）
+    // Strike through (o.cross=true draws an ×)
     strike(target, o = {}) {
       const b = boxOf(target);
       const strokes = o.cross
@@ -1030,7 +1030,7 @@
       const s = (o.size ?? 56) / 2;
       return new Strokes(this, [{ pts: linePts(x - s, y - s, x + s, y + s) }, { pts: linePts(x + s, y - s, x - s, y + s) }], { color: 'red', width: 7, ...o });
     }
-    // 花括号：水平（dir: 'down' 尖朝下 / 'up'），用于把几部分归到一起
+    // Curly brace: horizontal (dir: 'down' tip pointing down / 'up'), for grouping several parts together
     brace(x1, x2, y, o = {}) {
       const dir = o.dir === 'up' ? -1 : 1, d = (o.depth ?? 22) * dir, m = (x1 + x2) / 2;
       const pts = [
@@ -1045,7 +1045,7 @@
       it.tip = [m, y + d * 1.7];
       return it;
     }
-    // 竖向花括号（dir: 'right' 尖朝右 / 'left'）
+    // Vertical curly brace (dir: 'right' tip pointing right / 'left')
     vbrace(y1, y2, x, o = {}) {
       const dir = o.dir === 'left' ? -1 : 1, d = (o.depth ?? 22) * dir, m = (y1 + y2) / 2;
       const q = (a, b) => Math.min(30, Math.abs(b - a) / 3);
@@ -1062,9 +1062,9 @@
       return it;
     }
 
-    // ---------- 几何标注 ----------
-    // 角标记：顶点 v，两边指向 p1、p2（都是 [x, y]）。o.n 道弧（1–3，用来区分不同的角）；
-    // o.right = true 画直角符号；o.r 半径，o.gap 弧间距
+    // ---------- Geometry annotations ----------
+    // Angle mark: vertex v, sides pointing to p1 and p2 (both [x, y]). o.n arcs (1–3, to tell different angles apart);
+    // o.right = true draws a right-angle symbol; o.r radius, o.gap spacing between arcs
     angleMark(v, p1, p2, o = {}) {
       const a1 = Math.atan2(p1[1] - v[1], p1[0] - v[0]);
       let d = Math.atan2(p2[1] - v[1], p2[0] - v[0]) - a1;
@@ -1084,7 +1084,7 @@
       }
       return new Strokes(this, strokes, { width: 4, rough: 0.35, ...o });
     }
-    // 等长标记：在线段 p1–p2 上画 o.n 道短杠（1–3，用来区分不同的边）；o.pos 位置（0–1，默认中点）
+    // Equal-length mark: draws o.n short ticks on segment p1–p2 (1–3, to tell different sides apart); o.pos position (0–1, default midpoint)
     tickMark(p1, p2, o = {}) {
       const L = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
       const u = [(p2[0] - p1[0]) / L, (p2[1] - p1[1]) / L], nv = [-u[1], u[0]];
@@ -1097,14 +1097,14 @@
       }
       return new Strokes(this, strokes, { width: 4, rough: 0.3, ...o });
     }
-    // 把文字放在点 (px, py) 沿方向 dir 往外 pad 像素处，文字框不压住这个点
+    // Place text pad pixels out from point (px, py) along direction dir, so the text box doesn't cover the point
     _placeOut(item, px, py, dir, pad) {
       const { w, h } = item.box, L = Math.hypot(dir[0], dir[1]) || 1, ux = dir[0] / L, uy = dir[1] / L;
       const off = Math.abs(ux) * w / 2 + Math.abs(uy) * h / 2 + pad;
       item.place(px + ux * off, py + uy * off, 'center', 'middle');
       return item;
     }
-    // 多边形顶点字母：names[i] 放在 pts[i] 外侧（沿外角平分线）；null 跳过。返回文字数组
+    // Polygon vertex letters: names[i] goes outside pts[i] (along the external angle bisector); null skips. Returns an array of text items
     vertexLabels(pts, names, o = {}) {
       const n = pts.length, out = [];
       names.forEach((name, i) => {
@@ -1119,7 +1119,7 @@
       });
       return out;
     }
-    // 多边形边上的标注：labels[i] 标在边 pts[i]→pts[i+1] 的中点外侧；null 跳过。返回文字数组
+    // Polygon side labels: labels[i] goes outside the midpoint of side pts[i]→pts[i+1]; null skips. Returns an array of text items
     sideLabels(pts, labels, o = {}) {
       const n = pts.length, out = [];
       const cx = pts.reduce((s, p) => s + p[0], 0) / n, cy = pts.reduce((s, p) => s + p[1], 0) / n;
@@ -1135,7 +1135,7 @@
       return out;
     }
 
-    // 坐标系：返回 {toScreen(x,y), plot(fn,o), point(x,y,o), items}
+    // Coordinate axes: returns {toScreen(x,y), plot(fn,o), point(x,y,o), items}
     axes(o = {}) {
       const { x = 300, y = 200, w = 800, h = 500 } = o;
       const [x0, x1] = o.xRange || [0, 10], [y0, y1] = o.yRange || [0, 10];
@@ -1165,17 +1165,17 @@
       };
     }
 
-    // ---------- 封面：视频第一帧就是一张完整的封面，停留 hold 秒后淡出，进入白板 ----------
-    // o: title（支持 {red:关键词}）、subtitle、tag（左上角小标签）、hold（默认 1.3 秒）
-    // 返回 { hold, end, area, add(item) }：area 是标题下方留给主视觉的区域；
-    // 主视觉（插画、角色）用 hud: true, at: 0, dur: 0 画好后交给 add()，会和封面一起淡出。
+    // ---------- Cover: the video's first frame is a complete cover; it holds for `hold` seconds, then fades into the whiteboard ----------
+    // o: title (supports {red:keyword}), subtitle, tag (small label at the top left), hold (default 1.3 s)
+    // Returns { hold, end, area, add(item) }: area is the region below the title reserved for the main visual;
+    // draw the main visual (illustration, character) with hud: true, at: 0, dur: 0 and pass it to add(); it fades out together with the cover.
     cover(o = {}) {
       const W = this.W, H = this.H, hold = o.hold ?? 1.3, fade = 0.4;
       const items = [];
       const keep = (it) => { items.push(it); return it; };
       keep(new PanelItem(this, { hud: true, at: 0, overlap: true }));
       keep(this.rect(64, 64, W - 128, H - 128, { hud: true, at: 0, dur: 0, color: o.color ?? 'ink', width: 5, rough: 0.8, overlap: true }));
-      // 标题：从大字号往下试，直到一行放得下（最小 88）
+      // Title: try font sizes from large to small until it fits on one line (minimum 88)
       let title = null;
       for (const size of [150, 136, 124, 112, 100, 88]) {
         title = this.text(o.title || '', { hud: true, x: W / 2, y: o.titleY ?? (o.tag ? 310 : 250), size, align: 'center', valign: 'middle', at: 0, dur: 0 });
@@ -1200,20 +1200,20 @@
       };
     }
 
-    // ---------- 一堆、一把、时长、档位 ----------
-    // 在一块区域里堆一堆互不重叠的小东西（块、豆子、石子……），从后往前画。
-    // o: count, size, shape（SHAPES 里的名字）或 make(x, y, size, r, i) 自己返回 {d, color, fill}，color, fill, seed, gap
+    // ---------- Pile, sprinkle, timer, level ----------
+    // Piles non-overlapping small things (chunks, beans, pebbles…) inside an area, drawn back to front.
+    // o: count, size, shape (a name from SHAPES) or make(x, y, size, r, i) returning your own {d, color, fill}, color, fill, seed, gap
     pile(area, o = {}) {
       const seed = o.seed ?? this.nextSeed(), r = rng(seed + 7), size = o.size ?? 36;
-      // 每个形状的大小在 size 的 0.85–1.15 倍之间浮动，间距取 1.2 倍才不会互相压住
+      // Each shape's size varies between 0.85–1.15× size; a gap of 1.2× keeps them from overlapping
       const pts = scatterPoints(area, { count: o.count ?? 12, gap: o.gap ?? size * 1.2, seed }).sort((p, q) => p[1] - q[1] || p[0] - q[0]);
       const make = o.make || SHAPES[o.shape || 'chunk'];
       const list = pts.map((p, i) => ({ ...make(p[0], p[1], size * (0.85 + r() * 0.3), r, i) }));
       const it = this.path(list, { width: Math.min(3.5, Math.max(2, size / 11)), fill: o.fill ?? '#FFFFFF', ...o });
-      it.kind = '一堆';
+      it.kind = 'pile';
       return it;
     }
-    // 撒一把小东西（葱花、盐粒、气泡、雪花……）：大致均匀、随机分布，一个接一个出现
+    // Sprinkle a handful of small things (chopped scallions, salt grains, bubbles, snowflakes…): roughly even, random distribution, appearing one after another
     sprinkle(area, o = {}) {
       const seed = o.seed ?? this.nextSeed(), r = rng(seed + 7), size = o.size ?? 12;
       const pts = scatterPoints(area, { count: o.count ?? 14, gap: o.gap ?? size * 1.3, seed });
@@ -1224,10 +1224,10 @@
         return { ...sh, fill: sh.dot ? col(color) : sh.open ? undefined : o.fill ?? '#FFFFFF' };
       });
       const it = this.path(list, { width: 3, rough: 0.4, ...o, color, fill: undefined, dur: o.dur ?? Math.min(1.2, 0.08 * list.length + 0.2) });
-      it.kind = '一把';
+      it.kind = 'sprinkle';
       return it;
     }
-    // 时长：小钟 + 文字（如 "2 分钟"）；画完后分针转一圈
+    // Timer: a small clock + text (e.g. "2 minutes"); after drawing, the minute hand sweeps a full turn
     timer(x, y, o = {}) {
       const R = o.r ?? 40, color = o.color ?? 'ink', at = o.at ?? this.cursor;
       const face = this.path([circleD(x, y, R), ...[0, 1, 2, 3].map((k) => { const a = (k * Math.PI) / 2; return `M${x + Math.cos(a) * R * 0.78},${y + Math.sin(a) * R * 0.78} L${x + Math.cos(a) * R * 0.92},${y + Math.sin(a) * R * 0.92}`; })], { color, width: 4, rough: 0.4, at, dur: o.dur ?? 0.45, fill: o.fill ?? '#FFFFFF' });
@@ -1236,9 +1236,9 @@
       if (o.sweep !== false) hand.transform(hand.end + 0.05, { rotate: 360, origin: [x, y] }, 0.9, ease.inOut);
       const items = [face, hour, hand];
       if (o.label) items.push(this.text(o.label, { x: x + R + 14, y, valign: 'middle', size: o.size ?? Math.round(R * 1.05), color: o.labelColor ?? color, at: hand, delay: 0.05 }));
-      return groupOf(items, '时长');
+      return groupOf(items, 'timer');
     }
-    // 档位：火候 / 力度 / 难度这类"第几档"的信息。icon: 'flame' | 'bar' | 'star'；level 档亮起，其余为灰色轮廓
+    // Level: "which setting" info such as heat / strength / difficulty. icon: 'flame' | 'bar' | 'star'; the first `level` icons light up, the rest are gray outlines
     level(x, y, o = {}) {
       const max = o.max ?? 3, lv = o.level ?? 1, s = o.size ?? 40, icon = o.icon ?? 'bar', color = o.color ?? 'red';
       const at = o.at ?? this.cursor;
@@ -1246,7 +1246,7 @@
       for (let i = 0; i < max; i++) {
         const cx = x + i * s * 1.15, on = i < lv;
         let d;
-        // 火苗：底部圆、尖端带弯，外焰 + 内焰
+        // Flame: round bottom, curved tip, outer flame + inner flame
         if (icon === 'flame') d = [`M${cx},${y + s * 0.45} C${cx - s * 0.42},${y + s * 0.45} ${cx - s * 0.45},${y + s * 0.05} ${cx - s * 0.2},${y - s * 0.2} C${cx - s * 0.12},${y - s * 0.28} ${cx - s * 0.12},${y - s * 0.42} ${cx - s * 0.05},${y - s * 0.58} C${cx + s * 0.22},${y - s * 0.36} ${cx + s * 0.46},${y - s * 0.14} ${cx + s * 0.42},${y + s * 0.12} C${cx + s * 0.4},${y + s * 0.38} ${cx + s * 0.2},${y + s * 0.45} ${cx},${y + s * 0.45} Z`, `M${cx},${y + s * 0.36} C${cx - s * 0.17},${y + s * 0.33} ${cx - s * 0.14},${y + s * 0.08} ${cx + s * 0.02},${y - s * 0.1} C${cx + s * 0.12},${y + s * 0.1} ${cx + s * 0.17},${y + s * 0.3} ${cx},${y + s * 0.36} Z`];
         else if (icon === 'star') d = `M${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => { const a = -Math.PI / 2 + (k * Math.PI) / 5, rr = (k % 2 ? 0.22 : 0.5) * s; return `${cx + Math.cos(a) * rr},${y + Math.sin(a) * rr}`; }).join('L')}Z`;
         else { const h = s * (0.35 + (0.65 * (i + 1)) / max); d = `M${cx - s * 0.3},${y + s * 0.5} L${cx - s * 0.3},${y + s * 0.5 - h} L${cx + s * 0.3},${y + s * 0.5 - h} L${cx + s * 0.3},${y + s * 0.5} Z`; }
@@ -1254,22 +1254,22 @@
         items.push(this.path(parts, { color: on ? color : '#B9BCC2', fillOpacity: 0.9, width: 3.5, rough: 0.4, at: i ? items[i - 1] : at, dur: 0.18 }));
       }
       if (o.label) items.push(this.text(o.label, { x: x + (max - 1) * s * 1.15 + s * 0.6, y, valign: 'middle', size: o.labelSize ?? Math.round(s * 1.05), color: o.labelColor ?? color, at: items[items.length - 1], delay: 0.05 }));
-      return groupOf(items, '档位');
+      return groupOf(items, 'level');
     }
 
-    // ---------- 结尾全貌：拉远看整块白板，并按顺序标出 ①②③…… ----------
-    // 每一段（有章节时按章节，否则按镜头停留的位置）在白板上占的区域旁边标上序号，再用虚线箭头按讲解顺序串起来。
-    // 一章里镜头停过好几个不同的位置时，按停留顺序标成 2-1、2-2、2-3……，看得出章内是怎么走的。
-    // 放在 build 最后调用：取景包含结尾时白板上的全部内容，分段只统计全貌镜头开始（at）之前画的内容。
-    // o: at, dur（镜头拉远用时，默认 2）, hold（全部标完后至少停留几秒，默认 3，视频会自动加长）,
-    //    margin（画面四周给序号留的空白，屏幕像素，默认 100）, pad（额外留白，白板像素，默认 0）, numbers, route, color
+    // ---------- Ending overview: zoom out to the whole whiteboard and number the parts in order ①②③… ----------
+    // Each segment (by chapter when there are chapters, otherwise by where the camera held) gets a number badge next to its area on the board, and dashed arrows connect them in narration order.
+    // When the camera held at several different places within one chapter, they are numbered 2-1, 2-2, 2-3… in hold order, so the path within the chapter is visible.
+    // Call it at the end of build: the framing includes everything on the board at the end; segmentation only counts content drawn before the overview shot starts (at).
+    // o: at, dur (zoom-out duration, default 2), hold (minimum seconds to hold after all badges are drawn, default 3; the video is extended automatically),
+    //    margin (blank margin around the frame for the badges, in screen pixels, default 100), pad (extra padding, in board pixels, default 0), numbers, route, color
     overview(o = {}) {
       const at = o.at ?? this.cursor, dur = o.dur ?? 2;
       const T = this.T;
       const chapters = T && T.chapters.length >= 2;
       let spans;
       if (chapters) {
-        // 每章再按镜头移动切成几小段（镜头移动开始的时刻为分界）
+        // Split each chapter further by camera moves (the start of each camera move is a boundary)
         spans = T.chapters.flatMap((c, ci) => {
           const cuts = this.moves.filter((m) => m.at > c.start && m.at < Math.min(c.end, at)).map((m) => m.at);
           return [c.start, ...cuts].map((t0, k, a) => ({ title: c.title, num: ci + 1, t0, t1: k + 1 < a.length ? a[k + 1] : c.end }));
@@ -1278,7 +1278,7 @@
         const stops = this.moves.filter((m) => m.at < at).map((m) => m.at);
         spans = [0, ...stops].map((t0, i, a) => ({ title: '', t0, t1: i + 1 < a.length ? a[i + 1] : at }));
       }
-      // 取景：结尾时还留在白板上的全部内容；分段：只算全貌镜头开始之前画的
+      // Framing: everything still on the board at the end; segmentation: only what was drawn before the overview shot starts
       const dur0 = this.duration;
       const kept = (i) => !i.o.hud && i.box && !i.o.noOverview && (i.exits.length === 0 || Math.min(...i.exits.map((x) => x.at)) > dur0);
       const shown = (i) => kept(i) && i.start < at;
@@ -1297,7 +1297,7 @@
         const its = items.filter((i) => i.start >= sp.t0 && i.start < sp.t1);
         if (!its.length) continue;
         const box = unionBox(its.map(boxAt)), prev = regions[regions.length - 1];
-        // 同一段里镜头只是推近拉远、没有换地方：合并成一个区域
+        // Within the same chapter the camera only zoomed in/out without moving elsewhere: merge into one region
         if (prev && sp.num && prev.num === sp.num && near(prev.box, box, 40)) prev.box = unionBox([prev.box, box]);
         else regions.push({ ...sp, box });
       }
@@ -1308,7 +1308,7 @@
         regions.forEach((rg) => { seen[rg.num] = (seen[rg.num] || 0) + 1; rg.label = count[rg.num] > 1 ? `${rg.num}-${seen[rg.num]}` : String(rg.num); });
       } else regions.forEach((rg, i) => { rg.label = String(i + 1); });
       const all = unionBox(keptItems.map(boxAt));
-      // 镜头：和 focus 一样避开进度条和字幕；四周按屏幕像素留出放序号的空白（缩得越小，白板上留得越多）
+      // Camera: like focus, avoid the progress bar and captions; leave a margin in screen pixels around the edges for badges (the smaller the zoom, the more board space it takes)
       const numbers = o.numbers !== false && regions.length >= 2;
       const margin = o.margin ?? (numbers ? 100 : 60), pad = o.pad ?? 0;
       const top = this.chapterZone || 0, bottom = this.capEl ? 150 : 0, availH = this.H - top - bottom;
@@ -1317,11 +1317,11 @@
       this.camera(at, { x: camX, y: camY, zoom }, dur);
       this.endHold = at + dur + (o.hold ?? 3);
       if (!numbers) return this;
-      // 序号：屏幕上约 30 像素半径，按全貌镜头的缩放换算成白板尺寸
+      // Number badges: about 30 px radius on screen, converted to board size using the overview zoom
       const R = 30 / zoom, fs = 36 / zoom, color = o.color ?? 'red';
       const view = { x: camX - this.W / 2 / zoom, y: camY - this.H / 2 / zoom + top / zoom, w: this.W / zoom, h: availH / zoom };
-      // 自动找空位：在区域四周挑候选位置，选不压内容、在画面安全区内、也不和别的序号重叠的；
-      // 实在找不到，就选压得最少的位置，并挪回画面里（宁可压一点内容，也不能被画面裁掉）
+      // Auto-find a free spot: pick candidate positions around the region, choosing one that covers no content, stays in the safe area, and doesn't overlap other badges;
+      // if none exists, choose the position with the least overlap and pull it back into the frame (better to cover a little content than to be cropped off)
       const obstacles = keptItems.map(boxAt);
       const placed = [];
       const inter = (a, c) => Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
@@ -1331,7 +1331,7 @@
         const bb = { x: c[0] - R * 1.15, y: c[1] - R * 1.15, w: R * 2.3, h: R * 2.3 };
         return [...obstacles, ...placed].reduce((a, ob) => a + inter(bb, ob), 0);
       };
-      // 节奏：序号和箭头交替画出（像沿着路线走一遍），总共约 5 秒，区域多时每步更快
+      // Pacing: badges and arrows are drawn alternately (like walking the route), about 5 seconds total; faster per step when there are many regions
       const t0 = at + dur + 0.2, step = clamp(5 / regions.length, 0.3, 0.7);
       const badges = regions.map((rg) => {
         const b = rg.box, cands = [];
@@ -1341,7 +1341,7 @@
         let best = null, bestScore = Infinity;
         for (const c0 of cands) {
           const c = inView(c0);
-          // 被挪动过的候选位置离区域更远，稍微扣分
+          // Candidates that had to be moved end up farther from the region, so they get a small penalty
           const sc = clash(c) + (c[0] !== c0[0] || c[1] !== c0[1] ? R * R * 0.5 : 0);
           if (sc < bestScore) { best = c; bestScore = sc; }
           if (sc === 0) break;
@@ -1357,15 +1357,15 @@
         const num = this.text(bd.label, { x: bd.cx, y: bd.cy, size: fs * (bd.label.length > 2 ? 0.72 : 1.1), align: 'center', valign: 'middle', color, font: 'en', at: ring, dur: 0.08, overlap: true, noOverview: true });
         t = Math.max(t, num.end);
       });
-      // 顶部进度条的章节名前加上对应的序号；导出的全貌图顶部也会有图例
+      // Prefix the chapter titles in the top progress bar with their numbers; the exported board overview also gets a legend at the top
       this.overviewNumbers = { at: at + dur, titles: chapters ? T.chapters.map((c) => c.title) : regions.map((rg) => rg.title) };
-      // 按顺序连起来的虚线箭头
+      // Dashed arrows connecting the badges in order
       if (o.route !== false) {
         for (let i = 0; i + 1 < badges.length; i++) {
           const a = badges[i], b = badges[i + 1], L = Math.hypot(b.cx - a.cx, b.cy - a.cy) || 1;
           const ux = (b.cx - a.cx) / L, uy = (b.cy - a.cy) / L;
           const x1 = a.cx + ux * R * 1.3, y1 = a.cy + uy * R * 1.3, x2 = b.cx - ux * R * 1.3, y2 = b.cy - uy * R * 1.3;
-          // 自动选弯度：在几种弯法里挑一条穿过内容最少的
+          // Auto-pick the bend: among several bends, choose the one crossing the least content
           const hits = (bend) => {
             const mx = (x1 + x2) / 2 - uy * bend * L, my = (y1 + y2) / 2 + ux * bend * L;
             let n = 0;
@@ -1384,7 +1384,7 @@
       return this;
     }
 
-    // 一次擦掉多个元素（'all' = 当前已出现的全部）
+    // Erase several items at once ('all' = everything that has appeared so far)
     erase(items, at, dur = 0.5) {
       at = at ?? this.cursor;
       const list = items === 'all' ? this.items.filter((i) => i.start < at && !i.o.hud) : items;
@@ -1393,7 +1393,7 @@
       return this;
     }
 
-    // 整块白板的最终样子（导出大图用）：所有内容画完的状态，不含字幕、进度条等屏幕固定层
+    // Final look of the whole board (for exporting the large image): everything fully drawn, without screen-fixed layers like captions and the progress bar
     snapshot(pad = 100) {
       const T = this.duration;
       this.render(T);
@@ -1404,7 +1404,7 @@
         return { x, y, w: Math.min(r.x + r.w, b.x + b.w) - x, h: Math.min(r.y + r.h, b.y + b.h) - y };
       });
       let b = unionBox(boxes);
-      // 有顺序标注时，在图的上方写一行图例：① 章节名 ② 章节名 ……
+      // When there are order badges, write a one-line legend above the image: ① chapter title ② chapter title …
       const titles = this.overviewNumbers ? this.overviewNumbers.titles.filter(Boolean) : [];
       if (titles.length) {
         const lg = document.createElement('div');
@@ -1425,12 +1425,12 @@
         this.paper.style.backgroundPosition = `${pad - b.x}px ${pad - b.y}px`;
       }
       this.hud.style.display = 'none';
-      return { w, h, label: '白板全貌' };
+      return { w, h, label: 'Board overview' };
     }
 
     get duration() {
       const last = Math.max(0, ...this.items.map((i) => i.end + (i.hasFill ? 0.35 : 0)));
-      // 最后一笔画完后至少停 2 秒；有结尾全貌时，标完序号后至少停 hold 秒（视频自动加长，不会没看完就结束）
+      // Hold at least 2 seconds after the last stroke; with an ending overview, hold at least `hold` seconds after the badges (the video is extended automatically so it doesn't end before viewers finish looking)
       return Math.max(this.T ? this.T.duration : 0, last + 2, this.endHold || 0);
     }
 
@@ -1442,8 +1442,8 @@
     }
   }
 
-  // 给绘图方法创建的元素标上类型（自动检查的报告里用）；标注类元素本来就会和别的东西重叠
-  const KINDS = { line: '线', polyline: '折线', curve: '曲线', path: '插画', sketch: '插画', arrow: '箭头', rect: '矩形', ellipse: '椭圆', circle: '圆', circleAround: '圈注', boxAround: '框注', underline: '下划线', strike: '划线', check: '对勾', cross: '叉', brace: '括号', vbrace: '括号', highlight: '荧光笔', dot: '圆点', angleMark: '角标', tickMark: '等长标记' };
+  // Tag items created by drawing methods with a kind (used in lint check reports); annotation items are expected to overlap other things
+  const KINDS = { line: 'line', polyline: 'polyline', curve: 'curve', path: 'illustration', sketch: 'illustration', arrow: 'arrow', rect: 'rectangle', ellipse: 'ellipse', circle: 'circle', circleAround: 'circle annotation', boxAround: 'box annotation', underline: 'underline', strike: 'strikethrough', check: 'check mark', cross: 'cross', brace: 'brace', vbrace: 'brace', highlight: 'highlighter', dot: 'dot', angleMark: 'angle mark', tickMark: 'tick mark' };
   const ANNOT = new Set(['circleAround', 'boxAround', 'underline', 'strike', 'highlight', 'angleMark', 'tickMark']);
   for (const [m, label] of Object.entries(KINDS)) {
     const f = Board.prototype[m];
@@ -1452,7 +1452,7 @@
       if (it instanceof Item) {
         it.kind = label;
         it.annot = ANNOT.has(m);
-        // 画在照片 / 视频上的线条、圈注、箭头（照片在文字层，比墨线高）：自动放到最上层，不被照片盖住
+        // Lines, circle annotations and arrows drawn over a photo / video (photos sit in the text layer, above the ink): automatically moved to the top layer so the photo doesn't cover them
         const hit = (a, c) => a.x < c.x + c.w && c.x < a.x + a.w && a.y < c.y + c.h && c.y < a.y + a.h;
         if (m !== 'highlight' && !it.o.hud && !it.o.layer && it.box && it.node && it.node.parentNode === this.inkSvg && this.items.some((i) => i.isMedia && !i.o.hud && hit(i.box, it.box))) this.topSvg.appendChild(it.node);
       }
@@ -1460,9 +1460,9 @@
     };
   }
 
-  // ---------- 自动检查 ----------
-  // 找出只有"动起来"才会暴露的问题：没画完就擦、停留太短、画在画面外、压住字幕、边画边移镜头、互相重叠……
-  // 返回 [{ level: 'error'|'warn', t, src, what, msg }]
+  // ---------- Lint check ----------
+  // Finds problems that only show up "in motion": erased before finished, held too briefly, drawn off-frame, covering captions, moving the camera while drawing, overlapping each other…
+  // Returns [{ level: 'error'|'warn', t, src, what, msg }]
   Board.prototype.project = function (box, t, hud) {
     if (hud) return { ...box };
     const c = this.camAt(t);
@@ -1472,62 +1472,62 @@
     const out = [];
     const add = (level, t, it, msg) => out.push({ level, t: Math.round(t * 100) / 100, src: it ? it.src : '', what: it ? it.describe() : '', msg });
     const W = this.W, H = this.H, dur = this.duration;
-    const fat = (r) => ({ x: r.x - 1, y: r.y - 1, w: r.w + 2, h: r.h + 2 }); // 细线的外框高度可能为 0
+    const fat = (r) => ({ x: r.x - 1, y: r.y - 1, w: r.w + 2, h: r.h + 2 }); // a thin line's bounding box can have zero height
     const inter = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
     const gone = (it) => (it.exits.length ? Math.min(...it.exits.map((x) => x.at)) : Infinity);
     for (const it of this.items) {
       const done = it.done;
-      // 1. 擦除时机
+      // 1. Erase timing
       for (const x of it.exits) {
-        if (x.at <= it.start) add('error', it.start, it, '还没开始画就已经被擦掉，观众永远看不到');
-        else if (x.at < done - 0.05) add('error', x.at, it, `还没画完就开始擦除（只画到 ${Math.round(((x.at - it.start) / (done - it.start)) * 100)}%）`);
-        else if (x.at - done < 0.6) add('warn', x.at, it, `画完只停留 ${(x.at - done).toFixed(1)} 秒就被擦掉，观众来不及看`);
+        if (x.at <= it.start) add('error', it.start, it, 'erased before it even starts drawing; viewers will never see it');
+        else if (x.at < done - 0.05) add('error', x.at, it, `erase starts before drawing finishes (only ${Math.round(((x.at - it.start) / (done - it.start)) * 100)}% drawn)`);
+        else if (x.at - done < 0.6) add('warn', x.at, it, `erased only ${(x.at - done).toFixed(1)} s after drawing finishes; viewers don't have time to see it`);
       }
-      // 2. 超出视频时长
-      if (it.start >= dur) add('error', it.start, it, '开始时间超出了视频总时长');
-      else if (done > dur + 0.01) add('warn', done, it, '视频结束时还没画完');
+      // 2. Beyond the video duration
+      if (it.start >= dur) add('error', it.start, it, 'start time is past the total video duration');
+      else if (done > dur + 0.01) add('warn', done, it, 'still not finished drawing when the video ends');
       if (!it.box || it.start >= gone(it)) continue;
-      // 3. 画的时候是否在画面内（o.crop = true 表示有意只露出一部分）
+      // 3. Whether it is in frame while drawn (o.crop = true means only part is shown on purpose)
       if (!it.o.crop) {
         const t = Math.min(done, dur - 0.01);
         const r = fat(this.project(it.boxAt(t), t, it.o.hud));
         const area = Math.max(1, r.w * r.h);
         const visible = inter(r, { x: 0, y: 0, w: W, h: H }) / area;
-        if (visible < 0.02) add('error', t, it, '画完的时候完全不在画面里（镜头没对准它）');
-        else if (visible < 0.97) add('warn', t, it, `画完的时候有 ${Math.round((1 - visible) * 100)}% 在画面外，被裁掉了`);
-        // 4a. 压住顶部章节进度条
+        if (visible < 0.02) add('error', t, it, 'completely out of frame when drawing finishes (the camera is not pointed at it)');
+        else if (visible < 0.97) add('warn', t, it, `${Math.round((1 - visible) * 100)}% is out of frame when drawing finishes and gets cropped`);
+        // 4a. Covers the chapter progress bar at the top
         if (this.chapterZone && !it.annot && gone(it) > (this.coverEnd || 0) + 0.01 && r.y < this.chapterZone && r.y + r.h > 0 && r.x < W - 60 && r.x + r.w > 60) {
-          add('warn', t, it, `压到了顶部章节进度条（屏幕最上面 ${this.chapterZone} 像素）`);
+          add('warn', t, it, `overlaps the chapter progress bar at the top (the top ${this.chapterZone} px of the screen)`);
         }
-        // 4. 压住字幕区
+        // 4. Covers the caption area
         if (this.capEl && !it.annot && r.y + r.h > H - 140 && r.x < W - 260 && r.x + r.w > 260 && this.caps.some((c) => c.end > it.start && c.start < gone(it))) {
-          add('warn', t, it, '压到了底部字幕区（屏幕最下面 140 像素）');
+          add('warn', t, it, 'overlaps the caption area at the bottom (the bottom 140 px of the screen)');
         }
       }
-      // 5. 边画边移镜头
+      // 5. Moving the camera while drawing
       if (!it.o.hud) {
         for (const m of this.moves) {
           const ov = Math.min(it.end, m.at + m.dur) - Math.max(it.start, m.at);
-          if (ov > 0.3 && ov > 0.4 * it.dur) { add('warn', Math.max(it.start, m.at), it, `镜头还在移动时就开始画（重叠 ${ov.toFixed(1)} 秒），应该先移镜头再画`); break; }
+          if (ov > 0.3 && ov > 0.4 * it.dur) { add('warn', Math.max(it.start, m.at), it, `starts drawing while the camera is still moving (${ov.toFixed(1)} s of overlap); move the camera first, then draw`); break; }
         }
       }
     }
-    // 6. 实体元素之间的重叠（o.overlap = true 表示有意叠放）
-    const solid = this.items.filter((i) => i.box && !i.o.overlap && (['文字', '公式', '便签', '角色', '气泡', '图片'].includes(i.kind) || (i.kind === '插画' && i.hasFill)));
+    // 6. Overlap between solid items (o.overlap = true means stacked on purpose)
+    const solid = this.items.filter((i) => i.box && !i.o.overlap && (['text', 'formula', 'sticky note', 'character', 'speech bubble', 'image'].includes(i.kind) || (i.kind === 'illustration' && i.hasFill)));
     for (let a = 0; a < solid.length; a++) {
       for (let b = a + 1; b < solid.length; b++) {
         const A = solid[a], B = solid[b];
         const t0 = Math.max(A.start, B.start), t1 = Math.min(gone(A), gone(B), dur);
         if (t1 <= t0) continue;
         if (!!A.o.hud !== !!B.o.hud) {
-          // 固定在屏幕上的元素 vs 白板上的元素：按两者同时出现、镜头停稳时的位置比较
+          // Screen-fixed item vs. board item: compare positions when both are visible and the camera has settled
           const [hu, wo] = A.o.hud ? [A, B] : [B, A];
           const t = Math.min(t1 - 0.01, Math.max(t0, hu.done));
           const w = this.project(wo.boxAt(t), t), o = inter(hu.boxAt(t), w) / Math.max(1, w.w * w.h);
-          if (o > 0.12) add('warn', t, hu, `固定在屏幕上，挡住了白板上的 ${wo.describe()}（${wo.src}）${Math.round(o * 100)}%`);
+          if (o > 0.12) add('warn', t, hu, `fixed on screen, covers ${wo.describe()} (${wo.src}) on the board by ${Math.round(o * 100)}%`);
           continue;
         }
-        // 元素会移动：在共存时段的开头、结尾和每次移动结束时，按当时的位置检查
+        // Items can move: check positions at the start and end of their shared time span and at the end of every move
         const times = [t0 + 0.01, t1 - 0.01, ...[A, B].flatMap((it) => it.moves.map((m) => m.at + m.dur)).filter((t) => t > t0 && t < t1)];
         let worst = 0, when = t0;
         for (const t of times) {
@@ -1535,10 +1535,10 @@
           const r = inter(a, c) / (Math.min(a.w * a.h, c.w * c.h) || 1);
           if (r > worst) { worst = r; when = t; }
         }
-        if (worst > 0.12) add('warn', when, B, `和 ${A.describe()}（${A.src}）重叠了 ${Math.round(worst * 100)}%`);
+        if (worst > 0.12) add('warn', when, B, `overlaps ${A.describe()} (${A.src}) by ${Math.round(worst * 100)}%`);
       }
     }
-    // 8. 镜头"串场"：切到新区域时带到了别处的内容
+    // 8. Camera "bleed": cutting to a new region brings in content from elsewhere
     const frame = { x: 0, y: 0, w: W, h: H };
     const visAt = (it, t) => {
       if (it.o.hud || !it.box || t < it.start || t >= gone(it)) return 0;
@@ -1549,39 +1549,39 @@
     for (const m of this.moves) {
       if (m.dur <= 0) continue;
       const t0 = m.at - 0.01, t1 = m.at + m.dur + 0.01;
-      // 8a. 镜头停下后，画面边缘露出半截之前画的东西
+      // 8a. After the camera stops, part of something drawn earlier peeks in at the frame edge
       for (const it of world) {
         if (it.start >= m.at) continue;
         const v = visAt(it, t1);
-        if (v > 0.01 && v < 0.9) add('warn', t1, it, `镜头停下后，画面边缘露出了它的一部分（${Math.round(v * 100)}%）——像是上一段内容"串"进了这个镜头`);
+        if (v > 0.01 && v < 0.9) add('warn', t1, it, `after the camera stops, part of it (${Math.round(v * 100)}%) shows at the frame edge, as if the previous section "bled" into this shot`);
       }
-      // 8b. 镜头移动途中扫过了起点、终点都看不到的内容（中间隔着别的区域）
+      // 8b. During a camera move, it sweeps over content visible at neither the start nor the end (another region lies in between)
       const swept = world.filter((it) => visAt(it, t0) === 0 && visAt(it, t1) === 0 &&
         [0.25, 0.5, 0.75].some((k) => visAt(it, m.at + m.dur * k) > 0.05));
       if (swept.length) {
-        const names = swept.slice(0, 3).map((i) => i.describe()).join('、');
-        out.push({ level: 'warn', t: Math.round(m.at * 100) / 100, src: '', what: '镜头移动', msg: `移动途中扫过了别的区域的 ${swept.length} 个元素（${names}${swept.length > 3 ? ' 等' : ''}）。把区域按镜头路线依次排开，让每次只移到相邻区域；或者用 dur: 0 直接切过去` });
+        const names = swept.slice(0, 3).map((i) => i.describe()).join(', ');
+        out.push({ level: 'warn', t: Math.round(m.at * 100) / 100, src: '', what: 'camera move', msg: `sweeps over ${swept.length} item(s) from other regions on the way (${names}${swept.length > 3 ? ', etc.' : ''}). Lay out the regions in order along the camera route so each move only goes to an adjacent region, or use dur: 0 to cut straight there` });
       }
     }
-    // 9. 封面：第一帧不该是空白；封面收起前不该开始讲、也不该开始画
+    // 9. Cover: the first frame shouldn't be blank; narration and drawing shouldn't start before the cover is dismissed
     const lines = this.T ? this.T.lines.filter((l) => !l.silence && l.text) : [];
     if (!this.coverHold) {
-      if (!this.items.some((i) => i.start <= 0.05)) out.push({ level: 'warn', t: 0, src: '', what: '第一帧', msg: '第一帧是空白的。很多平台默认拿第一帧当封面，建议用 b.cover() 做一张封面' });
+      if (!this.items.some((i) => i.start <= 0.05)) out.push({ level: 'warn', t: 0, src: '', what: 'first frame', msg: 'the first frame is blank. Many platforms use the first frame as the cover by default; consider making one with b.cover()' });
     } else {
-      if (lines.length && lines[0].start < this.coverEnd) out.push({ level: 'warn', t: lines[0].start, src: '', what: '封面', msg: `封面还没收起，旁白就开始了：把 script.json 的 lead_in 调大 ${(this.coverEnd - lines[0].start + 0.2).toFixed(1)} 秒` });
+      if (lines.length && lines[0].start < this.coverEnd) out.push({ level: 'warn', t: lines[0].start, src: '', what: 'cover', msg: `narration starts before the cover is dismissed: increase lead_in in script.json by ${(this.coverEnd - lines[0].start + 0.2).toFixed(1)} s` });
       for (const it of this.items) {
         if (it.o.hud || it.coverPart || it.start >= this.coverEnd - 0.05) continue;
-        add('warn', it.start, it, '在封面收起之前就开始画了，会被封面挡住');
+        add('warn', it.start, it, 'starts drawing before the cover is dismissed and will be hidden by it');
       }
     }
-    // 7. 各元素自己的检查（例如角色指向的目标在画面外）
+    // 7. Each item's own checks (e.g. a character pointing at a target that is off-frame)
     for (const it of this.items) if (it.lint) it.lint(add);
     return out.sort((a, b) => a.t - b.t);
   };
 
   window.WB = {
     Board, COLORS, HL, NOTE, FONTS, board: (o) => new Board(o), unionBox,
-    // 供扩展模块（如 character.js）使用的内部工具
+    // Internal helpers for extension modules (e.g. character.js)
     _: { Item, svgEl, col, smoothD, wobble, samplePathD, boxOf },
     SHAPES, scatterPoints,
   };

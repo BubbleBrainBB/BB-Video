@@ -1,23 +1,23 @@
 #!/usr/bin/env node
-// render.mjs：零依赖渲染器。直接用 Chrome DevTools 协议驱动本机 Chrome，
-// 逐帧调用 window.renderFrame(t) 截图，交给 ffmpeg 编码成 mp4。
+// render.mjs: zero-dependency renderer. Drives the local Chrome directly over the Chrome DevTools Protocol,
+// calls window.renderFrame(t) frame by frame and screenshots it, then hands the frames to ffmpeg to encode an mp4.
 //
-// 用法：
-//   node render.mjs <项目目录>                   渲染完整视频 → out/video.mp4
-//   node render.mjs <项目目录> --draft           半分辨率快速草稿 → out/draft.mp4
-//   node render.mjs <项目目录> --from 10 --to 20 只渲染一段
-//   node render.mjs <项目目录> --stills 1.5,8,12 导出指定时间的截图 → review/
-//   node render.mjs <项目目录> --sheet           每句台词结束时的画面拼成总览图 → review/sheet.png
-//   node render.mjs <项目目录> --strip 14,17     这段时间内连续 8 帧拼成一张图，用来检查动画过程 → review/strip-14-17.png
-//   node render.mjs <项目目录> --check           只运行自动检查（时间线、画面范围、重叠等），不渲染
-//   node render.mjs <项目目录> --captions        列出全部字幕分段和时间，检查断句
-//   node render.mjs <项目目录> --board           导出整块白板画完后的全貌大图 → out/board.png（渲染成片时也会自动导出）
-//   node render.mjs <项目目录> --cover           导出封面（视频第一帧）→ out/cover.png（渲染成片时也会自动导出）
-// 其他参数：--workers 4  --fps 30  --out 文件名  --no-audio
-// 配乐：默认按 script.json 的 "bgm" 用代码自动生成并混入（见 bgm.mjs）；--no-bgm 不要配乐；--bgm-style 风格 临时换风格；
-//       --bgm-volume 1.2 调整配乐音量（倍数）；--bgm 音乐文件 改用自己的音乐（此时 --bgm-volume 默认 0.12）
-//           --offline 模拟断网（测试字体回退用）
-// 自动检查每次都会运行；有"错误"时拒绝渲染成片（草稿、截图不受影响），确认没问题可以加 --force 强制渲染
+// Usage:
+//   node render.mjs <project dir>                   render the full video → out/video.mp4
+//   node render.mjs <project dir> --draft           quick half-resolution draft → out/draft.mp4
+//   node render.mjs <project dir> --from 10 --to 20 render only one segment
+//   node render.mjs <project dir> --stills 1.5,8,12 export stills at the given times → review/
+//   node render.mjs <project dir> --sheet           contact sheet of the frame at the end of each narration line → review/sheet.png
+//   node render.mjs <project dir> --strip 14,17     8 consecutive frames across this time range tiled into one image, to check the motion → review/strip-14-17.png
+//   node render.mjs <project dir> --check           only run the lint check (timeline, frame bounds, overlaps, etc.), no render
+//   node render.mjs <project dir> --captions        list every caption segment with its times, to check line breaks
+//   node render.mjs <project dir> --board           export the board overview of the whole finished whiteboard → out/board.png (also exported automatically when rendering the final video)
+//   node render.mjs <project dir> --cover           export the cover (first frame of the video) → out/cover.png (also exported automatically when rendering the final video)
+// Other options: --workers 4  --fps 30  --out filename  --no-audio
+// Background music: by default generated in code from "bgm" in script.json and mixed in (see bgm.mjs); --no-bgm for no music; --bgm-style <style> switches style for this run;
+//       --bgm-volume 1.2 adjusts the music volume (multiplier); --bgm <music file> uses your own music instead (--bgm-volume then defaults to 0.12)
+//           --offline simulates having no network (for testing font fallback)
+// The lint check runs every time; if it reports "errors", rendering the final video is refused (drafts and stills are unaffected); once you've confirmed it's fine, add --force to render anyway
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { makeProjectBgm } from './bgm.mjs';
@@ -35,11 +35,11 @@ const CHROME = process.env.CHROME_PATH || [
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
   '/usr/bin/google-chrome', '/usr/bin/chromium',
 ].find((p) => fs.existsSync(p));
-if (!CHROME) { console.error('找不到 Chrome，请设置 CHROME_PATH'); process.exit(1); }
+if (!CHROME) { console.error('Chrome not found; please set CHROME_PATH'); process.exit(1); }
 const html = path.join(proj, opt('html', 'index.html'));
-if (!fs.existsSync(html)) { console.error('找不到 ' + html); process.exit(1); }
+if (!fs.existsSync(html)) { console.error('Not found: ' + html); process.exit(1); }
 
-// ---------- 极简 CDP 客户端 ----------
+// ---------- minimal CDP client ----------
 class CDP {
   constructor(ws) {
     this.ws = ws; this.id = 0; this.pending = new Map(); this.listeners = [];
@@ -100,7 +100,7 @@ async function openPage(cdp, scale) {
   const logs = [];
   cdp.listeners.push((m) => {
     if (m.sessionId !== sessionId) return;
-    if (m.method === 'Runtime.exceptionThrown') logs.push('页面异常：' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
+    if (m.method === 'Runtime.exceptionThrown') logs.push('Page exception: ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
     if (m.method === 'Runtime.consoleAPICalled' && ['error', 'warning'].includes(m.params.type)) logs.push(`console.${m.params.type}: ` + m.params.args.map((a) => a.value ?? a.description).join(' '));
   });
   await s('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: scale, mobile: false });
@@ -111,7 +111,7 @@ async function openPage(cdp, scale) {
   const loaded = cdp.once('Page.loadEventFired', sessionId);
   await s('Page.navigate', { url: pathToFileURL(html).href });
   await loaded;
-  const r = await s('Runtime.evaluate', { expression: 'window.__ready ? window.__ready : Promise.reject(new Error("页面没有调用 EV.composition()"))', awaitPromise: true, returnByValue: true });
+  const r = await s('Runtime.evaluate', { expression: 'window.__ready ? window.__ready : Promise.reject(new Error("the page did not call EV.composition()"))', awaitPromise: true, returnByValue: true });
   if (r.exceptionDetails) throw new Error((r.exceptionDetails.exception?.description || r.exceptionDetails.text) + '\n' + logs.join('\n'));
   const comp = r.result.value;
   if (comp.width !== 1920 || comp.height !== 1080) await s('Emulation.setDeviceMetricsOverride', { width: comp.width, height: comp.height, deviceScaleFactor: scale, mobile: false });
@@ -119,12 +119,12 @@ async function openPage(cdp, scale) {
     comp, logs,
     async frame(t, format = 'jpeg') {
       const e = await s('Runtime.evaluate', { expression: `window.renderFrame(${t})`, awaitPromise: true });
-      if (e.exceptionDetails) throw new Error(`t=${t} 渲染出错：` + (e.exceptionDetails.exception?.description || e.exceptionDetails.text));
+      if (e.exceptionDetails) throw new Error(`t=${t} render error: ` + (e.exceptionDetails.exception?.description || e.exceptionDetails.text));
       const shot = await s('Page.captureScreenshot', format === 'png' ? { format: 'png' } : { format: 'jpeg', quality: 92, optimizeForSpeed: true });
       return Buffer.from(shot.data, 'base64');
     },
     eval: (expr) => s('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }),
-    // 整块白板的全貌：把画布扩到能装下所有内容，截一张大图
+    // Overview of the whole whiteboard: enlarge the canvas to fit all the content and take one large screenshot
     async snapshot(out) {
       const r = await s('Runtime.evaluate', { expression: 'window.__snapshot && window.__snapshot()', returnByValue: true });
       const v = r.result && r.result.value;
@@ -132,7 +132,7 @@ async function openPage(cdp, scale) {
       await s('Runtime.evaluate', { expression: 'window.EV && EV.waitMedia && EV.waitMedia()', awaitPromise: true });
       const k = Math.min(1, 14000 / Math.max(v.w, v.h));
       fs.mkdirSync(path.dirname(out), { recursive: true });
-      // 分块截图再拼接：一次截太大的画面时，Chrome 只会栅格化其中一部分（其余是空白），尤其是有图片、阴影的时候
+      // Capture in tiles, then stitch: when a single capture is too large, Chrome rasterizes only part of it (the rest is blank), especially with images and shadows
       const TILE = 2000, tiles = [];
       for (let y = 0; y < v.h; y += TILE) for (let x = 0; x < v.w; x += TILE) tiles.push({ x, y, w: Math.min(TILE, v.w - x), h: Math.min(TILE, v.h - y) });
       const tdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ev-snap-'));
@@ -147,7 +147,7 @@ async function openPage(cdp, scale) {
       }
       if (tiles.length === 1) fs.copyFileSync(tiles[0].file, out);
       else {
-        // 按像素位置把每一块叠到一张画布上
+        // Overlay each tile onto one canvas at its pixel position
         const W = Math.round(v.w * k), H = Math.round(v.h * k);
         const inputs = tiles.flatMap((tl) => ['-i', tl.file]);
         let chain = `color=c=white:s=${W}x${H}:d=1[c0]`;
@@ -157,7 +157,7 @@ async function openPage(cdp, scale) {
         await ff.done;
       }
       fs.rmSync(tdir, { recursive: true, force: true });
-      return { w: Math.round(v.w * k), h: Math.round(v.h * k), label: v.label || '全貌图' };
+      return { w: Math.round(v.w * k), h: Math.round(v.h * k), label: v.label || 'Board overview' };
     },
   };
 }
@@ -166,20 +166,20 @@ function ffmpeg(argv, label) {
   const p = spawn('ffmpeg', ['-v', 'error', '-y', ...argv], { stdio: ['pipe', 'inherit', 'pipe'] });
   let err = '';
   p.stderr.on('data', (d) => (err += d));
-  p.done = new Promise((res, rej) => p.on('close', (c) => (c ? rej(new Error(`ffmpeg(${label}) 失败：${err}`)) : res())));
+  p.done = new Promise((res, rej) => p.on('close', (c) => (c ? rej(new Error(`ffmpeg(${label}) failed: ${err}`)) : res())));
   return p;
 }
-// 自动检查结果
+// Lint check results
 function report(issues) {
-  if (!issues.length) { console.log('自动检查：没有发现问题'); return 0; }
+  if (!issues.length) { console.log('Lint check: no issues found'); return 0; }
   const errs = issues.filter((i) => i.level === 'error');
-  console.log(`自动检查：${errs.length} 个错误，${issues.length - errs.length} 个提醒`);
-  for (const i of issues) console.log(`  ${i.level === 'error' ? '✗ 错误' : '! 提醒'}  ${i.t.toFixed(2)}s  ${i.src || ''}  ${i.what}：${i.msg}`);
-  console.log('  → 用 --strip 开始秒,结束秒 查看出问题的那段动画');
+  console.log(`Lint check: ${errs.length} error(s), ${issues.length - errs.length} warning(s)`);
+  for (const i of issues) console.log(`  ${i.level === 'error' ? '✗ error' : '! warning'}  ${i.t.toFixed(2)}s  ${i.src || ''}  ${i.what}: ${i.msg}`);
+  console.log('  → use --strip <start s>,<end s> to look at the animation where the problem is');
   return errs.length;
 }
 
-// 把若干张截图拼成网格
+// Tile several stills into a grid
 async function tile(files, cols, out) {
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ev-tile-'));
@@ -202,15 +202,15 @@ async function main() {
     const comp = first.comp;
     const fps = Number(opt('fps', draft ? 24 : comp.fps));
     const review = path.join(proj, 'review');
-    // 字体情况：只是告知，不影响渲染
+    // Font status: informational only, doesn't affect rendering
     const fonts = (await first.eval('window.__fontInfo || []')).result.value || [];
     if (fonts.length) {
       const ok = fonts.filter((f) => f.ok).map((f) => f.family), miss = fonts.filter((f) => !f.ok).map((f) => f.family);
-      console.log('字体：' + (ok.length ? ok.join('、') + ' 可用' : '') + (miss.length ? `${ok.length ? '；' : ''}${miss.join('、')} 不可用（本机没装、也没能联网下载），已自动改用备用字体` : ''));
+      console.log('Fonts: ' + (ok.length ? ok.join(', ') + ' available' : '') + (miss.length ? `${ok.length ? '; ' : ''}${miss.join(', ')} unavailable (not installed locally and could not be downloaded); switched to backup fonts automatically` : ''));
     }
-    // 时长：画面比旁白长时（结尾停留、全貌标序号），视频自动加长，音轨用静音补齐
+    // Duration: when the visuals run longer than the narration (closing hold, numbering on the board overview), the video is lengthened automatically and the audio track is padded with silence
     const tlDur = (await first.eval('window.TIMELINE ? window.TIMELINE.duration : 0')).result.value || 0;
-    console.log(`时长：${comp.duration.toFixed(1)} 秒` + (tlDur && comp.duration > tlDur + 0.05 ? `（旁白 ${tlDur.toFixed(1)} 秒，结尾画面多停留 ${(comp.duration - tlDur).toFixed(1)} 秒）` : ''));
+    console.log(`Duration: ${comp.duration.toFixed(1)} s` + (tlDur && comp.duration > tlDur + 0.05 ? ` (narration ${tlDur.toFixed(1)} s; the ending holds ${(comp.duration - tlDur).toFixed(1)} s longer)` : ''));
     const lint = await first.eval('window.__lint ? window.__lint() : []');
     const errors = report(lint.result.value || []);
     if (flag('check')) { process.exitCode = errors ? 1 : 0; return; }
@@ -223,17 +223,17 @@ async function main() {
       const out = path.join(proj, 'out', 'cover.png');
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, await first.frame(0, 'png'));
-      console.log(`封面：${out}`);
+      console.log(`Cover: ${out}`);
       return;
     }
     if (flag('board')) {
       const out = path.join(proj, 'out', 'board.png');
       const v = await first.snapshot(out);
-      console.log(v ? `${v.label}：${out}（${v.w}×${v.h}）` : '这个项目没有白板，无法导出全貌');
+      console.log(v ? `${v.label}: ${out} (${v.w}×${v.h})` : 'This project has no whiteboard; no overview to export');
       return;
     }
 
-    // ---- 截图模式 ----
+    // ---- stills mode ----
     if (flag('stills') || flag('sheet') || flag('strip')) {
       fs.mkdirSync(review, { recursive: true });
       let times;
@@ -261,16 +261,16 @@ async function main() {
         const out = path.join(review, `${name}.png`);
         await tile(files, cols, out);
         files.forEach((f) => fs.rmSync(f));
-        fs.writeFileSync(path.join(review, `${name}.txt`), times.map((t, i) => `#${i + 1}（第 ${Math.floor(i / cols) + 1} 行第 ${(i % cols) + 1} 列）t=${t.toFixed(2)}s`).join('\n'));
-        console.log(`${flag('sheet') ? '总览图' : '动画条'}：${out}（${times.length} 格，按行从左到右，时间见 ${name}.txt）`);
-      } else files.forEach((f) => console.log('截图：' + f));
+        fs.writeFileSync(path.join(review, `${name}.txt`), times.map((t, i) => `#${i + 1} (row ${Math.floor(i / cols) + 1}, column ${(i % cols) + 1}) t=${t.toFixed(2)}s`).join('\n'));
+        console.log(`${flag('sheet') ? 'Contact sheet' : 'Animation strip'}: ${out} (${times.length} cells, row by row, left to right; times in ${name}.txt)`);
+      } else files.forEach((f) => console.log('Still: ' + f));
       if (first.logs.length) console.log(first.logs.join('\n'));
       return;
     }
 
-    // ---- 视频模式 ----
+    // ---- video mode ----
     if (errors && !flag('draft') && !flag('force')) {
-      console.error('有自动检查错误，已停止渲染成片。请修改后重试；确认这些错误可以忽略时，加 --force 强制渲染。');
+      console.error('The lint check found errors, so the final render was stopped. Fix them and try again; if you are sure these errors can be ignored, add --force to render anyway.');
       process.exitCode = 1;
       return;
     }
@@ -293,7 +293,7 @@ async function main() {
         await write(ff.stdin, await page.frame(f / fps));
         doneFrames++;
         const pct = Math.floor((doneFrames / total) * 20) * 5;
-        if (pct !== lastPct) { lastPct = pct; process.stdout.write(`\r渲染中 ${pct}%（${doneFrames}/${total} 帧，${workers} 路并行）`); }
+        if (pct !== lastPct) { lastPct = pct; process.stdout.write(`\rRendering ${pct}% (${doneFrames}/${total} frames, ${workers} workers in parallel)`); }
       }
       ff.stdin.end();
       await ff.done;
@@ -312,28 +312,28 @@ async function main() {
       const bgm = opt('bgm');
       const gen = !bgm && !flag('no-bgm') ? makeProjectBgm(proj, comp.duration, { style: opt('bgm-style'), volume: Number(opt('bgm-volume', 1)) }) : null;
       if (gen) {
-        console.log(`配乐：${gen.name}（${gen.style}），代码生成`);
+        console.log(`Background music: ${gen.name} (${gen.style}), generated in code`);
         inputs.push('-ss', String(from), '-t', String(to - from), '-i', gen.file);
         filter = `[1:a]apad=whole_dur=${to - from}[n];[n][2:a]amix=inputs=2:duration=first:normalize=0[a]`;
       } else if (bgm) {
         inputs.push('-stream_loop', '-1', '-t', String(to - from), '-i', path.resolve(bgm));
         const v = Number(opt('bgm-volume', 0.12));
         filter = `[1:a]apad=whole_dur=${to - from}[n];[2:a]volume=${v},afade=t=out:st=${Math.max(0, to - from - 2)}:d=2[m];[n][m]amix=inputs=2:duration=first:normalize=0[a]`;
-      } else filter = `[1:a]apad=whole_dur=${to - from}[a]`; // 画面比旁白长（结尾停留）时，用静音补齐音轨
+      } else filter = `[1:a]apad=whole_dur=${to - from}[a]`; // When the visuals run longer than the narration (closing hold), pad the audio track with silence
       maps.push('-map', '[a]');
     }
     await ffmpeg([...inputs, ...(filter ? ['-filter_complex', filter] : []), ...maps, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out], 'mux').done;
     fs.rmSync(tmp, { recursive: true, force: true });
     const logs = pages.flatMap((p) => p.logs);
     if (logs.length) console.log([...new Set(logs)].join('\n'));
-    console.log(`完成：${out}（${(to - from).toFixed(1)} 秒，${fps}fps，用时 ${((Date.now() - t0) / 1000).toFixed(0)} 秒）`);
+    console.log(`Done: ${out} (${(to - from).toFixed(1)} s, ${fps}fps, took ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
     if (!draft && !flag('from') && !flag('to')) {
       const cover = path.join(outDir, 'cover.png');
       fs.writeFileSync(cover, await first.frame(0, 'png'));
-      console.log(`封面：${cover}`);
+      console.log(`Cover: ${cover}`);
       const board = path.join(outDir, 'board.png');
       const v = await first.snapshot(board);
-      if (v) console.log(`${v.label}：${board}（${v.w}×${v.h}）`);
+      if (v) console.log(`${v.label}: ${board} (${v.w}×${v.h})`);
     }
   } finally {
     await close();

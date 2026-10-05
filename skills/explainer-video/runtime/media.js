@@ -1,21 +1,21 @@
-// media.js：图片和视频片段素材（两种风格共用）
+// media.js: image and video clip media (shared by both styles)
 //
-// 素材先用 scripts/assets.mjs 整理：图片缩放后放在 assets/img/，视频片段抽成 30fps 的 JPEG 序列放在 assets/clips/<名字>/，
-// 清单写在 assets/manifest.js（window.MEDIA_ASSETS）。视频在 t 时刻显示哪一帧完全由 t 算出，画面仍然是时间的纯函数；
-// 截图前会等这一帧解码完成（EV.waitMedia）。
+// Media is first prepared with scripts/assets.mjs: images are resized into assets/img/, video clips are extracted as 30fps JPEG sequences into assets/clips/<name>/,
+// and the manifest is written to assets/manifest.js (window.MEDIA_ASSETS). Which video frame shows at time t is computed entirely from t, so the frame is still a pure function of time;
+// before each screenshot, the renderer waits for that frame to finish decoding (EV.waitMedia).
 //
-// 素材写法（src）：
-//   'photo1'                                   一张图片（清单里的名字）
-//   { clip: 'demo', from: 0, rate: 2, to: 10 } 视频片段：从片段的第 from 秒开始，以 rate 倍速播放，播到 to 秒停住（默认播到结尾）
+// Media spec (src):
+//   'photo1'                                   an image (its name in the manifest)
+//   { clip: 'demo', from: 0, rate: 2, to: 10 } video clip: starts at second `from` of the clip, plays at `rate`x speed, and stops at second `to` (default: plays to the end)
 //
-// 白板：b.photo(src, { x, y, w, anchor, valign, rotate, caption, tape, border, focus, aspect, at, play, hud })
-// 孔版：b.image(src, { x, y, w, h, fit, inks, frame, source, at, play })
+// Whiteboard: b.photo(src, { x, y, w, anchor, valign, rotate, caption, tape, border, focus, aspect, at, play, hud })
+// Riso: b.image(src, { x, y, w, h, fit, inks, frame, source, at, play })
 (function () {
   const { clamp, ease } = window.EV;
   const assets = () => window.MEDIA_ASSETS || { images: {}, clips: {} };
   const ROOT = () => window.MEDIA_ROOT || 'assets/';
 
-  // ---------- 帧同步：截图前等所有正在加载的图片解码完 ----------
+  // ---------- Frame sync: before a screenshot, wait for all loading images to finish decoding ----------
   const pending = new Set();
   function track(p) { pending.add(p); p.finally(() => pending.delete(p)); }
   function setImg(el, url) {
@@ -31,20 +31,20 @@
   }
   EV.waitMedia = () => (pending.size ? (async () => { while (pending.size) await Promise.all([...pending]); })() : undefined);
 
-  // ---------- 素材：尺寸、t 时刻的地址 ----------
+  // ---------- Media: size, and URL at time t ----------
   function source(src) {
     const A = assets();
     if (typeof src === 'string') {
       const m = A.images[src];
-      if (!m) throw new Error(`素材清单里没有图片 "${src}"。把图片放进项目的 assets/src/，再运行 node scripts/assets.mjs <项目>`);
+      if (!m) throw new Error(`Image "${src}" is not in the media manifest. Put the image in the project's assets/src/, then run node scripts/assets.mjs <project>`);
       return { w: m.w, h: m.h, label: src, url: () => ROOT() + (m.file || `img/${src}.jpg`) };
     }
     const c = A.clips[src.clip];
-    if (!c) throw new Error(`素材清单里没有视频片段 "${src.clip}"。把视频放进项目的 assets/src/，再运行 node scripts/assets.mjs <项目>`);
+    if (!c) throw new Error(`Video clip "${src.clip}" is not in the media manifest. Put the video in the project's assets/src/, then run node scripts/assets.mjs <project>`);
     const from = src.from || 0, rate = src.rate || 1, to = Math.min(src.to ?? Infinity, (c.frames - 1) / c.fps);
     return {
-      w: c.w, h: c.h, label: '视频:' + src.clip, clip: true,
-      // play：开始播放的时间；之前停在第一帧，播完停在最后一帧
+      w: c.w, h: c.h, label: 'video:' + src.clip, clip: true,
+      // play: time playback starts; before that it holds on the first frame, and after finishing it holds on the last frame
       url: (t, play) => {
         const ct = clamp(from + Math.max(0, t - play) * rate, from, to);
         const i = Math.min(c.frames, Math.floor(ct * c.fps + 1e-6) + 1);
@@ -53,12 +53,12 @@
       endAt: (play) => play + (to - from) / rate,
     };
   }
-  // 视频还没播完就消失了
+  // The video disappears before it finishes playing
   function clipLint(it, gone, add) {
-    if (it.clipEnd && gone < it.clipEnd - 0.3) add('warn', gone, it, `视频片段还没播完（要播到 ${it.clipEnd.toFixed(1)} 秒）就消失了：加快 rate、用 to 截短，或者晚一点再换走`);
+    if (it.clipEnd && gone < it.clipEnd - 0.3) add('warn', gone, it, `video clip disappears before it finishes playing (it plays until ${it.clipEnd.toFixed(1)}s): increase rate, shorten it with to, or remove it later`);
   }
 
-  // ---------- 白板：用胶带贴在白板上的照片 / 屏幕 ----------
+  // ---------- Whiteboard: a photo / screen taped onto the whiteboard ----------
   if (window.WB) {
     const { Item } = WB._;
     class Photo extends Item {
@@ -68,7 +68,7 @@
         (o.hud ? board.hudHtml : board.html).appendChild(div);
         super(board, o, div);
         this.S = S;
-        this.kind = '图片';
+        this.kind = 'image';
         this.isMedia = true;
         this.label = S.label;
         const w = o.w ?? 720, pad = o.border ?? 14, iw = w - pad * 2, ih = Math.round(iw / (o.aspect ?? S.w / S.h));
@@ -86,7 +86,7 @@
           cap.textContent = o.caption;
           div.appendChild(cap);
         }
-        // 胶带：两条半透明纸胶带斜贴在上边两角
+        // Tape: two translucent strips of paper tape stuck diagonally on the two top corners
         this.tapes = [];
         if (o.tape !== false) {
           for (const [side, rot] of [['left', -38], ['right', 38]]) {
@@ -111,7 +111,7 @@
         if (S.clip) this.clipEnd = S.endAt(this.play);
       }
       draw(p) {
-        // 贴上去：从上方略大处落下，胶带最后贴上
+        // Stick it on: drops in from slightly above and slightly larger; the tape goes on last
         const t = this.dur > 0 ? p * this.dur : 1e9;
         const land = ease.out(clamp(t / 0.4));
         this.baseTransform = `rotate(${this.rot}deg) translateY(${(1 - land) * -50}px) scale(${1 + (1 - land) * 0.05})`;
@@ -133,16 +133,16 @@
     WB.Board.prototype.photo = function (src, o = {}) { return new Photo(this, src, o); };
   }
 
-  // ---------- 孔版印刷：用专色油墨套印的图片 ----------
-  // inks：预设名，或每层一种油墨的数组 [{ ink, tone, gamma, amount, alpha, clean, bleed }]
-  //   tone: 'dark'（暗部上墨，默认）| 'light'（亮部上墨，深色背景的截图用）| 'flat'（整块实色，做底色）
-  //   gamma：>1 只让最深的地方上墨，<1 让中间调也上墨；amount：上墨浓度 0–1
-  //   alpha：自定义上墨量（feColorMatrix 的第 4 行，如 '1.2 1.2 -2.2 0 0' = 黄色的地方上墨），把图里某种颜色单独分到一种油墨上
+  // ---------- Riso: an image overprinted in spot-color inks ----------
+  // inks: a preset name, or an array with one ink per layer [{ ink, tone, gamma, amount, alpha, clean, bleed }]
+  //   tone: 'dark' (ink on shadows, default) | 'light' (ink on highlights, for screenshots with dark backgrounds) | 'flat' (a solid block, as a background)
+  //   gamma: >1 inks only the darkest areas, <1 inks the midtones too; amount: ink density 0–1
+  //   alpha: custom ink amount (row 4 of feColorMatrix, e.g. '1.2 1.2 -2.2 0 0' = ink where the image is yellow), to separate one color of the image onto its own ink
   const INK_PRESETS = {
-    photo: [{ ink: 'base', tone: 'flat', amount: 0.9 }, { ink: 'main', tone: 'dark', gamma: 0.9 }],        // 照片：底色 + 暗部，像双色印刷
-    screen: [{ ink: 'main', tone: 'dark', gamma: 0.85 }],                                                   // 浅色界面截图：只印暗部，字最清楚
-    'screen-tint': [{ ink: 'base', tone: 'flat', amount: 0.45 }, { ink: 'main', tone: 'dark', gamma: 0.8 }], // 浅色界面 + 淡底色
-    dark: [{ ink: 'main', tone: 'light', gamma: 0.9 }],                                                     // 深色界面（终端、深色图表）：亮的地方上墨
+    photo: [{ ink: 'base', tone: 'flat', amount: 0.9 }, { ink: 'main', tone: 'dark', gamma: 0.9 }],        // photo: background + shadows, like two-color printing
+    screen: [{ ink: 'main', tone: 'dark', gamma: 0.85 }],                                                   // light UI screenshot: prints only shadows, text is crispest
+    'screen-tint': [{ ink: 'base', tone: 'flat', amount: 0.45 }, { ink: 'main', tone: 'dark', gamma: 0.8 }], // light UI + faint background
+    dark: [{ ink: 'main', tone: 'light', gamma: 0.9 }],                                                     // dark UI (terminals, dark charts): ink on bright areas
   };
   if (window.RISO) {
     const { Item, svgEl } = RISO._;
@@ -151,7 +151,7 @@
         super(b, o);
         const S = source(src);
         this.S = S;
-        this.kind = '图片';
+        this.kind = 'image';
         this.isMedia = true;
         this.label = S.label;
         this.enter = o.enter ?? 'print';
@@ -160,7 +160,7 @@
         this.box = { x, y, w, h };
         const fit = o.fit ?? 'slice';
         const inks = typeof o.inks === 'string' ? INK_PRESETS[o.inks] : o.inks ?? INK_PRESETS.photo;
-        if (!inks) throw new Error(`没有这种图片印法："${o.inks}"，可用：${Object.keys(INK_PRESETS).join('、')}，或者自己写油墨层数组`);
+        if (!inks) throw new Error(`Unknown image ink preset: "${o.inks}". Available: ${Object.keys(INK_PRESETS).join(', ')}, or write your own ink-layer array`);
         this.imgs = [];
         inks.forEach((L) => {
           const g = this.part(L.ink, L.clean ?? L.tone !== 'flat');
@@ -173,20 +173,20 @@
           const col = b.col(L.ink), [r, gg, bb] = [1, 3, 5].map((k) => parseInt(col.slice(k, k + 2), 16) / 255);
           const f = svgEl('filter', { id: fid, x: 0, y: 0, width: 1, height: 1, 'color-interpolation-filters': 'sRGB' }, b.defs);
           const lr = 0.2126, lg = 0.7152, lb = 0.0722, inv = L.tone === 'light';
-          // 亮度 → 透明度：dark 模式 a = 1 - 亮度，light 模式 a = 亮度；颜色恒为油墨色
+          // Luminance → alpha: dark mode a = 1 - luminance, light mode a = luminance; color is always the ink color
           const arow = L.alpha ?? (inv ? `${lr} ${lg} ${lb} 0 0` : `${-lr} ${-lg} ${-lb} 0 1`);
           svgEl('feColorMatrix', { type: 'matrix', values: `0 0 0 0 ${r}  0 0 0 0 ${gg}  0 0 0 0 ${bb}  ${arow}` }, f);
           const ct = svgEl('feComponentTransfer', {}, f);
           svgEl('feFuncA', { type: 'gamma', amplitude: L.amount ?? 1, exponent: L.gamma ?? 1, offset: 0 }, ct);
           this.imgs.push(svgEl('image', { x, y, width: w, height: h, preserveAspectRatio: fit === 'slice' ? 'xMidYMid slice' : 'xMidYMid meet', filter: `url(#${fid})` }, g));
         });
-        // 细线框，像杂志里的图片边
+        // Thin frame, like a picture border in a magazine
         if (o.frame !== false) svgEl('rect', { x, y, width: w, height: h, fill: 'none', stroke: b.col(o.frameInk ?? 'main'), 'stroke-width': o.frameWidth ?? 3 }, this.part(o.frameInk ?? 'main', true));
         this.dur = o.dur ?? 0.7;
         this.finish();
         this.play = o.play ?? this.end;
         if (S.clip) this.clipEnd = S.endAt(this.play);
-        // 来源 / 图注
+        // Source / caption
         if (o.source) this.cap = b.label(o.source, { x, y: y + h + 12, size: o.sourceSize ?? 26, ink: 'main', at: this.start, dur: 0.4, annot: true });
       }
       draw(t) {

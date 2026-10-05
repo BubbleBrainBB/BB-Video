@@ -8,7 +8,7 @@ body.ev-preview { display: flex; flex-direction: column; align-items: center; he
 .ev-time { font-variant-numeric: tabular-nums; min-width: 130px; }
 .ev-hint { color: #888; }
 
-/* 白板层级：纸面 → 荧光笔 → 墨线 → 文字/公式/便签 → 顶层墨线 → 固定层（字幕、题目固定区） */
+/* Whiteboard layers: paper → highlighter → ink → text/formulas/sticky notes → top ink → fixed layer (captions, pinned problem area) */
 .wb-paper { position: absolute; inset: 0; }
 .wb-texture { position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply; }
 .wb-world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }

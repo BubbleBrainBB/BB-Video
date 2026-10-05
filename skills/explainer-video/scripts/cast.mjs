@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// cast.mjs：角色定妆图。读取项目里的 characters.js（window.CAST = { 名字: 规格, ... }），
-// 渲染成图片给用户确认。
-//   node cast.mjs <项目目录>              所有角色并排 → review/cast.png
-//   node cast.mjs <项目目录> <角色名>     这个角色的全部表情和动作 → review/cast-<角色名>.png
+// cast.mjs: character model sheet. Reads the project's characters.js (window.CAST = { name: spec, ... })
+// and renders it to an image for the user to approve.
+//   node cast.mjs <project dir>                   all characters side by side → review/cast.png
+//   node cast.mjs <project dir> <character name>  every expression and pose of that character → review/cast-<character name>.png
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,9 +10,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const [projArg, who] = process.argv.slice(2);
-if (!projArg) { console.error('用法：node cast.mjs <项目目录> [角色名]'); process.exit(1); }
+if (!projArg) { console.error('Usage: node cast.mjs <project dir> [character name]'); process.exit(1); }
 const proj = path.resolve(projArg);
-if (!fs.existsSync(path.join(proj, 'characters.js'))) { console.error('找不到 ' + path.join(proj, 'characters.js')); process.exit(1); }
+if (!fs.existsSync(path.join(proj, 'characters.js'))) { console.error('Not found: ' + path.join(proj, 'characters.js')); process.exit(1); }
 fs.mkdirSync(path.join(proj, 'review'), { recursive: true });
 
 const html = `<!doctype html><html><head><meta charset="utf-8">
@@ -23,7 +23,7 @@ const WHO = ${JSON.stringify(who || null)};
 EV.composition({ duration: 4, fonts: ['40px "LXGW WenKai"'], build: async () => {
   const b = WB.board({ captions: false, seed: 'cast' });
   const names = Object.keys(window.CAST || {});
-  if (!names.length) throw new Error('characters.js 里没有定义 window.CAST');
+  if (!names.length) throw new Error('characters.js does not define window.CAST');
   if (!WHO) {
     const n = names.length, cols = Math.min(4, n), rows = Math.ceil(n / cols);
     const cw = 1920 / cols, ch = 1080 / rows, size = Math.min(cw * 1.2, ch * 0.78);
@@ -34,14 +34,14 @@ EV.composition({ duration: 4, fonts: ['40px "LXGW WenKai"'], build: async () => 
     });
   } else {
     const spec = CAST[WHO];
-    if (!spec) throw new Error('没有这个角色：' + WHO);
-    // 上两行：全部表情 + 说话；最后一行：四个方向的指向（格子更宽，手臂不会伸进隔壁）
-    const faces = ['neutral', 'smile', 'happy', 'explain', 'think', 'surprised', 'confused', 'sad', 'serious', 'proud', 'excited', '说话'];
-    const aims = [['指右上', 1, -1], ['指左', -1, -0.1], ['指右下', 1, 0.8], ['指正上', 0.15, -1]];
+    if (!spec) throw new Error('No such character: ' + WHO);
+    // Top two rows: every expression + talking; last row: pointing in four directions (wider cells, so the arm doesn't reach into the next cell)
+    const faces = ['neutral', 'smile', 'happy', 'explain', 'think', 'surprised', 'confused', 'sad', 'serious', 'proud', 'excited', 'talking'];
+    const aims = [['point up-right', 1, -1], ['point left', -1, -0.1], ['point down-right', 1, 0.8], ['point up', 0.15, -1]];
     faces.forEach((e, i) => {
       const cx = 320 * (i % 6 + 0.5), by = 360 * (Math.floor(i / 6) + 1) - 44;
       const c = b.character(spec, { x: cx, y: by, size: 250, at: 0, dur: 0.5, blink: false });
-      if (e === '说话') c.expr(0, 'explain', 0.01).expr(0, { mouthOpen: 0.55 }, 0.01);
+      if (e === 'talking') c.expr(0, 'explain', 0.01).expr(0, { mouthOpen: 0.55 }, 0.01);
       else c.expr(0, e, 0.01);
       b.text(e, { x: cx, y: by + 2, size: 28, align: 'center', at: 0, dur: 0.1, color: 'gray' });
     });
@@ -62,5 +62,5 @@ const out = r.stdout.toString();
 if (r.status !== 0) { console.error(out); process.exit(1); }
 const png = path.join(proj, 'review', who ? `cast-${who}.png` : 'cast.png');
 fs.renameSync(path.join(proj, 'review', 'still-3.00.png'), png);
-out.split('\n').filter((l) => l && !l.startsWith('截图')).forEach((l) => console.log(l));
-console.log('定妆图：' + png);
+out.split('\n').filter((l) => l && !l.startsWith('Still: ')).forEach((l) => console.log(l));
+console.log('Model sheet: ' + png);

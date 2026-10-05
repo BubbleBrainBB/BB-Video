@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""用 edge-tts 把 script.json 的旁白合成为音频，并生成逐词时间轴。
+"""Synthesizes the narration in script.json to audio with edge-tts, and builds a word-level timeline.
 
-用法：python3 tts.py <项目目录>
+Usage: python3 tts.py <project dir>
 
-输入  <项目目录>/script.json
-输出  audio/lines/<id>.mp3   每句单独的音频（带缓存，文字没变就不重新合成）
-      audio/narration.m4a    拼好的整条旁白
-      timeline.json / timeline.js   每句、每个词的开始和结束时间（秒）
+Input   <project dir>/script.json
+Output  audio/lines/<id>.mp3   one audio file per line (cached: not re-synthesized if the text is unchanged)
+        audio/narration.m4a    the full narration, joined together
+        timeline.json / timeline.js   start and end times (seconds) of every line and every word
 """
 import asyncio, hashlib, json, os, subprocess, sys
 from array import array
 from pathlib import Path
 
-SR = 24000  # 采样率
+SR = 24000  # sample rate
 
 
 def ensure_edge_tts():
@@ -21,13 +21,13 @@ def ensure_edge_tts():
         return
     except ImportError:
         pass
-    # 找附近的 .venv 重新执行自己
+    # look for a nearby .venv and re-exec this script with it
     here = Path.cwd().resolve()
     for d in [here, *here.parents, Path(__file__).resolve().parent]:
         py = d / ".venv" / "bin" / "python"
         if py.exists() and Path(sys.prefix).resolve() != (d / ".venv").resolve():
             os.execv(str(py), [str(py), *sys.argv])
-    sys.exit("找不到 edge-tts。请先安装：python3 -m venv .venv && .venv/bin/pip install edge-tts")
+    sys.exit("edge-tts not found. Install it first: python3 -m venv .venv && .venv/bin/pip install edge-tts")
 
 
 ensure_edge_tts()
@@ -66,15 +66,15 @@ async def synth(line, cfg, out_dir: Path, sem):
                         s = ch["offset"] / 1e7
                         words.append({"text": ch["text"], "start": round(s, 3), "end": round(s + ch["duration"] / 1e7, 3)})
                 if not buf:
-                    raise RuntimeError("没有收到音频")
+                    raise RuntimeError("no audio received")
                 mp3.write_bytes(bytes(buf))
                 meta.write_text(json.dumps({"key": key, "words": words}, ensure_ascii=False))
-                print(f"  合成 {line['id']}：{line['text'][:24]}")
+                print(f"  synthesized {line['id']}: {line['text'][:24]}")
                 return words
-            except Exception as e:  # 网络抖动时重试
+            except Exception as e:  # retry on network hiccups
                 if attempt == 3:
                     raise
-                print(f"  {line['id']} 失败（{e}），重试…")
+                print(f"  {line['id']} failed ({e}), retrying…")
                 await asyncio.sleep(1.5 * (attempt + 1))
 
 
@@ -84,7 +84,7 @@ async def main(proj: Path):
     ids = [l["id"] for l in lines]
     dup = {i for i in ids if ids.count(i) > 1}
     if dup:
-        sys.exit(f"script.json 里 id 重复：{dup}")
+        sys.exit(f"duplicate id in script.json: {dup}")
     out_dir = proj / "audio" / "lines"
     out_dir.mkdir(parents=True, exist_ok=True)
     sem = asyncio.Semaphore(4)
@@ -98,7 +98,7 @@ async def main(proj: Path):
     timeline = []
     for l in lines:
         cursor += l.get("pause_before", 0)
-        if not l.get("text"):  # 纯停顿：{"id": "beat", "silence": 1.2}
+        if not l.get("text"):  # pure pause: {"id": "beat", "silence": 1.2}
             d = l.get("silence", 1.0)
             timeline.append({"id": l["id"], "text": "", "silence": True, "start": round(cursor, 3), "end": round(cursor + d, 3), "words": []})
             cursor += d
@@ -111,7 +111,7 @@ async def main(proj: Path):
         need = off + len(pcm)
         if len(track) < need:
             track.extend([0] * (need - len(track)))
-        for i, v in enumerate(pcm):  # 叠加（相邻句的尾部静音可能重叠）
+        for i, v in enumerate(pcm):  # mix in (the trailing silence of adjacent lines may overlap)
             s = track[off + i] + v
             track[off + i] = 32767 if s > 32767 else -32768 if s < -32768 else s
         timeline.append({
@@ -124,14 +124,14 @@ async def main(proj: Path):
 
     duration = round(max(cursor - gap, len(track) / SR) + cfg.get("tail", 1.5), 3)
 
-    # 章节：某句台词带 "chapter": "章节名"，表示新的一章从这句开始；第一章从 0 秒算起。
-    # 章节在"上一句话说完"时就切换，和两句之间的镜头转场同步，而不是等新的一句开口
+    # Chapters: a line with "chapter": "<chapter name>" starts a new chapter at that line; the first chapter starts at 0 s.
+    # A chapter switches as soon as the previous line finishes, in sync with the camera transition between the two lines, rather than waiting for the new line to start
     chapters = []
     for i, (l, t) in enumerate(zip(lines, timeline)):
         if l.get("chapter"):
             start = 0.0 if not chapters else round(timeline[i - 1]["end"] + 0.05, 3) if i > 0 else t["start"]
             chapters.append({"title": l["chapter"], "start": start})
-    # 最后一章在最后一句话说完时结束（之后的收尾停留不算进度），进度条正好和内容一起走完
+    # The last chapter ends when the last line finishes (the closing hold after it doesn't count as progress), so the progress bar completes exactly with the content
     spoken_end = max((t["end"] for t in timeline if not t.get("silence")), default=duration)
     for i, c in enumerate(chapters):
         c["end"] = chapters[i + 1]["start"] if i + 1 < len(chapters) else round(min(duration, spoken_end + 0.05), 3)
@@ -144,9 +144,9 @@ async def main(proj: Path):
     data = {"duration": duration, "lines": timeline, "chapters": chapters}
     (proj / "timeline.json").write_text(json.dumps(data, ensure_ascii=False, indent=1))
     (proj / "timeline.js").write_text("window.TIMELINE = " + json.dumps(data, ensure_ascii=False) + ";\n")
-    print(f"完成：{len(timeline)} 句，总时长 {duration:.1f} 秒" + (f"，{len(chapters)} 个章节" if chapters else ""))
+    print(f"Done: {len(timeline)} lines, total duration {duration:.1f} s" + (f", {len(chapters)} chapters" if chapters else ""))
     for c in chapters:
-        print(f"  章节 {c['start']:6.2f} – {c['end']:6.2f}  {c['title']}")
+        print(f"  chapter {c['start']:6.2f} – {c['end']:6.2f}  {c['title']}")
     for t in timeline:
         print(f"  {t['start']:6.2f} – {t['end']:6.2f}  {t['id']:<12} {t['text'][:30]}")
 
