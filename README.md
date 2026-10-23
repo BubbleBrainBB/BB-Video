@@ -1,4 +1,4 @@
-# BubbleSkill
+# BB Video
 
 An agent skill for making videos **in pure code** — no editing app, no stock footage.
 Every frame is drawn with HTML / SVG / canvas as a pure function of time, rendered frame by frame in headless Chrome, with music and sound effects synthesized in code, and encoded with ffmpeg.
@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| [`bubble-video-skill`](skills/bubble-video-skill) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 14 visual styles |
+| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 14 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -43,15 +43,15 @@ What it covers:
 With the [`skills`](https://github.com/vercel-labs/skills) CLI (Claude Code, Codex, Cursor, OpenCode and other agents):
 
 ```bash
-npx skills add DylanDDeng/BubbleSkill                                          # pick interactively
-npx skills add DylanDDeng/BubbleSkill --skill bubble-video-skill -a claude-code -g   # globally for Claude Code
+npx skills add DylanDDeng/BB-Video                                          # pick interactively
+npx skills add DylanDDeng/BB-Video --skill bb-video -a claude-code -g   # globally for Claude Code
 ```
 
 Or copy the folder yourself:
 
 ```bash
-git clone https://github.com/DylanDDeng/BubbleSkill.git
-cp -r BubbleSkill/skills/bubble-video-skill ~/.claude/skills/
+git clone https://github.com/DylanDDeng/BB-Video.git
+cp -r BB-Video/skills/bb-video ~/.claude/skills/
 ```
 
 
@@ -98,4 +98,4 @@ Each frame is a pure function of time, so renders are deterministic and parallel
 
 ## License
 
-[MIT](LICENSE). Bundled third-party code: [KaTeX](https://katex.org) (MIT, see `skills/bubble-video-skill/explainer/runtime/katex/LICENSE`). Loaded from CDNs under their own licenses: three.js (MIT), GSAP (Standard "no charge" license), Matter.js (MIT); fonts LXGW WenKai, Excalifont, Noto Sans / Serif SC, Inter, Oswald and others (SIL OFL 1.1).
+[MIT](LICENSE). Bundled third-party code: [KaTeX](https://katex.org) (MIT, see `skills/bb-video/explainer/runtime/katex/LICENSE`). Loaded from CDNs under their own licenses: three.js (MIT), GSAP (Standard "no charge" license), Matter.js (MIT); fonts LXGW WenKai, Excalifont, Noto Sans / Serif SC, Inter, Oswald and others (SIL OFL 1.1).

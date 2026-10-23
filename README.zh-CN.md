@@ -1,4 +1,4 @@
-# BubbleSkill
+# BB Video
 
 一个**用代码做视频**的 Agent 技能：不用剪辑软件，不用素材库。
 每一帧都是 HTML / SVG / canvas 画出来的、只由时间决定的画面，在无界面 Chrome 里逐帧渲染；配乐和音效用代码合成，最后由 ffmpeg 编码成 mp4。
@@ -9,7 +9,7 @@
 
 | 技能 | 做什么 |
 |---|---|
-| [`bubble-video-skill`](skills/bubble-video-skill) | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，14 种画面风格 |
+| [`bb-video`](skills/bb-video) | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，14 种画面风格 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -43,15 +43,15 @@
 用 [`skills`](https://github.com/vercel-labs/skills) 命令（Claude Code、Codex、Cursor、OpenCode 等都能用）：
 
 ```bash
-npx skills add DylanDDeng/BubbleSkill                                          # 交互式选择
-npx skills add DylanDDeng/BubbleSkill --skill bubble-video-skill -a claude-code -g   # 全局装到 Claude Code
+npx skills add DylanDDeng/BB-Video                                          # 交互式选择
+npx skills add DylanDDeng/BB-Video --skill bb-video -a claude-code -g   # 全局装到 Claude Code
 ```
 
 或者自己拷文件夹：
 
 ```bash
-git clone https://github.com/DylanDDeng/BubbleSkill.git
-cp -r BubbleSkill/skills/bubble-video-skill ~/.claude/skills/
+git clone https://github.com/DylanDDeng/BB-Video.git
+cp -r BB-Video/skills/bb-video ~/.claude/skills/
 ```
 
 
@@ -98,4 +98,4 @@ index.html（画画的代码，renderFrame(t)）──► render.mjs ──► C
 
 ## 许可
 
-[MIT](LICENSE)。附带的第三方代码：[KaTeX](https://katex.org)（MIT，见 `skills/bubble-video-skill/explainer/runtime/katex/LICENSE`）。从 CDN 加载、各自的许可：three.js（MIT）、GSAP（Standard "no charge" 许可）、Matter.js（MIT）；字体 霞鹜文楷、Excalifont、Noto Sans / Serif SC、Inter、Oswald 等（SIL OFL 1.1）。
+[MIT](LICENSE)。附带的第三方代码：[KaTeX](https://katex.org)（MIT，见 `skills/bb-video/explainer/runtime/katex/LICENSE`）。从 CDN 加载、各自的许可：three.js（MIT）、GSAP（Standard "no charge" 许可）、Matter.js（MIT）；字体 霞鹜文楷、Excalifont、Noto Sans / Serif SC、Inter、Oswald 等（SIL OFL 1.1）。
