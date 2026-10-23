@@ -14,7 +14,7 @@ Runtime: `runtime/chat.js` (`PROMO.chat(F)`). New project:
 - explainer: `node explainer/scripts/new.mjs <dir> --style chat`;
 - promo: `node scripts/new.mjs <dir> --style chat` (add `--quick` for the quick version).
 
-Sample film: `videos/lychee-chat` (the story behind the line "一骑红尘妃子笑" — "a rider in the red dust, and the consort smiles"; narrated, hand-written).
+Starter page: `styles/chat/index.html` (a narrated story told in the app, hand-written).
 
 ## 0. Safety
 - Don't imitate any real chat app: the `im` theme borrows the layout and colours common to Chinese chat apps (grey background, light green bubbles), but uses no app's logo, name, red packets, money transfers, "pat-pat" or other distinctive features, and never makes a screenshot that passes for a "real chat log". When making a promo for someone else's product, use `light` / `dark` (dressing another product up as a particular chat app is misleading and a trademark risk).

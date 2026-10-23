@@ -4,7 +4,7 @@
 
 A frame: cream printing paper, mostly red and black, with touches of Bauhaus yellow and blue. A big circle, a thick black bar and a wedge cut diagonally into the frame, in an asymmetric composition. Heavy sans slogans set on a diagonal, slammed in letter by letter. Things are "assembled" from circles, squares and triangles. Transitions are a big red wedge, a big circle or a few colour bands sweeping across the frame. Motion is machine-like: crisp, precise, sliding in along a straight line and clicking into place.
 
-Runtime: `runtime/bauhaus.js` (`PROMO.bauhaus(F)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style bauhaus`, promo `node scripts/new.mjs <dir> --style bauhaus` (add `--quick` for the quick version). Sample: `videos/bauhaus-history` (about the Bauhaus, narrated, hand-written).
+Runtime: `runtime/bauhaus.js` (`PROMO.bauhaus(F)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style bauhaus`, promo `node scripts/new.mjs <dir> --style bauhaus` (add `--quick` for the quick version). Starter page: `styles/bauhaus/index.html`.
 
 ## 0. Safety
 - Hard cuts between big black / white / red blocks and full-screen red transitions: at most once every 3–4 s in a passage; don't sweep on every beat.

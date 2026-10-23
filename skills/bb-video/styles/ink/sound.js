@@ -1,7 +1,7 @@
 // Sound design (starting point for ink used in a promo): brush, xuan paper, a scroll unrolling, a seal stamp. Principles and how-to in promo/references/sound.md; adapt to the product.
 // Types the generic APIs emit: brush (writing), scroll (the scroll moving past), wash (ink wash), splash (ink splash), stamp (seal stamp), logo
 export default {
-  name: '一句话：这个产品写在宣纸上听起来是什么样的（例：书房、毛笔、安静）',
+  name: 'One line: what this product sounds like written on rice paper (e.g. a study, a brush, quiet)',
   space: { size: 0.45, mix: 0.16 },
   vary: 0.08,
   sounds: {

@@ -29,7 +29,7 @@ PROMO.film({
 
 Colours come from the product: write `brand: '#brandcolour'` (research lists candidates in `research/colors.json`; brief.md has a line "颜色：…（来自：…）" — Colours: … (from: …)), optionally `accent` (a second colour). **Each style lands it in its own material** (`PROMO.kit.brand(style, { brand, accent, ground })` → `{ theme, kit, color }`): op makes it the stripe colour, pop replaces the closest primary, cut-out / origami replace the closest paper, whiteboard gets a brand-colour marker, riso switches to the closest real Riso ink, launch / ASCII use it as the accent (the ground is chosen separately: `ground: 'light' | 'dark' | 'brand'`), Bauhaus replaces red with the brand colour (too light a colour becomes an accent); ink has only ink and cinnabar and shadow puppetry only a few leather dyes, so they don't change. When the brand colour is black / white / grey (many tech companies) the style keeps its own colours and uses `accent` if there is one. Hand-written films: `const { theme, kit } = PROMO.kit.brand('op', { brand })` → `compose({ theme })`, `PROMO.op(F, kit)`. `--check` warns when brief.md doesn't say where the colours came from, or when research found a brand colour that the film doesn't use.
 
-Total length, cover frame, music sections and transition times are all computed by the script (all on the beat); landscape and portrait layouts are handled automatically (portrait avoids the top 8% and bottom 20%). Samples of one script in four styles: `videos/grok-kinetic-{op,pop,cutout,origami}`.
+Total length, cover frame, music sections and transition times are all computed by the script (all on the beat); landscape and portrait layouts are handled automatically (portrait avoids the top 8% and bottom 20%). The same script works in every style: change `style` and nothing else.
 
 One background per scene (`variant` changes the pattern / colour; if omitted, it rotates by scene order), with the style's transition between scenes. The cues inside a scene play one after another:
 
@@ -128,7 +128,6 @@ When writing:
 - Annotated screenshots use the real UI, and `note` says what the control **does** ("difficulty = thinking time"), not what it is called.
 - Chart numbers and annotation notes must be in brief.md (illustrative data must be labelled "illustrative").
 - For more creativity, write directly with the style's own components (`S.raw` / the style runtime: op's `Q.field` lenses, pop's `K.page` panels, cut-out's `C.collage`, origami's `O.model` …); cues are only a starting point.
-- Sample: `videos/grok-bot-op-v3` (op: lens path, montage, drop).
 
 ## Following the voiceover (explain): explainers in promo styles
 
@@ -148,7 +147,7 @@ PROMO.film({
 (The sample is a Chinese explainer, "Why is the sky blue?" — Rayleigh scattering.)
 - Cues are the same as in big-type motion (say / line / list / shot / stat, plus the information cues flow / compare / chart / annotate / diagram); their timing comes from the narration: `at: 'l3'` (when this line starts), `['l4', '蓝光']` (when this word — here "blue light" — is spoken), or seconds. The words of a say, the items of a list: each appears the moment the narration says it; if it isn't said, they are spread evenly across the line (very short items go in one row, at most 3 per row in portrait).
 - Transitions sit in the pause between scenes; the end card follows the last line (`end.at` can change it); film length = narration + 4 s end card. Captions are added automatically (board styles use the board's own captions); no beat sync required; for sound, see below.
-- **Quick version or hand-written**: the skeleton is `PROMO.film({ format: 'explain' })` — big type, lists and the flow / compare / chart / annotate cues follow the narration; use it when the explanation is mostly words and charts and you need it fast. To **act out a mechanism** (layers moving at different speeds, something being assembled, characters playing out a story), hand-write `PROMO.compose` + the style's own runtime (`PROMO.bauhaus(F)`, `PROMO.shadow(F)` …); samples `videos/bauhaus-history`, `videos/anshi-shadow`. Polished films are usually hand-written.
+- **Quick version or hand-written**: the skeleton is `PROMO.film({ format: 'explain' })` — big type, lists and the flow / compare / chart / annotate cues follow the narration; use it when the explanation is mostly words and charts and you need it fast. To **act out a mechanism** (layers moving at different speeds, something being assembled, characters playing out a story), hand-write `PROMO.compose` + the style's own runtime (`PROMO.bauhaus(F)`, `PROMO.shadow(F)` …); start from the style's starter page (e.g. `styles/shadow/explain.html`). Polished films are usually hand-written.
 - **Chapters**: lines in `script.json` with `chapter` get a chapter bar at the top of the screen automatically (at least 2 chapters; `compose({ chapters: false })` turns it off).
 - Transitions start moving only after the last line has been spoken; the end card follows right after.
 
@@ -163,7 +162,6 @@ PROMO.film({
   - very dense narration with almost no pauses (the music would stay ducked with no chance to come up).
   - Also turn it off when the user says "no music / too noisy".
   - Other explainers keep the music bed (it carries the mood in pauses and scene changes); say in the storyboard which one you chose and why.
-- Samples: `videos/sky-blue-{launch,origami,pop,op,cutout}` (the same Chinese narration in five styles, big type first); `videos/sky-blue-rich-{launch,cutout}` (the same narration with a spectrum, a scattering diagram, a bar chart and a comparison: far more information).
 
 ## Promos on the explainer boards (whiteboard / riso / ink)
 
@@ -173,7 +171,6 @@ PROMO.film({
 - Ink: each scene is a stretch of the handscroll; the transition = moving along the scroll / ink bleed; big type is brush-written, captions are kaishu (楷书, regular script); the signature move = an ink splash; the end card can be stamped with a seal (`end.seal`). Best for Chinese content.
 - The boards' own checks are merged into `--check` (stricter than the promo checks: leave enough reading time after writing, don't write while the camera moves …); text written on the board is fact-checked too.
 - For finer control: `S.board()` gives you the board itself, with its full API (`styles/<style>/STYLE.md`).
-- Samples: `videos/grok-kinetic-{whiteboard,riso}`, `videos/youvibe-kinetic-ink`.
 
 ## The common interface (kit.js)
 

@@ -2,7 +2,7 @@
 // Types the components emit: receive, send, type (typing), notify (notification), system (system notice), voice (a voice message starts playing), react (an emoji reaction),
 //   tick (one more line in a sign-up chain), swipe (switch to another chat / transition), zoom (push in on a message), logo. Pitched sounds are in F major — change to match the score.
 export default {
-  name: '一句话：这个产品 / 这个题目听起来是什么样的（例：一个热闹的群聊，消息一条接一条）',
+  name: 'One line: what this product / topic sounds like (e.g. a lively group chat, one message after another)',
   space: { size: 0.2, mix: 0.08 },
   vary: 0.05,
   sounds: {

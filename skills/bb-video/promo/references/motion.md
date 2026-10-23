@@ -43,7 +43,7 @@ Components for a visual style (such as origami's `PROMO.origami`) are in that st
 | `PROMO.camera(F, parent)` → `cam` | Camera: `cam.rig` is the container; put windows and the cursor in it; `cam.focus(at, dur, x, y, factor, { fit: {x,y,w,h} })` pushes in, `cam.reset(at, dur)` pulls back (zoom interpolates logarithmically, so push-ins and pull-outs feel even). `PROMO.camera(F, parent, z, { breathe: 0.035 })`: the camera keeps a very slow push/pull + sideways drift, so the frame is never fully still when held (the final check reports "画面静止" (frame static)); push/pull adds motion-blur sub-frames automatically. `fit` is the area that must stay entirely in frame after pushing in (e.g. a whole card): the factor shrinks and the position shifts automatically — add it especially for narrow portrait frames |
 | `PROMO.cursor(F, parent, [[t, x, y], …, [t, x, y, hideTime]], [clickTimes…])` | Cursor moves along keyframes; on click it shrinks + ripple + click sfx. Put it inside `cam.rig` to scale with the camera |
 
-Cards, buttons, options and ranking bars in a UI are written directly with `PROMO.el` in the project (see the Top 10 Agents cards in videos/arena-promo).
+Cards, buttons, options and ranking bars in a UI are written directly with `PROMO.el` in the project (a ranked list of cards is a few `el` calls plus `set` per frame).
 
 ## Transitions
 | Component | Description | Automatic sfx |
@@ -63,7 +63,7 @@ Cards, buttons, options and ranking bars in a UI are written directly with `PROM
 | `PROMO.endcard(F, parent, { at, logo: { text, font } or { src, h }, tagline, url, cta, pulses })` | End card: logo written on / faded in, tagline, URL and call to action rising word by word |
 
 ## Animation libraries (allowed in promos; time is always driven by F)
-Load them from jsDelivr in index.html (see videos/aestara-motion):
+Load them from jsDelivr in index.html:
 `gsap@3.13.0/dist/gsap.min.js` + plugins `SplitText` `DrawSVGPlugin` `MorphSVGPlugin` `ScrambleTextPlugin` `CustomEase` `MotionPathPlugin` (all free, including commercial use), `matter-js@0.20.0/build/matter.min.js`, `opentype.js@1.3.4/dist/opentype.min.js`; Three.js is loaded dynamically by `PROMO.three`.
 
 | API | Description |

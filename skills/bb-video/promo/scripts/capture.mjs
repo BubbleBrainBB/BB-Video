@@ -26,13 +26,16 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { M, isZh } from '../../core/scripts/lang.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : d; };
 const flag = (n) => args.includes('--' + n);
 const proj = path.resolve(args[0] && !args[0].startsWith('--') ? args[0] : '.');
+process.env.BV_LANG ??= isZh(proj) ? 'zh' : 'en';
+if (flag('research') && !opt('research')) { console.error(M('用法：node capture.mjs <项目目录> --research <网址> [--mobile]（调研）/ node capture.mjs <项目目录> [--only 名字,名字]（按 shots.json 截图）', 'Usage: node capture.mjs <project dir> --research <url> [--mobile] (research) / node capture.mjs <project dir> [--only name,name] (screenshots per shots.json)')); process.exit(1); }
 const CHROME = process.env.CHROME_PATH || ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((p) => fs.existsSync(p));
-if (!CHROME) { console.error('找不到 Chrome，请设置 CHROME_PATH'); process.exit(1); }
+if (!CHROME) { console.error(M('找不到 Chrome，请设置 CHROME_PATH', 'Chrome not found: set CHROME_PATH')); process.exit(1); }
 const VIEW = { desktop: [1440, 900], wide: [1920, 1080], mobile: [390, 844] };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => { if (process.env.DEBUG) console.error('·', ...a); };
@@ -44,10 +47,10 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cap-'));
 const proc = spawn(CHROME, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--force-color-profile=srgb', 'about:blank'], { stdio: 'ignore' });
 const quit = () => { try { proc.kill(); } catch {} try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} };
 process.on('exit', quit);
-setTimeout(() => { console.error('超时（10 分钟），退出'); process.exit(1); }, 600000).unref();
+setTimeout(() => { console.error(M('超时（10 分钟），退出', 'Timed out (10 minutes), exiting')); process.exit(1); }, 600000).unref();
 const pf = path.join(dir, 'DevToolsActivePort');
 for (let i = 0; i < 400 && !fs.existsSync(pf); i++) await sleep(50);
-if (!fs.existsSync(pf)) { console.error('Chrome 没有启动（可能正在自动更新，稍后重试）'); process.exit(1); }
+if (!fs.existsSync(pf)) { console.error(M('Chrome 没有启动（可能正在自动更新，稍后重试）', 'Chrome did not start (it may be auto-updating; try again later)')); process.exit(1); }
 await sleep(100);
 const [port, wsPath] = fs.readFileSync(pf, 'utf8').trim().split('\n');
 const ws = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
@@ -65,13 +68,13 @@ const view = async (v, dsf = 1) => { const [w, h] = Array.isArray(v) ? v : VIEW[
 // find scroll areas in the page: some sites don't scroll the whole page, the content is in an inner scroll container
 const SCROLLER = `(() => [...document.querySelectorAll('main, main *, body *')].filter((e) => e.scrollHeight > e.clientHeight + 50 && /auto|scroll/.test(getComputedStyle(e).overflowY)).sort((a, b) => b.clientHeight * b.clientWidth - a.clientHeight * a.clientWidth)[0] || document.scrollingElement)()`;
 async function goto(url, wait) {
-  log('打开', url);
+  log(M('打开', 'open'), url);
   await within(s('Page.navigate', { url }), 30000);
   await sleep(wait);
   // wait for the page's images to finish decoding (up to 8 s)
-  log('等图片');
+  log(M('等图片', 'waiting for images'));
   await within(ev(`Promise.all([...document.images].filter((i) => i.getBoundingClientRect().width > 50).map((i) => i.decode().catch(() => {})))`).catch(() => {}), 8000);
-  log('页面就绪');
+  log(M('页面就绪', 'page ready'));
 }
 async function act(a) {
   if (a.wait) await sleep(a.wait);
@@ -90,16 +93,16 @@ if (flag('research')) {
   const mobile = flag('mobile');
   await view(mobile ? 'mobile' : 'wide', 1);
   await goto(url, 6000);
-  log('提取信息');
+  log(M('提取信息', 'extracting info'));
   const info = await ev(`(() => {
     const vis = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
     const uniq = (a) => [...new Set(a.map((x) => x.replace(/\\s+/g, ' ').trim()).filter(Boolean))];
     const text = document.body.innerText;
-    const colors = {};
+    const colors = {}, BG = ${JSON.stringify(M('背景', 'background'))}, FG = ${JSON.stringify(M('文字', 'text'))};
     for (const e of [...document.querySelectorAll('body, body *')].slice(0, 4000)) {
       if (!vis(e)) continue;
       const cs = getComputedStyle(e), r = e.getBoundingClientRect(), area = r.width * r.height;
-      for (const [k, v] of [['背景', cs.backgroundColor], ['文字', cs.color]]) { if (v === 'rgba(0, 0, 0, 0)') continue; const key = k + ' ' + v; colors[key] = (colors[key] || 0) + (k === '背景' ? area : e.childNodes.length && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) ? 1000 : 0); }
+      for (const [k, v] of [[BG, cs.backgroundColor], [FG, cs.color]]) { if (v === 'rgba(0, 0, 0, 0)') continue; const key = k + ' ' + v; colors[key] = (colors[key] || 0) + (k === BG ? area : e.childNodes.length && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) ? 1000 : 0); }
     }
     const fonts = uniq([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '') + ' ' + f.weight + (f.style !== 'normal' ? ' ' + f.style : '')));
     const used = uniq([...document.querySelectorAll('h1,h2,h3,p,a,button,span')].slice(0, 400).filter(vis).map((e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/"/g, '')));
@@ -113,8 +116,8 @@ if (flag('research')) {
     add(document.querySelector('meta[name=theme-color]')?.content, 'theme-color', 6);
     const rootCs = getComputedStyle(document.documentElement);
     for (const sh of [...document.styleSheets]) { let rules; try { rules = sh.cssRules; } catch { continue; } for (const r of [...rules].slice(0, 3000)) { if (!r.style || !/^(:root|html|body)$/.test(r.selectorText || '')) continue; for (const k of r.style) if (k.startsWith('--') && /brand|primary|accent|cta|link|highlight|main|logo/i.test(k) && !/error|danger|warn|invalid|success|alert|disabled|negative|positive/i.test(k)) { const v = rootCs.getPropertyValue(k).trim(); const tmp = document.createElement('i'); tmp.style.color = v; document.body.appendChild(tmp); add(getComputedStyle(tmp).color, 'CSS ' + k, /brand|logo/i.test(k) ? 8 : 4); tmp.remove(); } } }
-    for (const e of [...document.querySelectorAll('button, [role=button], a[class*=btn i], a[class*=button i], a[class*=cta i], input[type=submit]')].filter(vis).slice(0, 200)) add(getComputedStyle(e).backgroundColor, '按钮底色', 3);
-    for (const e of [...document.querySelectorAll('a')].filter(vis).slice(0, 300)) add(getComputedStyle(e).color, '链接颜色', 1);
+    for (const e of [...document.querySelectorAll('button, [role=button], a[class*=btn i], a[class*=button i], a[class*=cta i], input[type=submit]')].filter(vis).slice(0, 200)) add(getComputedStyle(e).backgroundColor, ${JSON.stringify(M('按钮底色', 'button background'))}, 3);
+    for (const e of [...document.querySelectorAll('a')].filter(vis).slice(0, 300)) add(getComputedStyle(e).color, ${JSON.stringify(M('链接颜色', 'link colour'))}, 1);
     for (const e of [...document.querySelectorAll('header [class*=logo] svg *, nav [class*=logo] svg *, header a[href="/"] svg *, nav a[href="/"] svg *, header svg[class*=logo] *')].slice(0, 120)) { add(e.getAttribute('fill'), 'Logo', 8); add(getComputedStyle(e).fill, 'Logo', 3); }
     const pageBg = hex(getComputedStyle(document.body).backgroundColor) || hex(rootCs.backgroundColor) || hex(getComputedStyle(document.querySelector('main') || document.body).backgroundColor) || '#FFFFFF';
     const brandList = Object.values(brand).sort((a, b) => b.score - a.score).slice(0, 8).map((x) => ({ color: x.color, from: [...x.from].join(' / '), score: x.score }));
@@ -137,18 +140,19 @@ if (flag('research')) {
   const ground = lumOf(info.pageBg) > 0.6 ? 'light' : lumOf(info.pageBg) < 0.3 ? 'dark' : 'brand';
   const cj = path.join(proj, 'research', 'colors.json'), prev = fs.existsSync(cj) ? JSON.parse(fs.readFileSync(cj, 'utf8')) : {};
   fs.writeFileSync(cj, JSON.stringify({ ...prev, [url]: { pageBg: info.pageBg, ground, brand: info.brandList[0]?.color ?? null, accent: info.brandList[1]?.color ?? null, candidates: info.brandList } }, null, 2));
-  const L = (title, arr) => `## ${title}\n${arr.length ? arr.map((x) => '- ' + x).join('\n') : '（无）'}\n`;
-  fs.writeFileSync(out, `# 调研：${url}\n抓取时间：${new Date().toISOString().slice(0, 16).replace('T', ' ')}（页面上的数字是实时数据，写进 brief 时注明"截至"这个时间）\n\n` +
-    `## 标题\n${info.title}\n\n## 描述\n${info.desc || '（无）'}\n\n` + L('各级标题', info.headings) + '\n' + L('按钮 / 链接 / 标签', info.buttons) + '\n' + L('出现的数字', info.numbers) + '\n' +
-    L('实际加载的字体', info.fonts) + '\n' + L('元素上用到的字体（按出现顺序）', info.used) + '\n' + L('主要颜色（按面积 / 文字量排序）', info.colors) + '\n' +
-    L('品牌色候选（有颜色的；黑白灰不列）——写进 brief.md 的"颜色：…（来自：…）"', info.brandList.map((x) => `${x.color}（来自：${x.from}）`)) + `\n页面底色：${info.pageBg}（${ground}）\n` + '\n## 页面全部可见文字\n\n```\n' + info.text + '\n```\n');
-  console.log('调研笔记：' + out);
+  const L = (title, arr) => `## ${title}\n${arr.length ? arr.map((x) => '- ' + x).join('\n') : M('（无）', '(none)')}\n`;
+  const at = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  fs.writeFileSync(out, M(`# 调研：${url}\n抓取时间：${at}（页面上的数字是实时数据，写进 brief 时注明"截至"这个时间）\n\n`, `# Research: ${url}\nCaptured: ${at} (numbers on the page are live data; when writing them into the brief, note "as of" this time)\n\n`) +
+    M(`## 标题\n${info.title}\n\n## 描述\n${info.desc || '（无）'}\n\n`, `## Title\n${info.title}\n\n## Description\n${info.desc || '(none)'}\n\n`) + L(M('各级标题', 'Headings'), info.headings) + '\n' + L(M('按钮 / 链接 / 标签', 'Buttons / links / tabs'), info.buttons) + '\n' + L(M('出现的数字', 'Numbers on the page'), info.numbers) + '\n' +
+    L(M('实际加载的字体', 'Fonts actually loaded'), info.fonts) + '\n' + L(M('元素上用到的字体（按出现顺序）', 'Fonts used on elements (in order of appearance)'), info.used) + '\n' + L(M('主要颜色（按面积 / 文字量排序）', 'Main colours (sorted by area / amount of text)'), info.colors) + '\n' +
+    L(M('品牌色候选（有颜色的；黑白灰不列）——写进 brief.md 的"颜色：…（来自：…）"', 'Brand-colour candidates (chromatic only; black, white and grey not listed) — for the "Colours: … (from: …)" line in brief.md'), info.brandList.map((x) => M(`${x.color}（来自：${x.from}）`, `${x.color} (from: ${x.from})`))) + M(`\n页面底色：${info.pageBg}（${ground}）\n`, `\nPage background: ${info.pageBg} (${ground})\n`) + M('\n## 页面全部可见文字\n\n```\n', '\n## All visible page text\n\n```\n') + info.text + '\n```\n');
+  console.log(M('调研笔记：', 'Research notes: ') + out);
   process.exit(0);
 }
 
 // ---------- screenshots ----------
 const specPath = path.join(proj, 'shots.json');
-if (!fs.existsSync(specPath)) { console.error('找不到 ' + specPath + '（格式见本脚本开头的说明）'); process.exit(1); }
+if (!fs.existsSync(specPath)) { console.error(M('找不到 ' + specPath + '（格式见本脚本开头的说明）', 'Cannot find ' + specPath + ' (format: see the notes at the top of this script)')); process.exit(1); }
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
 const D = { viewport: 'desktop', dsf: 2, wait: 4000, ...(spec.defaults || {}) };
 const only = opt('only') ? opt('only').split(',') : null;
@@ -181,7 +185,7 @@ for (const sh of spec.shots) {
       // a region of the page (CSS pixels): [x, y, width, height], captured at dsf× resolution (for logos)
       const [x, y, cw, ch] = shot.clip;
       data = (await s('Page.captureScreenshot', { format: 'png', clip: { x, y, width: cw, height: ch, scale: 1 } })).data;
-      console.log('截图 ' + (await save(o.name, data, true)));
+      console.log(M('截图 ', 'Screenshot ') + (await save(o.name, data, true)));
       continue;
     } else {
       // element: first scroll it to the middle of the screen (clear of a fixed nav bar), wait for decoding, then capture its region
@@ -194,10 +198,10 @@ for (const sh of spec.shots) {
         const b = e.getBoundingClientRect(), p = ${shot.pad ?? 0};
         return { x: b.x - p + scrollX, y: b.y - p + scrollY, width: b.width + 2 * p, height: b.height + 2 * p };
       })()`);
-      if (!r) throw new Error(`找不到元素 ${shot.selector}[${shot.index ?? 0}]`);
+      if (!r) throw new Error(M(`找不到元素 ${shot.selector}[${shot.index ?? 0}]`, `Element not found: ${shot.selector}[${shot.index ?? 0}]`));
       data = (await s('Page.captureScreenshot', { format: 'jpeg', quality: 93, clip: { ...r, scale: 1 } })).data;
     }
-    console.log('截图 ' + (await save(o.name, data)));
-  } catch (e) { console.error(`✗ ${o.name}：${e.message}`); }
+    console.log(M('截图 ', 'Screenshot ') + (await save(o.name, data)));
+  } catch (e) { console.error(M(`✗ ${o.name}：${e.message}`, `✗ ${o.name}: ${e.message}`)); }
 }
 process.exit(0);

@@ -22,7 +22,8 @@
 // Timing: at = the moment the paper **settles** (on the beat) — the pasting motion starts lead earlier (default 0.3 s); until = the moment it is **fully gone** (the exit plays out before it, matching F.text registration).
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('cutout.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('cutout.js 要在 promo.js 之后加载', 'cutout.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -165,7 +166,7 @@
       }
       return { pts: out, d: 'M' + out.map(([x, y]) => `${f1(x)} ${f1(y)}`).join(' L') + ' Z' };
     };
-    const rawShape = (o, seed) => { const s = o.shape ?? 'blob'; if (typeof s === 'function') return s(rng(seed + 1), o); if (Array.isArray(s)) return s; const fn = SHAPES[s]; if (!fn) throw new Error(`没有这种剪纸形状：${s}（有：${Object.keys(SHAPES).join(' / ')}，或者传点列 / 函数）`); return fn(rng(seed + 1), o); };
+    const rawShape = (o, seed) => { const s = o.shape ?? 'blob'; if (typeof s === 'function') return s(rng(seed + 1), o); if (Array.isArray(s)) return s; const fn = SHAPES[s]; if (!fn) throw new Error(M(`没有这种剪纸形状：${s}（有：${Object.keys(SHAPES).join(' / ')}，或者传点列 / 函数）`, `No such cut-paper shape: ${s} (available: ${Object.keys(SHAPES).join(' / ')}, or pass a point list / function)`)); return fn(rng(seed + 1), o); };
 
     // shadow: lift 0 = pasted flat (very light), 1 = picked up (big, soft, offset to the lower right: light comes from the upper left)
     const shadowCss = (lift, k = 1) => { const L = Math.max(0, lift), a = (0.2 - 0.06 * Math.min(1, L)) * C.shadow * k; return `drop-shadow(${f1(F.px(1.6 + 12 * L))}px ${f1(F.px(2.4 + 18 * L))}px ${f1(F.px(2.5 + 20 * L))}px rgba(52,38,22,${f3(a)}))`; };

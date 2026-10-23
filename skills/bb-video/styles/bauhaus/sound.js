@@ -2,7 +2,7 @@
 // Types the components emit: clank (a metal block locks in), thud (a big circle drops), stamp (slogan, big number stamped), tick (caption text printed), snap (an arrow locks), whoosh (the transition wedge sweeps by), logo.
 // Pitched sounds are in C minor (C D Eb F G Ab Bb) — change to match the music, same key as score.js.
 export default {
-  name: '一句话：这个产品 / 这个题目听起来是什么样的（例：一间安静的印刷车间，机器一下一下压字）',
+  name: 'One line: what this product / topic sounds like (e.g. a quiet print works, the press stamping letters one beat at a time)',
   space: { size: 0.3, mix: 0.12 },
   vary: 0.08,
   sounds: {

@@ -2,7 +2,7 @@
 // Types the puppet components emit: wood (clapper: a placard drops, a prop comes on stage), gong (big words appear), drum (marching drums), step (a puppet's soft footfall), thud (falling down), stamp (seal), whoosh (the lamp dims at a scene change).
 // Pitched sounds (clapper, gong) are in D minor pentatonic (D F G A C) — change them to match the music, same key as score.js.
 export default {
-  name: '一句话：这一出戏听起来是什么样的（例：老戏台、油灯、木头和牛皮）',
+  name: 'One line: what this play sounds like (e.g. an old stage, oil lamps, wood and oxhide)',
   space: { size: 0.4, mix: 0.16 },
   ambience: { use: 'roomtone', bright: 380, gain: 0.06 },
   vary: 0.08,

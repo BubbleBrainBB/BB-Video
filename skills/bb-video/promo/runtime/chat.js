@@ -25,7 +25,8 @@
 // Time: at = when a message appears and is readable (on the beat / on the narration's word); until = disappears. The chat lays messages out itself (each pushing the rest up); no coordinates needed.
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('chat.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('chat.js 要在 promo.js 之后加载', 'chat.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -200,7 +201,7 @@
       const caret = el('span', `position:relative;display:inline-block;width:${f1(px(3))}px;height:${f1(px(Z.msg * 0.9))}px;background:${IM ? '#07C160' : acc};margin-left:${f1(px(3))}px`, fieldText);
       const fieldPre = el('span', 'position:relative;white-space:pre', fieldText); fieldText.insertBefore(fieldPre, caret);
       const send = IM ? el('div', `right:${f1(px(16))}px;top:${f1(px(18))}px;width:${f1(sendW)}px;height:${f1(px(Z.comp - 36))}px;border-radius:${f1(px(8))}px;background:#07C160;color:#FFFFFF;display:none;align-items:center;justify-content:center;font:500 ${f1(px(Z.msg * 0.7))}px/1 ${FONT}`, comp) : el('div', `right:${f1(px(18))}px;top:${f1(px(16))}px;width:${f1(px(Z.comp - 32))}px;height:${f1(px(Z.comp - 32))}px;border-radius:50%;background:${acc};color:${meInk};display:flex;align-items:center;justify-content:center;font:700 ${f1(px(Z.msg * 0.8))}px/1 ${FONT}`, comp);
-      send.textContent = IM ? '发送' : '↑';
+      send.textContent = IM ? M('发送', 'Send') : '↑';   // the app's own words follow the page's language
       const A = { el: root, threads: [], opens: [], focuses: [], types: [], at, until, list: listBox };
       const titles = [];
       // A chat: title, member count; messages stack downward one by one, and once full the whole lot pushes up
@@ -221,7 +222,7 @@
       A.activeAt = (t) => openAt(t).cur;
       // "Me" types in the input field, sent at `at`
       A.type = (t, text, oo = {}) => {
-        const dur = oo.dur ?? Math.min(2, 0.3 + [...text].length * 0.07), T = oo.thread ?? A.threads[A.threads.length - 1], me = oo.who ?? Object.keys(C.castList).find((n) => C.castList[n].me) ?? '我';
+        const dur = oo.dur ?? Math.min(2, 0.3 + [...text].length * 0.07), T = oo.thread ?? A.threads[A.threads.length - 1], me = oo.who ?? Object.keys(C.castList).find((n) => C.castList[n].me) ?? M('我', 'Me');
         A.types.push({ a: t - dur, b: t, text });
         for (let k = t - dur; k < t - 0.05; k += 0.12) F.sfx(k, 'type', 0.12);
         return T.msg(t, me, text, { ...oo, sent: true });
@@ -278,10 +279,10 @@
           F.sfx(t, 'system', 0.2);
           return it;
         };
-        T.recall = (t, n) => T.system(t, `${n} 撤回了一条消息`);
+        T.recall = (t, n) => T.system(t, M(`${n} 撤回了一条消息`, `${n} recalled a message`));
         // Rename the group: system notice "X changed the group name to …", the title bar's name switches (old one rises away, new one drops in, accent-coloured first then back) — an end title can appear this way
         T.rename = (t, title, ro = {}) => {
-          if (ro.by) T.system(t, `${ro.by} 修改群名为“${title}”`);
+          if (ro.by) T.system(t, M(`${ro.by} 修改群名为“${title}”`, `${ro.by} changed the group name to "${title}"`));
           const nt = el('div', `inset:0;display:none;align-items:center;justify-content:center;font:700 ${f1(px(Z.title))}px/1 ${FONT};color:${th.ink};white-space:nowrap`, titleBox);
           nt.textContent = title + (T.members ? ` (${T.members})` : '');
           const prev = titles.filter((x) => x.T === T).pop();
@@ -362,9 +363,9 @@
             });
           } else if (k === 'record') {   // forwarded chat record: title + a few preview lines
             const box = el('div', `position:relative;${pad}`, b);
-            txt(box, co.title ?? '聊天记录', `font:700 ${f1(px(Z.msg * 0.88))}px/1.4 ${FONT};margin-bottom:${f1(px(8))}px`);
+            txt(box, co.title ?? M('聊天记录', 'Chat history'), `font:700 ${f1(px(Z.msg * 0.88))}px/1.4 ${FONT};margin-bottom:${f1(px(8))}px`);
             (co.lines || []).forEach((ln) => txt(box, ln, `font:400 ${f1(px(Z.msg * 0.78))}px/1.5 ${FONT};color:${th.muted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis`));
-            foot('聊天记录');
+            foot(M('聊天记录', 'Chat history'));
           } else if (k === 'contact') {   // contact card
             const box = el('div', `position:relative;${pad};display:flex;align-items:center;gap:${f1(px(20))}px`, b);
             const av = el('div', `position:relative;width:${f1(px(96))}px;height:${f1(px(96))}px;border-radius:${f1(px(24))}px;background:${acc};color:${meInk};display:flex;align-items:center;justify-content:center;font:700 ${f1(px(44))}px/1 ${FONT};flex:none`, box); av.textContent = [...(co.name ?? '·')][0];

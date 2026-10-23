@@ -1,6 +1,6 @@
 // Sound design: design it for this product (principles and how to write it: the skill's references/sound.md). Below is only a skeleton — rewrite every entry for the product.
 export default {
-  name: '一句话：这个产品听起来是什么样的',
+  name: 'One line: what this product sounds like',
   space: { size: 0.3, mix: 0.12 },
   ambience: null,
   sounds: {

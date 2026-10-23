@@ -4,7 +4,7 @@
 
 A frame: on a sheet of printer paper (or a black screen), product images, big text and shapes are all built from monospaced characters — character density is brightness (` .:-=+*#%@`). Garbage characters settle cell by cell into the product; as the camera pushes in, the characters get finer and the picture clearer, until it "resolves" top to bottom into the real image; captions type out letter by letter with a blinking cursor; box-drawing characters `┌─┐` draw windows.
 
-Runtime: `runtime/ascii.js` (`PROMO.ascii(F)`). New project: `node scripts/new.mjs <dir> --style ascii` (add `--quick` for the quick version). Sample: `videos/apple-ascii` (the apple.com home page, hand-written).
+Runtime: `runtime/ascii.js` (`PROMO.ascii(F)`). New project: `node scripts/new.mjs <dir> --style ascii` (add `--quick` for the quick version). Starter page: `styles/ascii/index.html`.
 
 ## 0. Safety
 - Garbage characters flip at most 12 times a second, and only in a narrow band or small area (the decoding edge, a transition's leading edge); **no full-screen garbage flicker** — transitions sweep across, they don't flip the whole screen.

@@ -14,7 +14,8 @@
 //   this avoids photosensitivity discomfort, and avoids moiré, stripes running backwards (wagon-wheel effect) and compression mush in the video. field clamps too-fine or too-fast parameters automatically and warns in the console.
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('op.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('op.js 要在 promo.js 之后加载', 'op.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -95,8 +96,8 @@ in vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
       const cv = el('canvas', `left:${f1(o.x ?? 0)}px;top:${f1(o.y ?? 0)}px;width:${f1(W)}px;height:${f1(H)}px;${o.z !== undefined ? `z-index:${o.z};` : ''}${o.css ?? ''}`, parent);
       cv.width = Math.round(W * ratio); cv.height = Math.round(H * ratio);
       const gl = cv.getContext('webgl2', { preserveDrawingBuffer: true, antialias: false });
-      if (!gl) throw new Error('欧普图案需要 WebGL2');
-      const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('op 着色器：' + gl.getShaderInfoLog(s)); return s; };
+      if (!gl) throw new Error(M('欧普图案需要 WebGL2', 'op patterns need WebGL2'));
+      const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(M('op 着色器：', 'op shader: ') + gl.getShaderInfoLog(s)); return s; };
       const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VERT)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FRAG)); gl.linkProgram(pr); gl.useProgram(pr);
       const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
       const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
@@ -106,7 +107,7 @@ in vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
       const p0 = { period: o.period ?? F.px(36), amp: o.amp ?? 0, wave: o.wave ?? 0.006, speed: o.speed ?? 1, twist: o.twist ?? 6, angle: o.angle ?? 0, duty: o.duty ?? 0.5, rays: o.rays ?? 48, cx: (o.center || [])[0] ?? W / 2, cy: (o.center || [])[1] ?? H / 2, bandW: o.bandW ?? W / 4 };
       const keys = [], morphs = [], lens = [], lensKeys = [];
       let patA = PAT[o.pattern ?? 'stripes'];
-      if (patA === undefined) throw new Error(`没有这种欧普图案：${o.pattern}（有：${Object.keys(PAT).join(' / ')}）`);
+      if (patA === undefined) throw new Error(M(`没有这种欧普图案：${o.pattern}（有：${Object.keys(PAT).join(' / ')}）`, `No such op pattern: ${o.pattern} (available: ${Object.keys(PAT).join(' / ')})`));
       const bands = (o.bands || []).slice(0, 4).map(rgb);
       const paramsAt = (t) => { const s = { ...p0 }; for (const k of keys) { if (t <= k.at) break; const q = seg(t, k.at, k.at + k.dur, k.ease); for (const n in k.to) s[n] = lerp(s[n], k.to[n], q); } return s; };
       // Pattern switch: blend from the current pattern to the `to` pattern over dur
@@ -119,7 +120,7 @@ in vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
       const api = {
         el: cv, w: W, h: H,
         to(at, dur, to, ease = E.cubicInOut) { keys.push({ at, dur, to, ease }); keys.sort((a, b) => a.at - b.at); return api; },
-        morph(at, dur, to, ease = E.cubicInOut) { const k = PAT[to]; if (k === undefined) throw new Error(`没有这种欧普图案：${to}`); morphs.push({ at, dur, to: k, ease }); morphs.sort((a, b) => a.at - b.at); return api; },
+        morph(at, dur, to, ease = E.cubicInOut) { const k = PAT[to]; if (k === undefined) throw new Error(M(`没有这种欧普图案：${to}`, `No such op pattern: ${to}`)); morphs.push({ at, dur, to: k, ease }); morphs.sort((a, b) => a.at - b.at); return api; },
         // Lens: x, y (canvas px), r (radius), s (strength: 0.5 = centre magnified 2×; negative = squeeze)
         lens(i, l) { lens[i] = { x: l.x ?? W / 2, y: l.y ?? H / 2, r: l.r ?? 0, s: l.s ?? 0 }; return api; },
         lensTo(i, at, dur, to, ease = E.cubicInOut) { lensKeys.push({ i, at, dur, to, ease }); lensKeys.sort((a, b) => a.at - b.at); return api; },
@@ -131,7 +132,7 @@ in vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
         if (!on) return;
         const s = paramsAt(t), [a, b, m] = patAt(t), Ls = lensAt(t);
         // safety clamp: stripes must not be too thin
-        if (s.period < minPeriod) { if (!warned) { console.warn(`op：条纹周期 ${s.period.toFixed(1)}px 太细（会闪、出摩尔纹），夹到 ${minPeriod.toFixed(0)}px`); warned = true; } s.period = minPeriod; }
+        if (s.period < minPeriod) { if (!warned) { console.warn(M(`op：条纹周期 ${s.period.toFixed(1)}px 太细（会闪、出摩尔纹），夹到 ${minPeriod.toFixed(0)}px`, `op: stripe period ${s.period.toFixed(1)}px is too fine (flicker, moiré); clamped to ${minPeriod.toFixed(0)}px`)); warned = true; } s.period = minPeriod; }
         gl.viewport(0, 0, cv.width, cv.height);
         gl.uniform2f(u.uRes, cv.width, cv.height);
         gl.uniform1f(u.uT, t); gl.uniform1f(u.uU, ratio); gl.uniform1f(u.uTravel, travel(t));

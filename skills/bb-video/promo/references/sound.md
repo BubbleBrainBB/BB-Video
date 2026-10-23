@@ -32,7 +32,7 @@ Together with the music:
 
 ```js
 export default {
-  name: '暗房：纸、胶片、快门、药水',
+  name: 'Darkroom: paper, film, shutter, developer',
   space: { size: 0.25, mix: 0.14 },                  // space: size 0–1, mix 0–1 wetness
   ambience: { use: 'roomtone', bright: 420, hum: 50, gain: 0.12 },   // very light ambience (optional)
   vary: 0.06,                                          // amount of subtle variation each time
@@ -52,7 +52,6 @@ export default {
   logo: [{ use: 'shutter', gain: 0.8 }, { use: 'glass', note: 'E6', gain: 0.6 }, { use: 'glass', note: 'B6', gain: 0.4, delay: 0.06 }, { use: 'thud', freq: 55, gain: 0.7 }],
 };
 ```
-(The example name '暗房：纸、胶片、快门、药水' = "darkroom: paper, film, shutter, developer".)
 
 - Each sound: `{ use: timbre, ...params, gain, delay, pan }`; `layers: [...]` stacks several layers; `variants: [...]` are used in turn; `notes: [...]` step through pitches; `mute: true` or `false` = no sound for this kind of motion.
 - `use` can also be a function `(p, r, ev) => Float32Array` (44.1kHz mono); `ev.LIB` has `svf` `noise` `noteHz` `RECIPES` for synthesising your own.

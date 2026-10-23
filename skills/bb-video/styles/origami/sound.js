@@ -1,7 +1,7 @@
 // Sound design (starting point for the origami style): paper + wooden table. Principles and usage in the skill's references/sound.md; style notes in styles/origami/STYLE.md.
 // The types the origami components emit are already written here (fold / unfold / land / flip / flutter) — then adapt to the product: paper thickness, table hardness, pitched accents in the score's key.
 export default {
-  name: '一句话：这个产品的纸听起来是什么样的（例：厚的手工纸、木桌、安静的工作室）',
+  name: 'One line: what this product sounds like as paper (e.g. thick handmade paper, a wooden table, a quiet studio)',
   space: { size: 0.22, mix: 0.1 },                               // small, dry room
   ambience: { use: 'roomtone', bright: 380, gain: 0.08 },
   vary: 0.07,

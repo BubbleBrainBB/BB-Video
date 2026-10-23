@@ -39,7 +39,8 @@
 //   transitions between scenes sit between two narration lines; ending end: { at, title, tagline, url } (no at = after the last line); captions are added automatically
 (function () {
   const P = window.PROMO;
-  if (!P || !P.kit) throw new Error('formats.js 要在 kit.js 之后加载');
+  const M = P && P.M ? P.M : (zh, en) => ((window.__BV_LANG || (/^zh/i.test(document.documentElement.lang || '') ? 'zh' : 'en')) === 'zh' ? zh : en);   // P.M is missing only when promo.js did not load
+  if (!P || !P.kit) throw new Error(M('formats.js 要在 kit.js 之后加载', 'formats.js must load after kit.js'));
   const FORMATS = {};
   const f1 = (n) => Math.round(n * 10) / 10;
   const words = (s) => String(s).trim().split(/\s+/).length + (String(s).match(/[一-鿿]/g) || []).length / 3;
@@ -117,7 +118,7 @@
           else if (c.shot) beats = c.beats ?? 5;
           else if (c.stat !== undefined) beats = c.beats ?? 4;
           else if (c.line) beats = c.beats ?? Math.max(3, Math.ceil((0.9 + 0.3 * words(c.line)) / B));
-          else throw new Error('大字动效的 cue 要有 say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw 之一：' + JSON.stringify(c));
+          else throw new Error(M('大字动效的 cue 要有 say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw 之一：', 'A kinetic-type cue needs one of say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw: ') + JSON.stringify(c));
           cues.push({ ...c, at: b, beats, parts });
           b += beats;
         }
@@ -152,7 +153,7 @@
     },
     async build(F, S, plan, o) {
       const T = F.T;
-      if (!T || !T.lines.length) throw new Error('跟着旁白走（format: "explain"）要先有旁白：写 script.json，运行 explainer/scripts/tts.py，页面里加载 timeline.js');
+      if (!T || !T.lines.length) throw new Error(M('跟着旁白走（format: "explain"）要先有旁白：写 script.json，运行 explainer/scripts/tts.py，页面里加载 timeline.js', 'Following narration (format: "explain") needs narration first: write script.json, run explainer/scripts/tts.py, load timeline.js in the page'));
       const lineOf = (id) => T.lines.find((l) => l.id === id);
       const at = (spec) => (typeof spec === 'number' ? spec : Array.isArray(spec) ? T.word(spec[0], spec[1]) : T.start(spec));
       const idOf = (spec) => (Array.isArray(spec) ? spec[0] : typeof spec === 'string' ? spec : null);
@@ -224,7 +225,7 @@
         ? { full: [0, 0, 1, 1], top: [0, 0.02, 1, 0.44], bottom: [0, 0.4, 1, 0.48] }
         : { full: [0, 0, 1, 1], left: [0, 0, 0.5, 1], right: [0.5, 0, 0.5, 1], top: [0, 0, 1, 0.56], bottom: [0, 0.44, 1, 0.56] };
       const r = A[nm];
-      if (!r) throw new Error(`area 只能是 full / left / right / top / bottom：${name}`);
+      if (!r) throw new Error(M(`area 只能是 full / left / right / top / bottom：${name}`, `area must be full / left / right / top / bottom: ${name}`));
       return { x: r[0] * F.W, y: r[1] * H, w: r[2] * F.W, h: r[3] * H };
     };
     // information layouts use only the safe zone: 9% at the top, the bottom clear of captions / platform overlay (landscape 15%, portrait 22%), 6% on each side
@@ -360,13 +361,13 @@
           }
         });
       } else if (kind === 'diagram') {
-        if (!S.box) throw new Error(`示意图（diagram：方框 + 箭头）是画板风格（白板 / 孔版 / 水墨）的语言，${S.name} 不用它——一步接一步用 flow，对照用 compare，数字用 chart，真实界面用 annotate，很多件事用 montage（每种风格会用自己的方式画出来）`);
+        if (!S.box) throw new Error(M(`示意图（diagram：方框 + 箭头）是画板风格（白板 / 孔版 / 水墨）的语言，${S.name} 不用它——一步接一步用 flow，对照用 compare，数字用 chart，真实界面用 annotate，很多件事用 montage（每种风格会用自己的方式画出来）`, `diagram (boxes + arrows) belongs to the board styles (whiteboard / riso / ink); ${S.name} doesn't use it: use flow for step by step, compare for contrast, chart for numbers, annotate for a real UI, montage for many things (each style draws them its own way)`));
         // figure ratio: landscape defaults to 2:1; in portrait with no separate drawing (portrait), the same figure is stretched vertically to full height (positions are fractions, so nothing misaligns)
         const items = itemsOf(c, PT), idx = diagramSteps(items), A = c.aspect ?? (PT ? (c.portrait ? C.w / C.h : Math.max(C.w / C.h, 1)) : 2);
         const Dw = Math.min(C.w, C.h * A), Dh = Dw / A, D = { x: C.x + (C.w - Dw) / 2, y: C.y + (C.h - Dh) / 2, w: Dw, h: Dh };
         const px = (fx) => D.x + fx * D.w, py = (fy) => D.y + fy * D.h, ids = {};
         const edge = (id, toward) => {   // from a shape's centre, walk in a direction to its edge (plus a little gap)
-          const g = ids[id]; if (!g) throw new Error(`示意图里没有 id 为 ${id} 的图元`);
+          const g = ids[id]; if (!g) throw new Error(M(`示意图里没有 id 为 ${id} 的图元`, `The diagram has no shape with id ${id}`));
           const dx = toward[0] - g.cx, dy = toward[1] - g.cy, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, gap = F.px(16);
           const d = g.r !== undefined ? g.r : Math.min(Math.abs(ux) > 1e-6 ? g.w / 2 / Math.abs(ux) : 1e9, Math.abs(uy) > 1e-6 ? g.h / 2 / Math.abs(uy) : 1e9);
           return [g.cx + ux * (d + gap), g.cy + uy * (d + gap)];
@@ -383,7 +384,7 @@
           else if (it.arrow) {
             const a = it.arrow;
             let from, to;
-            if (typeof a[0] === 'string') { const A2 = ids[a[0]], B2 = ids[a[1]]; if (!A2 || !B2) throw new Error(`示意图的箭头连不上：${a.join(' → ')}（先画有这个 id 的图元）`); from = edge(a[0], [B2.cx, B2.cy]); to = edge(a[1], [A2.cx, A2.cy]); }
+            if (typeof a[0] === 'string') { const A2 = ids[a[0]], B2 = ids[a[1]]; if (!A2 || !B2) throw new Error(M(`示意图的箭头连不上：${a.join(' → ')}（先画有这个 id 的图元）`, `Diagram arrow can't connect: ${a.join(' → ')} (draw the shapes with these ids first)`)); from = edge(a[0], [B2.cx, B2.cy]); to = edge(a[1], [A2.cx, A2.cy]); }
             else { from = [px(a[0]), py(a[1])]; to = [px(a[2]), py(a[3])]; }
             S.arrow(layer, { ...o, from, to, bend: it.bend, color: it.color });
           } else if (it.circle) {
@@ -398,12 +399,12 @@
           else if (it.band) { const [x, y, w, h] = it.band; S.shape(layer, { ...o, kind: 'band', x: px(x), y: py(y), w: w * D.w, h: h * D.h, colors: it.colors }); }
           else if (it.mark !== undefined) {
             let r;
-            if (typeof it.mark === 'string') { const g = ids[it.mark]; if (!g) throw new Error(`示意图里没有 id 为 ${it.mark} 的图元`); const hw = g.r ?? g.w / 2, hh = g.r ?? g.h / 2; r = { x: g.cx - hw, y: g.cy - hh, w: hw * 2, h: hh * 2 }; }
+            if (typeof it.mark === 'string') { const g = ids[it.mark]; if (!g) throw new Error(M(`示意图里没有 id 为 ${it.mark} 的图元`, `The diagram has no shape with id ${it.mark}`)); const hw = g.r ?? g.w / 2, hh = g.r ?? g.h / 2; r = { x: g.cx - hw, y: g.cy - hh, w: hw * 2, h: hh * 2 }; }
             else { const [x, y, w, h] = it.mark; r = { x: px(x), y: py(y), w: w * D.w, h: h * D.h }; }
             S.mark(layer, { ...o, ...r, kind: it.kind ?? 'circle' });
             foci.push({ t: ts, x: r.x + r.w / 2, y: r.y + r.h / 2 });
           } else if (it.bars) S.bars(layer, { ...o, x: px(it.x), y: py(it.y), w: it.w * D.w, h: it.h * D.h, data: it.bars, unit: it.unit, hot: it.hot, max: it.max, size: it.size ?? 36 * ks });
-          else throw new Error('示意图的图元要有 box / label / word / arrow / circle / rect / line / band / mark / bars 之一：' + JSON.stringify(it));
+          else throw new Error(M('示意图的图元要有 box / label / word / arrow / circle / rect / line / band / mark / bars 之一：', 'A diagram shape needs one of box / label / word / arrow / circle / rect / line / band / mark / bars: ') + JSON.stringify(it));
         });
       }
     }
@@ -455,7 +456,7 @@
       }
       return r.map((x) => x ?? 'build');
     })();
-    for (const x of roles) if (!ROLE[x]) throw new Error(`场景的 role 只能是 ${Object.keys(ROLE).join(' / ')}：${x}`);
+    for (const x of roles) if (!ROLE[x]) throw new Error(M(`场景的 role 只能是 ${Object.keys(ROLE).join(' / ')}：${x}`, `A scene's role must be ${Object.keys(ROLE).join(' / ')}: ${x}`));
     // camera: set by role, the same move never three times in a row (the third in a row is swapped); board styles use their own camera work (panning regions, scrolling handscroll, page turns), not here
     const cams = [];
     roles.forEach((x, i) => { let c2 = scenes[i].camera ?? ROLE[x].cam; if (!scenes[i].camera && i >= 2 && c2 === cams[i - 1] && c2 === cams[i - 2]) c2 = ['pull', 'glide', 'hold', 'punch'].find((m) => m !== c2); cams.push(c2); });
@@ -489,16 +490,16 @@
     function rhythmLint(rows, scenes) {
       window.__rhythm = () => rows.map((r) => ({ ...r, from: Math.round(r.from * 100) / 100, to: Math.round(Math.min(r.to, F.duration) * 100) / 100 }));
       F.addLint(() => {
-        const out = [], D = F.duration, w = (t, msg) => out.push({ level: 'warn', t: Math.round(t * 100) / 100, src: '', what: '节奏', msg });
+        const out = [], D = F.duration, w = (t, msg) => out.push({ level: 'warn', t: Math.round(t * 100) / 100, src: '', what: M('节奏', 'rhythm'), msg });
         const first = scenes[0] && scenes[0].cues[0] ? scenes[0].cues[0].atT : 0;
-        if (first > 3) w(first, `第一个东西 ${first.toFixed(1)} 秒才出来：开头 3 秒内要有动静（钩子）`);
+        if (first > 3) w(first, M(`第一个东西 ${first.toFixed(1)} 秒才出来：开头 3 秒内要有动静（钩子）`, `The first thing only appears at ${first.toFixed(1)} s: something must happen in the first 3 s (the hook)`));
         if (!F.voiced) {
           const bi = rows.findIndex((r) => r.role === 'burst');
-          if (D > 20 && bi < 0) w(0, '没有快切段：在片子 30–40% 的位置加一段 montage（真实的功能 / 结果 / 数字一格一格切过去），整支片子才有高潮');
-          if (bi >= 0) { const f = rows[bi].from / D; if (f < 0.2 || f > 0.7) w(rows[bi].from, `快切段在片子的 ${(f * 100).toFixed(0)}% 处：放在 30–60% 之间（前面要有铺垫，后面要留落点）`); }
+          if (D > 20 && bi < 0) w(0, M('没有快切段：在片子 30–40% 的位置加一段 montage（真实的功能 / 结果 / 数字一格一格切过去），整支片子才有高潮', 'No fast-cut section: add a montage at 30–40% of the film (real features / results / numbers cut one by one) so the film has a climax'));
+          if (bi >= 0) { const f = rows[bi].from / D; if (f < 0.2 || f > 0.7) w(rows[bi].from, M(`快切段在片子的 ${(f * 100).toFixed(0)}% 处：放在 30–60% 之间（前面要有铺垫，后面要留落点）`, `The fast-cut section is at ${(f * 100).toFixed(0)}% of the film: put it between 30–60% (set-up before, a landing after)`)); }
         }
-        for (let i = 1; i < rows.length; i++) { const a = rows[i - 1], b = rows[i], ch = (a.energy !== b.energy) + (a.camera !== b.camera) + (a.kind !== b.kind) + (a.variant !== b.variant); if (ch < 2) w(b.from, `第 ${a.scene} → ${b.scene} 场只换了 ${ch} 样：换场时强度、镜头、画面类型、底色至少换两样，否则像在翻 PPT`); }
-        for (let i = 2; i < rows.length; i++) if (rows[i].camera === rows[i - 1].camera && rows[i].camera === rows[i - 2].camera && !String(rows[i].camera).startsWith('（')) w(rows[i].from, `连续三场都是同一种镜头（${rows[i].camera}）：换一种`);
+        for (let i = 1; i < rows.length; i++) { const a = rows[i - 1], b = rows[i], ch = (a.energy !== b.energy) + (a.camera !== b.camera) + (a.kind !== b.kind) + (a.variant !== b.variant); if (ch < 2) w(b.from, M(`第 ${a.scene} → ${b.scene} 场只换了 ${ch} 样：换场时强度、镜头、画面类型、底色至少换两样，否则像在翻 PPT`, `Scene ${a.scene} → ${b.scene} changes only ${ch} thing(s): change at least two of intensity, camera, picture type, ground at a scene change, or it feels like flipping slides`)); }
+        for (let i = 2; i < rows.length; i++) if (rows[i].camera === rows[i - 1].camera && rows[i].camera === rows[i - 2].camera && !/^[（(]/.test(String(rows[i].camera))) w(rows[i].from, M(`连续三场都是同一种镜头（${rows[i].camera}）：换一种`, `Three scenes in a row use the same camera move (${rows[i].camera}): change one`));
         return out;
       });
     }
@@ -570,7 +571,7 @@
         } else if (c.line) {
           S.line(layer, { at, until, text: c.line, x: cx, y: Yp(Y.lineOnly), size: c.size ?? sz(SZ.lineOnly), maxW: lineW });
           if (c.accent) S.accent(layer, { at, until, x: cx, y: Yp(Y.lineOnly) });
-        } else throw new Error('cue 要有 say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw 之一：' + JSON.stringify(c));
+        } else throw new Error(M('cue 要有 say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw 之一：', 'A cue needs one of say / line / list / shot / stat / flow / compare / chart / annotate / diagram / montage / raw: ') + JSON.stringify(c));
         if (!infoKind(c) && !c.raw) for (let q = nT; q < F.texts.length; q++) F.texts[q].slogan = true;   // information density check: text of big words, single lines, lists and numbers doesn't count as a "hand-built layout"
       });
       // transition: added after everything in this scene is built (the origami page turn treats the whole scene as one sheet of paper)
@@ -581,7 +582,7 @@
       const from = prevShow;   // fix this scene's start time (prevShow changes later)
       F.add((tt) => P.set(layer, { display: tt >= from && tt < w.hide ? '' : 'none' }));
       if (!S.board) { const c0 = sc.cues[0]; camera(layer, cams[i], from, w.hide, foci, c0 ? c0.atT : sc.startT, [F.W / 2, c0 && c0.say !== undefined ? H * (c0.line ? Y.sayL : Y.say) : H * 0.42], i % 2 ? -1 : 1); }
-      rows.push({ scene: i + 1, role, from: sc.startT, to: sc.coverT, energy, camera: S.board ? '（画板运镜）' : cams[i], kind: kindOfScene(sc), music: [F.voiced ? '' : spec.hit && i > 0 ? '重击' : '', role === 'drop' && !F.voiced && i > 0 ? '急停' : '', !F.voiced && role !== 'burst' && (nextRole === 'burst' || nextRole === 'drop') ? '蓄力' : ''].filter(Boolean).join(' '), variant: sc.variant ?? i });
+      rows.push({ scene: i + 1, role, from: sc.startT, to: sc.coverT, energy, camera: S.board ? M('（画板运镜）', '(board camera)') : cams[i], kind: kindOfScene(sc), music: [F.voiced ? '' : spec.hit && i > 0 ? M('重击', 'hit') : '', role === 'drop' && !F.voiced && i > 0 ? M('急停', 'stop') : '', !F.voiced && role !== 'burst' && (nextRole === 'burst' || nextRole === 'drop') ? M('蓄力', 'build') : ''].filter(Boolean).join(' '), variant: sc.variant ?? i });
       prevShow = w.show;
     });
     // ending
@@ -594,7 +595,7 @@
     if (!S.board) camera(endL, 'pull', endFrom, F.duration + 1, [], endT);
     S.end(endL, { ...o.end, at: endT });
     F.scene(scenes[n - 1].coverT, F.duration, { end: true, name: 'end' });
-    rows.push({ scene: '片尾', role: endDrop ? 'drop' : 'resolve', from: scenes[n - 1].coverT, to: F.duration, energy: endDrop ? 3 : 1, camera: S.board ? '（画板运镜）' : 'pull', kind: 'end', music: endDrop ? '急停 重击' : '', variant: n });
+    rows.push({ scene: M('片尾', 'end'), role: endDrop ? 'drop' : 'resolve', from: scenes[n - 1].coverT, to: F.duration, energy: endDrop ? 3 : 1, camera: S.board ? M('（画板运镜）', '(board camera)') : 'pull', kind: 'end', music: endDrop ? M('急停 重击', 'stop hit') : '', variant: n });
     rhythmLint(rows, scenes);
   }
 
@@ -602,7 +603,7 @@
   // one call makes a film: work out the timeline → compose → the style's shared API → lay it out by format
   P.film = (o) => {
     const fmt = FORMATS[o.format ?? 'kinetic'];
-    if (!fmt) throw new Error(`快速版没有这种讲法：${o.format}（有：${Object.keys(FORMATS).join(' / ')}）`);
+    if (!fmt) throw new Error(M(`快速版没有这种讲法：${o.format}（有：${Object.keys(FORMATS).join(' / ')}）`, `The quick version has no format ${o.format} (available: ${Object.keys(FORMATS).join(' / ')})`));
     const plan = fmt.plan(o);
     // colours come from the product: brand (brand colour) / accent (second colour) are applied in this style's materials (P.kit.brand); ground ('light' / 'dark' / 'brand') is for styles with several grounds (launch, ASCII)
     const bb = o.brand || o.accent || o.ground ? P.kit.brand(o.style, { brand: o.brand, accent: o.accent, ground: o.ground }) : { theme: P.kit.theme(o.style), kit: {}, color: null };

@@ -1,7 +1,7 @@
 // Sound design (starting point for the op-art style): minimal electronic sounds, like a precision instrument. Principles and how to write it: the skill's references/sound.md; style notes: styles/op/STYLE.md.
 // Types the op-art components emit: pulse (striped text), sweep (cards, transitions). Pitched sounds are all in the A minor pentatonic (A C D E G) — change to suit the product.
 export default {
-  name: '一句话：这个产品的仪器听起来是什么样的（例：干净、精确、有一点催眠）',
+  name: 'One line: what this product sounds like as an instrument (e.g. clean, precise, a little hypnotic)',
   space: { size: 0.4, mix: 0.14 },
   vary: 0.05,
   sounds: {

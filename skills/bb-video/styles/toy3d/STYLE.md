@@ -3,7 +3,7 @@ On a dark, warm desk, the product's UI becomes physical platforms (real screensh
 
 Reference: the DeepSeek promo (an editing app's UI laid flat as a physical slab, a blue soft-vinyl whale hopping on the toolbar keys and landing on the timeline's keyframes). Check against the reference while you work; for anything the reference doesn't show (what a toy looks like), first find real photos to compare with, see section 9.
 
-Runtime: `runtime/toy3d.js` (`await PROMO.toy3d(F, opt)`, three.js; the starter page has the import map). New project: promo `node scripts/new.mjs <dir> --style toy3d`, explainer `node explainer/scripts/new.mjs <dir> --style toy3d`. Toy modelling: `node scripts/toy3d-model.mjs <dir>` (section 9). Samples: `videos/linear-toy3d-v2` (promo, Linear, written with this runtime: key clicks, typing, carrying cards, rolling, stamping, keycaps, nine fit shots); earlier hand-written experiments: `videos/linear-toy3d`, `videos/chicken-rabbit-toy3d` (explainer, the chickens-and-rabbits problem (鸡兔同笼)).
+Runtime: `runtime/toy3d.js` (`await PROMO.toy3d(F, opt)`, three.js; the starter page has the import map). New project: promo `node scripts/new.mjs <dir> --style toy3d`, explainer `node explainer/scripts/new.mjs <dir> --style toy3d`. Toy modelling: `node scripts/toy3d-model.mjs <dir>` (section 9). Starter pages: `styles/toy3d/index.html` (promo: hops, a key click, typing, keycaps, a shot list), `styles/toy3d/explain.html` (explainer).
 
 ## 1. What products it suits
 - Software with a real UI (editors, kanban boards, IDEs, design tools, apps), especially "one action after another" flows: click, type, drag, review, publish.

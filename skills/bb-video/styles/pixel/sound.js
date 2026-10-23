@@ -4,7 +4,7 @@
 // Pitched sounds are in C major (C D E F G A B) — change to match the music, same key as score.js.
 const sq = (from, to, dur, gain = 1, delay = 0) => ({ use: 'blip', wave: 'square', freq: from, to, dur, gain, delay });
 export default {
-  name: '一句话：这个产品 / 这个题目听起来是什么样的（例：一台小游戏机，每做对一步就"叮"一声）',
+  name: 'One line: what this product / topic sounds like (e.g. a little game console that goes "ding" at every right move)',
   space: { size: 0.1, mix: 0.04 },
   vary: 0.02,
   sounds: {

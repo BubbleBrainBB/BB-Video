@@ -1,7 +1,7 @@
 // Sound design (starting point when the whiteboard makes a promo): a marker writing on the board, tape, camera pans. Principles and how to write it: promo/references/sound.md; change to suit the product.
 // Types the shared interface (promo/runtime/kit.js) emits: write (writing), circle (circling), tape (taping up a photo), pan (camera pans to the next section), logo
 export default {
-  name: '一句话：这个产品写在白板上听起来是什么样的（例：安静的会议室、马克笔、轻快）',
+  name: 'One line: what this product sounds like written on a whiteboard (e.g. a quiet meeting room, markers, brisk)',
   space: { size: 0.3, mix: 0.12 },
   vary: 0.08,
   sounds: {

@@ -2,7 +2,7 @@
 // Types the cut-paper components emit: snip (scissors close), paste (the light pat of paper pressed down), rustle (picking up / moving paper), lift (peeling up), cover (a big sheet sweeping over), tear (tearing open).
 // Pitched sounds (the scissors' metallic ring, wooden accents) are all in the F major pentatonic (F G A C D) — change to suit the product, in the same key as score.js.
 export default {
-  name: '一句话：这个产品的剪纸工作台听起来是什么样的（例：明亮的工作室、锋利的剪刀、厚实的水粉纸）',
+  name: 'One line: what this product sounds like on a cut-paper workbench (e.g. a bright studio, sharp scissors, thick gouache paper)',
   space: { size: 0.24, mix: 0.1 },                                 // a small, dry studio
   ambience: { use: 'roomtone', bright: 420, gain: 0.07 },
   vary: 0.07,

@@ -13,7 +13,8 @@
 //   O.endcard(parent, { at, logo, tagline, url, cta }) end card: paper folded into a small square drops and unfolds
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('origami.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('origami.js 要在 promo.js 之后加载', 'origami.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -27,7 +28,7 @@
   const tp = (m, p) => { const r = m.transformPoint(new DOMPoint(p[0], p[1], p[2] || 0, 1)); return [r.x, r.y, r.z]; };
   const nrm = (m) => unit(sub(tp(m, [0, 0, 1]), tp(m, [0, 0, 0])));
   const css3 = (m) => 'matrix3d(' + Array.from(m.toFloat64Array(), (x) => (Math.abs(x) < 1e-9 ? 0 : +x.toFixed(6))).join(',') + ')';
-  const hex = (c) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); if (!m) throw new Error(`折纸的颜色请写成 #RRGGBB：${c}`); const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const hex = (c) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); if (!m) throw new Error(M(`折纸的颜色请写成 #RRGGBB：${c}`, `Origami colours must be written as #RRGGBB: ${c}`)); const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
   // relative luminance of a colour (0 black … 1 white)
   const lum = (c) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); if (!m) return 1; const n = parseInt(m[1], 16), ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]; };
   const centroid = (poly) => poly.reduce((s, p) => [s[0] + p[0] / poly.length, s[1] + p[1] / poly.length], [0, 0]);
@@ -261,7 +262,7 @@
       const W = o.w, H = o.h;
       const spec = typeof o.fold === 'string' ? { type: o.fold } : o.fold || { type: 'flat' };
       const gen = spec.panels ? null : PLANS[spec.type];
-      if (!spec.panels && !gen) throw new Error(`没有这种折法：${spec.type}（可用：${Object.keys(PLANS).join(' / ')}，或者自己写 { panels, order }）`);
+      if (!spec.panels && !gen) throw new Error(M(`没有这种折法：${spec.type}（可用：${Object.keys(PLANS).join(' / ')}，或者自己写 { panels, order }）`, `No such fold: ${spec.type} (available: ${Object.keys(PLANS).join(' / ')}, or write your own { panels, order })`));
       const plan = spec.panels ? spec : gen({ w: W, h: H, ...spec });
       const paper = o.paper ?? O.paper, backPaper = o.back ?? O.back;
       const wrap = space(parent, o.zIndex, o.before, o.perspective && F.px(o.perspective));
@@ -362,7 +363,7 @@
         // Position in the parent layer of paper point (u, v) when lying flat and unmoved (for placing cursors, annotations)
         P: (u, v) => [T0.x + u, T0.y + v],
         // A crease group starts at at and turns to q over dur seconds (0 = flat, 1 = fully folded)
-        crease(c, at, dur, q, ease = E.cubicInOut) { if (!creases.includes(c)) throw new Error(`这张纸没有折痕组 "${c}"（有：${creases.join(' / ')}）`); (keys[c] ??= []).push({ at, dur, to: q, ease }); keys[c].sort((a, b) => a.at - b.at); return S; },
+        crease(c, at, dur, q, ease = E.cubicInOut) { if (!creases.includes(c)) throw new Error(M(`这张纸没有折痕组 "${c}"（有：${creases.join(' / ')}）`, `This sheet has no crease group "${c}" (available: ${creases.join(' / ')})`)); (keys[c] ??= []).push({ at, dur, to: q, ease }); keys[c].sort((a, b) => a.at - b.at); return S; },
         // Compute a crease group's value over time yourself: fn(t, value from the keyframes) → q
         drive(c, fn) { drive[c] = fn; return S; },
         // Fold up / unfold in sequence; o2: { order, overlap (overlap ratio between neighbouring crease groups, default 0.3), ease, to, sfx (sound type; false = none), gain }
@@ -513,7 +514,7 @@
     //      flap: { amp (degrees), hz, from, to } (wing flapping), pose: (t) => ({ joint name: degrees }), zIndex }
     function model(parent, o) {
       const def = typeof o.def === 'string' ? MODELS[o.def] : o.def;
-      if (!def) throw new Error(`没有这种折纸模型：${o.def}（有：${Object.keys(MODELS).join(' / ')}，或者自己写 { v, f }）`);
+      if (!def) throw new Error(M(`没有这种折纸模型：${o.def}（有：${Object.keys(MODELS).join(' / ')}，或者自己写 { v, f }）`, `No such origami model: ${o.def} (available: ${Object.keys(MODELS).join(' / ')}, or write your own { v, f })`));
       // Back defaults to one shade darker than the front (not white): the model tumbles in the air, so it's recognisable from either side
       const size = F.px(o.size ?? 140), cf = hex(o.paper ?? O.paper), cb = o.back ? hex(o.back) : cf.map((x) => x * 0.8);
       const wrap = space(parent, o.zIndex, o.before), sh = shadowLayer(wrap);
@@ -567,7 +568,7 @@
         },
         // Fold from a flat sheet into the model (to = 1) or lay it back flat (to = 0); the model needs flat
         form(at, dur, to = 1, o2 = {}) {
-          if (!def.flat) throw new Error('这个模型没有 flat（展开图），不能 form');
+          if (!def.flat) throw new Error(M('这个模型没有 flat（展开图），不能 form', 'This model has no flat (unfolded pattern), so it cannot form'));
           keys.push({ kind: 'form', at, dur, to, ease: o2.ease ?? E.cubicInOut });
           keys.sort((a, b) => a.at - b.at);
           if (o2.sfx !== false) F.sfx(at, o2.sfx ?? 'fold', o2.gain ?? 0.8, { dur, size: 0.5 });

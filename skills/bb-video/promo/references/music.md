@@ -26,7 +26,7 @@ The 5 sample scores in `../core/scripts/scores/` (minimal electronic / ambient /
 
 ```js
 export default {
-  name: '暗房里的慢显影',          // one sentence; it gets printed
+  name: 'A slow develop in the darkroom',          // one sentence; it gets printed
   key: 'D lydian',                // key: C … B (with # / b) + major / minor / dorian / mixolydian / lydian / phrygian
   swing: 0.5,                     // swing: 0.5 = straight, around 0.6 = a lazy back beat
   sidechain: false,               // true: other parts duck when the kick hits (common in electronic and pop)
@@ -36,11 +36,11 @@ export default {
   chords: ['Dmaj7', 'Bm7', ['Gmaj7', 2], 'A/C#'],   // chords (one bar each by default, [chord, bars] for longer); scale degrees 1–7 also work
   motif: 'F#5:1.5 A5:.5 E5:2 | r:1 D5:1 B4:1 C#5:1', // melodic motif: note:beats, r = rest, | is only a bar line
   parts: [                        // one entry per part
-    { name: '铺底', synth: 'pad', play: 'chord', pattern: 'x', octave: 3, cut: 900, attack: 0.6, gain: 0.22, from: 0 },
-    { name: '钢琴', synth: 'piano', play: 'arp', pattern: 'x.x.x.x.', order: 'updown', range: 2, octave: 4, len: 3, gain: 0.2, from: 1 },
-    { name: '低音', synth: 'sub', play: 'bass', pattern: 'x...x...', offsets: [0, 7], octave: 1, gain: 0.25, from: 0 },
-    { name: '底鼓', synth: 'kick', pattern: 'x...x...x...x...', tune: 48, gain: 0.45, from: 2 },
-    { name: '旋律', synth: 'bell', play: 'motif', gain: 0.16, from: 2, upAt: 3 },
+    { name: 'pad', synth: 'pad', play: 'chord', pattern: 'x', octave: 3, cut: 900, attack: 0.6, gain: 0.22, from: 0 },
+    { name: 'piano', synth: 'piano', play: 'arp', pattern: 'x.x.x.x.', order: 'updown', range: 2, octave: 4, len: 3, gain: 0.2, from: 1 },
+    { name: 'bass', synth: 'sub', play: 'bass', pattern: 'x...x...', offsets: [0, 7], octave: 1, gain: 0.25, from: 0 },
+    { name: 'kick', synth: 'kick', pattern: 'x...x...x...x...', tune: 48, gain: 0.45, from: 2 },
+    { name: 'melody', synth: 'bell', play: 'motif', gain: 0.16, from: 2, upAt: 3 },
   ],
 };
 ```

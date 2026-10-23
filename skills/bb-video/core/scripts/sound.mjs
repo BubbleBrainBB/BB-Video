@@ -4,11 +4,12 @@
 //   - a slight variation every time (pitch, brightness, volume), so sounds of one kind never sound copy-pasted
 //   - one shared space (reverb), so every sound seems to happen in the same place; an optional, very quiet ambience
 //   - checks: density, gaps, one kind of sound used too often
+import { M } from './lang.mjs';
 export const SR = 44100;
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const NOTE = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
-export const noteHz = (x) => { if (typeof x === 'number') return x; const m = String(x).match(/^([A-G][#b]?)(-?\d)$/); if (!m) throw new Error(`看不懂的音高：${x}（写 Hz 数字或音名，如 E6、F#5）`); return hz(12 * (Number(m[2]) + 1) + NOTE[m[1]]); };
+export const noteHz = (x) => { if (typeof x === 'number') return x; const m = String(x).match(/^([A-G][#b]?)(-?\d)$/); if (!m) throw new Error(M(`看不懂的音高：${x}（写 Hz 数字或音名，如 E6、F#5）`, `Unreadable pitch: ${x} (write a number in Hz or a note name such as E6, F#5)`)); return hz(12 * (Number(m[2]) + 1) + NOTE[m[1]]); };
 export function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 export const hashStr = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 // state-variable filter (cutoff can be a function of time); a cutoff above SR/6 diverges, so it is clamped
@@ -177,7 +178,7 @@ export const RECIPES = {
 
 // Default sound design (used when there is no sound.js; only a fallback — every product should design its own)
 export const DEFAULT_PALETTE = {
-  name: '默认（通用）',
+  get name() { return M('默认（通用）', 'default (generic)'); },   // read when used, so it follows the run's language
   space: { size: 0.3, mix: 0.12 },
   sounds: {
     whoosh: { use: 'swish' }, impact: { use: 'impact' }, boom: { use: 'boom' }, riser: { use: 'riser' },
@@ -205,7 +206,7 @@ function voice(spec, ev, r, palette) {
   const parts = [];
   for (const l of layers) {
     const fn = typeof l.use === 'function' ? l.use : RECIPES[l.use];
-    if (!fn) throw new Error(`没有这种声音：${l.use}（可用：${Object.keys(RECIPES).join(' / ')}，或者写一个函数）`);
+    if (!fn) throw new Error(M(`没有这种声音：${l.use}（可用：${Object.keys(RECIPES).join(' / ')}，或者写一个函数）`, `No such sound: ${l.use} (available: ${Object.keys(RECIPES).join(' / ')}, or write a function)`));
     const vary = l.vary ?? palette.vary ?? 0.05, k = 1 + (r() * 2 - 1) * vary;           // slight variation every time
     const size = ev.size ?? 0.5, sizeK = 1 + (size - 0.5) * (l.sizeAmount ?? 0.6);          // bigger = lower, heavier
     const p = { ...l };
@@ -224,12 +225,12 @@ export function renderSfx(plan, palette, duration, seed) {
   const r = rng(seed), n = Math.ceil(duration * SR), L = new Float32Array(n), R = new Float32Array(n), warnings = [], used = {};
   // Wrong parameters in the sound design (the kind that don't error, just silently fall back to the default): swish's color is only air / cloth / digital
   { const bad = new Set(); const walk = (x) => { if (!x || typeof x !== 'object') return; if (Array.isArray(x)) return x.forEach(walk); if (x.use === 'swish' && x.color && !['air', 'cloth', 'digital'].includes(x.color)) bad.add(x.color); Object.values(x).forEach(walk); }; walk(pal.sounds); walk(pal.logo);
-    if (bad.size) warnings.push(`声音设计里 swish 的 color 写了 ${[...bad].join('、')}：只认 air / cloth / digital（其它的当成 air）`); }
+    if (bad.size) warnings.push(M(`声音设计里 swish 的 color 写了 ${[...bad].join('、')}：只认 air / cloth / digital（其它的当成 air）`, `The sound design gives swish the color ${[...bad].join(', ')}: only air / cloth / digital are known (anything else is treated as air)`)); }
   const put = (b, t, g, pan0, pan1 = pan0) => { const s0 = Math.round(t * SR); for (let i = Math.max(0, -s0); i < b.length && s0 + i < n; i++) { const pn = pan0 + (pan1 - pan0) * (i / b.length), gl = g * Math.cos(((pn + 1) * Math.PI) / 4), gr = g * Math.sin(((pn + 1) * Math.PI) / 4); L[s0 + i] += b[i] * gl; R[s0 + i] += b[i] * gr; } };
   const play = (type, ev) => {
     let spec = pal.sounds[type] ?? (RECIPES[type] ? { use: type } : null);
     if (spec === false || (spec && spec.mute)) return;
-    if (!spec) { warnings.push(`声音设计里没有 "${type}"：在 sound.js 的 sounds 里加上它`); return; }
+    if (!spec) { warnings.push(M(`声音设计里没有 "${type}"：在 sound.js 的 sounds 里加上它`, `The sound design has no "${type}": add it to sounds in sound.js`)); return; }
     const k = used[type] || 0; used[type] = k + 1;
     // variants: several sounds used in rotation; notes: pitched sounds step through notes (in one key, so in a row they sound like a melody)
     if (spec.variants) spec = spec.variants[k % spec.variants.length];
@@ -263,12 +264,12 @@ export function renderSfx(plan, palette, duration, seed) {
   }
   // ---- Checks ----
   const evs = (plan.sfx || []).filter((e) => !['type'].includes(e.type) && !e.cut).map((e) => e.t).sort((a, b) => a - b);   // the effect on each cut of a fast-cut montage (cut: true) is that passage's beat, not "scoring every move"
-  for (let i = 0; i + 3 < evs.length; i++) if (evs[i + 3] - evs[i] < 0.6) { warnings.push(`${evs[i].toFixed(2)} 秒附近 0.6 秒里有 4 个音效（不算打字）：太密，像在"配每一个动作"——只留最重要的一两个`); break; }
+  for (let i = 0; i + 3 < evs.length; i++) if (evs[i + 3] - evs[i] < 0.6) { warnings.push(M(`${evs[i].toFixed(2)} 秒附近 0.6 秒里有 4 个音效（不算打字）：太密，像在"配每一个动作"——只留最重要的一两个`, `Around ${evs[i].toFixed(2)} s there are 4 sound effects within 0.6 s (typing excluded): too dense, like "scoring every move" — keep only the one or two that matter most`)); break; }
   const total = (plan.sfx || []).filter((e) => e.type !== 'type').length, perSec = total / duration; // typing sounds don't count (they are dense by nature)
-  if (perSec > 2.2) warnings.push(`平均每秒 ${perSec.toFixed(1)} 个音效：太多了，克制一点（一般每秒 1–1.5 个，打字除外）`);
+  if (perSec > 2.2) warnings.push(M(`平均每秒 ${perSec.toFixed(1)} 个音效：太多了，克制一点（一般每秒 1–1.5 个，打字除外）`, `${perSec.toFixed(1)} sound effects per second on average: too many, hold back (usually 1–1.5 per second, typing excluded)`));
   const cutUse = {}; for (const e of plan.sfx || []) if (e.cut) cutUse[e.type] = (cutUse[e.type] || 0) + 1;   // the same sound on every cut of a fast-cut montage is intentional
-  for (const [k, v] of Object.entries(used)) if (v - (cutUse[k] || 0) >= 8 && !['type', 'tick'].includes(k) && !(pal.sounds[k] && (pal.sounds[k].variants || pal.sounds[k].notes))) warnings.push(`"${k}" 用了 ${v} 次、都是同一种声音：给它设计两三种变体（variants 轮流用，或 notes 依次换音），或者有的地方换成别的声音`);
+  for (const [k, v] of Object.entries(used)) if (v - (cutUse[k] || 0) >= 8 && !['type', 'tick'].includes(k) && !(pal.sounds[k] && (pal.sounds[k].variants || pal.sounds[k].notes))) warnings.push(M(`"${k}" 用了 ${v} 次、都是同一种声音：给它设计两三种变体（variants 轮流用，或 notes 依次换音），或者有的地方换成别的声音`, `"${k}" is used ${v} times, always the same sound: design two or three variants (variants in rotation, or notes stepping through pitches), or use a different sound in some places`));
   const all = (plan.sfx || []).filter((e) => e.type !== 'type').map((e) => e.t).sort((a, b) => a - b);
-  for (let i = 0; i + 1 < all.length; i++) if (all[i + 1] - all[i] > 4) warnings.push(`${all[i].toFixed(1)}–${all[i + 1].toFixed(1)} 秒没有任何音效${pal.ambience ? '（只有环境声）' : ''}：确认这段安静是有意的`);
+  for (let i = 0; i + 1 < all.length; i++) if (all[i + 1] - all[i] > 4) warnings.push(M(`${all[i].toFixed(1)}–${all[i + 1].toFixed(1)} 秒没有任何音效${pal.ambience ? '（只有环境声）' : ''}：确认这段安静是有意的`, `${all[i].toFixed(1)}–${all[i + 1].toFixed(1)} s has no sound effects${pal.ambience ? ' (only ambience)' : ''}: make sure this silence is intended`));
   return { L, R, used, warnings, palette: pal };
 }

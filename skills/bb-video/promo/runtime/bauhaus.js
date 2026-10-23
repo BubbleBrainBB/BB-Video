@@ -22,7 +22,8 @@
 // Timing: at = landed (readable, on the beat); motion starts `lead` earlier; until = fully gone. Coordinates: x, y are the centre (frame px); sizes are design sizes (1080p, converted internally by F.px).
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('bauhaus.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('bauhaus.js 要在 promo.js 之后加载', 'bauhaus.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -202,7 +203,7 @@
       const wrap = el('div', `left:0;top:0;display:none;pointer-events:none;transform-origin:0 0;${o.z !== undefined ? `z-index:${o.z};` : 'z-index:20;'}`, parent);
       const line = el('div', `position:relative;font:900 ${f1(size)}px/1.05 ${B.head};color:${col};white-space:nowrap;letter-spacing:${o.tracking ?? '0.02em'};padding:${f1(size * 0.08)}px ${f1(size * 0.18)}px`, wrap);
       const blk = o.block ? el('div', `inset:0;background:${C(o.block)};transform-origin:0% 50%`, line) : null;
-      wrap.dataset.what = 'B.slogan'; if (blk) { blk.dataset.what = 'B.slogan 色块'; blk.dataset.motion = 'snap'; }
+      wrap.dataset.what = 'B.slogan'; if (blk) { blk.dataset.what = M('B.slogan 色块', 'B.slogan colour block'); blk.dataset.motion = 'snap'; }
       const parts = o.by === 'word' || (!/[^\x00-\xff]/.test(text) && o.by !== 'char') ? text.split(/(\s+)/) : [...text];
       const spans = parts.map((p) => { const s = el('span', `position:relative;display:inline-block;white-space:pre`, line); s.textContent = p; return s; });
       const per = Math.min(0.06, 0.45 / Math.max(1, spans.length)), lead = 0.25 + per * spans.length + (blk ? 0.3 : 0);

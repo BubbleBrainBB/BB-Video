@@ -1,6 +1,6 @@
 // Sound: soft vinyl toys landing on a hard plastic platform (a muffled "pff", three in rotation), heavy landings, a rolling rustle, the plastic "tick" of keys, a light glockenspiel for lighting up, a "pop" for growing. Same key as the score (D minor)
 export default {
-  name: '桌上的软胶玩具和塑料键',
+  name: 'Soft rubber toys and plastic keys on a desk',
   space: { size: 0.3, mix: 0.12 },
   ambience: null,
   sounds: {

@@ -4,7 +4,7 @@
 
 One frame: a low-resolution game screen blown up to full screen, every "pixel" a crisp little square (4 px per cell at 1080p, 480 × 270 cells in landscape). The sky is bands of colour blended with checkerboard dithering; distant hills and cities scroll back layer by layer in parallax; outlined little figures stand on the grass, walking, jumping, talking, fighting. Information is told through game UI: dialog boxes type out character by character, a menu's ▶ cursor moves from item to item, health bars fill cell by cell, scores count up, a marker hops level by level across a level map. Transitions are block dissolves, a closing circle (iris), staircase fills. Everything moves by whole cells: no scaling, no rotation, no blur.
 
-Runtime: `runtime/pixel.js` (`PROMO.pixel(F)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style pixel`, promo `node scripts/new.mjs <dir> --style pixel` (add `--quick` for the quick version). Sample: `videos/pixel-famicom` (why the Famicom's picture has only these few colours, narrated, hand-written).
+Runtime: `runtime/pixel.js` (`PROMO.pixel(F)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style pixel`, promo `node scripts/new.mjs <dir> --style pixel` (add `--quick` for the quick version). Starter page: `styles/pixel/index.html`.
 
 ## 0. Safety
 - The white flash when hit, the blinking of a selection box's four corners and the blinking ▼ are all small areas, at most 3 times a second. Never flash the whole screen's colour back and forth.

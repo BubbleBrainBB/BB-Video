@@ -3,6 +3,9 @@
 // One codebase serves both landscape 16:9 and portrait 9:16: sizes go through F.u (short side / 1080), layout branches on F.portrait.
 (function () {
   const { clamp, lerp } = window.EV;
+  // Message language for the page's checks and warnings: what the render decided (window.__BV_LANG), else the page's <html lang>.
+  //   M(中文, English) → the message in that language; style runtimes use PROMO.M
+  const M = (zh, en) => ((window.__BV_LANG || (/^zh/i.test(document.documentElement.lang || '') ? 'zh' : 'en')) === 'zh' ? zh : en);
   const E = {
     lin: (q) => q,
     expoOut: (q) => (q >= 1 ? 1 : 1 - Math.pow(2, -10 * q)),
@@ -157,7 +160,7 @@
           }
           for (let x = f; x <= g; x++) {
             // data-motion="snap": the style's signature move is a sudden snap (colour block shooting out, thick bar growing): not counted as too fast
-            if (!big && a[x][4] >= 0.02 && mp[x] > TH.fast && !nearCut(x) && els[k].dataset.motion !== 'snap') note('fast', x, k, `（每帧 ${Math.round(mp[x] * H)}px）`);
+            if (!big && a[x][4] >= 0.02 && mp[x] > TH.fast && !nearCut(x) && els[k].dataset.motion !== 'snap') note('fast', x, k, M(`（每帧 ${Math.round(mp[x] * H)}px）`, ` (${Math.round(mp[x] * H)}px per frame)`));
             if (big && L >= 6 && x >= f + 2 && x <= g - 2 && !onHit(x) && m[x] - m[x - 1] > TH.cam && m[x] > 2 * m[x - 1] && !nearCut(x) && !nearCut(x - 1)) note('cam', x, k);   // only sudden acceleration counts (ease-out deceleration is by design; abrupt stops are caught by the linear-stop rule)   // camera: speed jumped by more than half in one frame (eased starts / stops never do)
           }
           f = g + 1;
@@ -251,6 +254,9 @@
     // Register an "intended appearance": something appears whole at this moment (e.g. the first frame of paper dropping into view from above). The film check won't report it as a "sudden jump";
     //   unlike cut: it need not be on the beat, and motion blur still blends as usual
     appear(t) { (this.appears ??= []).push(t); }
+    // How long the picture may hold completely still before the frame check calls it frozen (default 0.6 s). A style whose medium
+    //   holds still between moves (pixel art steps in whole cells at 2–4 fps) raises it; the dead-air check (≥ 1.2 s) still applies
+    stillMax(sec) { this._stillMax = Math.max(this._stillMax ?? 0.6, sec); }
     // Fast motion in this span: motion blur uses n sub-frames (the default 6 would stack into separate ghost copies)
     blur(a, b, n = 16) { (this.blurs ??= []).push([a, b, n]); }
     // At the start of each frame swap Math.random for a time-seeded version: random effects in animation libraries (scrambled text etc.) render the same every time
@@ -773,7 +779,7 @@
   //   never let a standalone gsap.to(...) play on its own; never change state from onComplete / onUpdate-style callbacks (callbacks are unreliable with per-frame, multi-process rendering).
   function gsapTimeline(F) {
     const g = window.gsap;
-    if (!g) throw new Error('没加载 GSAP：在 index.html 里加 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js">');
+    if (!g) throw new Error(M('没加载 GSAP：在 index.html 里加 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js">', 'GSAP is not loaded: add <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"> to index.html'));
     g.defaults({ lazy: false, overwrite: false });
     g.ticker.lagSmoothing(0);
     g.globalTimeline.pause(); // a tween left out of the master timeline won't quietly play in real time (it stays at its start, easy to spot when checking)
@@ -803,7 +809,7 @@
   //   returns { bodies, at(t) → [{ x, y, angle }] (one per body) }
   function physics(F, o) {
     const M = window.Matter;
-    if (!M) throw new Error('没加载 Matter.js：<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js">');
+    if (!M) throw new Error(window.PROMO.M('没加载 Matter.js：<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js">', 'Matter.js is not loaded: <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js">'));   // the local M here is Matter
     const engine = M.Engine.create();
     const bodies = o.setup(M, engine);
     const hz = o.hz ?? 240, dt = 1 / hz, frames = [];
@@ -821,7 +827,7 @@
   //   returns { d, w, h, svg(css) → an <svg> with the path already in it }
   const fontCache = {};
   async function textPath(fontUrl, text, size, o = {}) {
-    if (!window.opentype) throw new Error('没加载 opentype.js：<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js">');
+    if (!window.opentype) throw new Error(M('没加载 opentype.js：<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js">', 'opentype.js is not loaded: <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js">'));
     const font = fontCache[fontUrl] ??= await opentype.load(fontUrl);
     const p = font.getPath(text, 0, 0, size, { kerning: true }), bb = p.getBoundingBox(), pad = size * 0.06;
     const w = bb.x2 - bb.x1 + pad * 2, h = bb.y2 - bb.y1 + pad * 2;
@@ -881,13 +887,13 @@
     for (const x of F.texts) {
       const odd = [...x.el.querySelectorAll('*')].find((n) => !INLINE.has(n.tagName) && !INLINE.has(n.tagName.toUpperCase()));
       const jsx = typeof x.raw === 'string' && /<[A-Z]/.test(x.raw) && !x.el.textContent.includes('<'); // fine if < is already shown literally on screen
-      if ((odd || jsx) && !seen.has('html|' + x.text)) { seen.add('html|' + x.text); add('warn', x.win[0], '文字被当成 html', `"${String(x.raw ?? x.text).slice(0, 30)}" 里的 <${odd ? odd.tagName.toLowerCase() : '…'}> 被浏览器当成了标签，画面上那段字会消失。代码、带尖括号的界面文字用 PROMO.esc() 转义，或者设 textContent`); }
+      if ((odd || jsx) && !seen.has('html|' + x.text)) { seen.add('html|' + x.text); add('warn', x.win[0], M('文字被当成 html', 'text parsed as html'), M(`"${String(x.raw ?? x.text).slice(0, 30)}" 里的 <${odd ? odd.tagName.toLowerCase() : '…'}> 被浏览器当成了标签，画面上那段字会消失。代码、带尖括号的界面文字用 PROMO.esc() 转义，或者设 textContent`, `the <${odd ? odd.tagName.toLowerCase() : '…'}> in "${String(x.raw ?? x.text).slice(0, 30)}" was parsed by the browser as a tag, so that text disappears from the picture. Escape code and UI text with angle brackets with PROMO.esc(), or set textContent`)); }
     }
     // Latin curly quotes / apostrophes (’ “ ”) with a Chinese font first: these glyphs are full-width in Chinese fonts, so can’t shows as "can’ t"
     for (const x of F.texts) {
       if (!/[\u2018\u2019\u201C\u201D]/.test(x.text) || !/[A-Za-z][\u2018\u2019]|[\u201C\u201D]\s*[A-Za-z]|[A-Za-z]\s*[\u201C\u201D]/.test(x.text)) continue;
       const first = (getComputedStyle(x.el).fontFamily.split(',')[0] || '').replace(/["']/g, '').trim();
-      if (/SC|TC|JP|KR|CJK|Han|Hei|Song|Kai|WenKai|PingFang|ZCOOL|Noto Serif SC|Ma Shan/i.test(first) && !seen.has('quote|' + x.text)) { seen.add('quote|' + x.text); add('warn', x.win[0], '西文引号', `"${x.text.slice(0, 24)}" 里有弯引号 / 撇号，首选字体是中文字体 ${first}：显示成全角，单词中间空一大块——字体列表里把一个西文字体放在中文字体前面（如 "Noto Sans", "Noto Sans SC"），或者改成直引号`); }
+      if (/SC|TC|JP|KR|CJK|Han|Hei|Song|Kai|WenKai|PingFang|ZCOOL|Noto Serif SC|Ma Shan/i.test(first) && !seen.has('quote|' + x.text)) { seen.add('quote|' + x.text); add('warn', x.win[0], M('西文引号', 'Latin quotes'), M(`"${x.text.slice(0, 24)}" 里有弯引号 / 撇号，首选字体是中文字体 ${first}：显示成全角，单词中间空一大块——字体列表里把一个西文字体放在中文字体前面（如 "Noto Sans", "Noto Sans SC"），或者改成直引号`, `"${x.text.slice(0, 24)}" has curly quotes / apostrophes and the first font is the Chinese font ${first}: they render full-width, leaving a big gap inside words — put a Latin font before the Chinese one in the font list (e.g. "Noto Sans", "Noto Sans SC"), or use straight quotes`)); }
     }
     // Readable on a phone: a line's real height on screen (including camera zoom) scaled to a 360px-wide phone screen
     const lineH = (root) => {
@@ -909,21 +915,21 @@
       const live = F.texts.filter((x) => vis(x.el)).map((x) => ({ x, b: shown(x.el) })).filter((v) => v.b && v.b.w > 1 && v.b.h > 1);
       // Text on screen, but for 2+ seconds no line readable on a phone (only small UI text) — one of the reviewers' most common complaints
       const big = live.reduce((m, v) => Math.max(m, lineH(v.x.el)), 0) * phone;
-      if (live.length && big < READ) tiny ??= { t, big }; else if (tiny) { if (t - tiny.t >= 2) add('warn', tiny.t, '手机上读不清', `${tiny.t.toFixed(1)}–${t.toFixed(1)} 秒画面上没有一行字在手机上读得清（最大的一行在手机上约 ${tiny.big.toFixed(0)}px 高）：推近界面，或者配一句大标题`); tiny = null; }
+      if (live.length && big < READ) tiny ??= { t, big }; else if (tiny) { if (t - tiny.t >= 2) add('warn', tiny.t, M('手机上读不清', 'unreadable on phones'), M(`${tiny.t.toFixed(1)}–${t.toFixed(1)} 秒画面上没有一行字在手机上读得清（最大的一行在手机上约 ${tiny.big.toFixed(0)}px 高）：推近界面，或者配一句大标题`, `${tiny.t.toFixed(1)}–${t.toFixed(1)} s: no line of text on screen is readable on a phone (the largest is about ${tiny.big.toFixed(0)}px tall there): push in on the UI, or add a big headline`)); tiny = null; }
       // Check key information one by one (end-card text, logo, URL): one big line in the frame doesn't mean the URL is readable too
       for (const { x } of live) {
         const key = ['endcard', 'logo'].includes(x.kind) || /^[^\w]*(https?:\/\/)?[\w-]+(\.[\w-]+)*\.[a-z]{2,}(\/\S*)?$/i.test(x.text.trim()), kk = 'key|' + x.text;   // URL: the whole text is one address
         if (!key || seen.has(kk) || t < x.win[0] + 0.5) continue;
         seen.add(kk); const h = lineH(x.el) * phone;
-        if (h > 0 && h < READ) add('warn', t, '手机上读不清', `关键信息 "${x.text.slice(0, 30)}" 在手机上只有约 ${h.toFixed(1)}px 高（片尾的字、网址每一条都要读得清，至少约 ${READ}px）：字号至少 ${Math.ceil((READ / phone) / 1.2)}px 左右`);
+        if (h > 0 && h < READ) add('warn', t, M('手机上读不清', 'unreadable on phones'), M(`关键信息 "${x.text.slice(0, 30)}" 在手机上只有约 ${h.toFixed(1)}px 高（片尾的字、网址每一条都要读得清，至少约 ${READ}px）：字号至少 ${Math.ceil((READ / phone) / 1.2)}px 左右`, `key text "${x.text.slice(0, 30)}" is only about ${h.toFixed(1)}px tall on a phone (every end-card line and URL must be readable, at least about ${READ}px): use a font size of at least about ${Math.ceil((READ / phone) / 1.2)}px`));
       }
       for (const { x } of live) {
         const k = 'win|' + x.text;
-        if ((t < x.win[0] - 0.15 || t > x.win[1] + 1.0) && !seen.has(k)) { seen.add(k); add('warn', t, '提前 / 滞留', `"${x.text.slice(0, 24)}" 在 ${t.toFixed(1)} 秒就看得见，但登记的出现时间是 ${x.win[0].toFixed(1)}–${x.win[1] > 1e8 ? '结尾' : x.win[1].toFixed(1)} 秒`); }
+        if ((t < x.win[0] - 0.15 || t > x.win[1] + 1.0) && !seen.has(k)) { seen.add(k); add('warn', t, M('提前 / 滞留', 'early / lingering'), M(`"${x.text.slice(0, 24)}" 在 ${t.toFixed(1)} 秒就看得见，但登记的出现时间是 ${x.win[0].toFixed(1)}–${x.win[1] > 1e8 ? '结尾' : x.win[1].toFixed(1)} 秒`, `"${x.text.slice(0, 24)}" is visible at ${t.toFixed(1)} s, but its registered time is ${x.win[0].toFixed(1)}–${x.win[1] > 1e8 ? 'the end' : x.win[1].toFixed(1) + ' s'}`)); }
       }
       // Only one headline at a time (two on screen at once and viewers don't know which to read)
       const heads = live.filter((v) => v.x.kind === 'headline');
-      if (heads.length > 1) { const k = 'two|' + heads.map((v) => v.x.text).join('|'); if (!seen.has(k)) { seen.add(k); add('warn', t, '两句标题', `"${heads[0].x.text.slice(0, 20)}" 和 "${heads[1].x.text.slice(0, 20)}" 同时在画面上：等上一句退完再出下一句`); } }
+      if (heads.length > 1) { const k = 'two|' + heads.map((v) => v.x.text).join('|'); if (!seen.has(k)) { seen.add(k); add('warn', t, M('两句标题', 'two headlines'), M(`"${heads[0].x.text.slice(0, 20)}" 和 "${heads[1].x.text.slice(0, 20)}" 同时在画面上：等上一句退完再出下一句`, `"${heads[0].x.text.slice(0, 20)}" and "${heads[1].x.text.slice(0, 20)}" are on screen together: let the first leave before the next comes in`)); } }
       for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
         const a = live[i], c = live[j];
         if (a.x.el.contains(c.x.el) || c.x.el.contains(a.x.el)) continue;
@@ -932,7 +938,7 @@
         // Boxes overlap, so look closer: by where the text actually sits (each line's extent; rotated text per character) — two diagonal tagline lines can have heavily overlapping boxes while the text itself doesn't
         if (o > 0.1) { const ra = glyphRects(a.x), rc = glyphRects(c.x), area = (rs) => rs.reduce((m, r) => m + r.width * r.height, 0); let sI = 0; for (const p1 of ra) for (const p2 of rc) sI += Math.max(0, Math.min(p1.right, p2.right) - Math.max(p1.left, p2.left)) * Math.max(0, Math.min(p1.bottom, p2.bottom) - Math.max(p1.top, p2.top)); o = sI / Math.max(1, Math.min(area(ra), area(rc))); }
         const key = a.x.text + '|' + c.x.text;
-        if (o > 0.1 && !seen.has(key)) { seen.add(key); add('warn', t, '文字重叠', `"${a.x.text.slice(0, 20)}" 和 "${c.x.text.slice(0, 20)}" 同时出现并重叠了 ${Math.round(o * 100)}%`); }
+        if (o > 0.1 && !seen.has(key)) { seen.add(key); add('warn', t, M('文字重叠', 'text overlap'), M(`"${a.x.text.slice(0, 20)}" 和 "${c.x.text.slice(0, 20)}" 同时出现并重叠了 ${Math.round(o * 100)}%`, `"${a.x.text.slice(0, 20)}" and "${c.x.text.slice(0, 20)}" are on screen together and overlap by ${Math.round(o * 100)}%`)); }
       }
       // Line through text: a ring edge, thin bar or arrow shaft crossing text (checked every 0.2 s)
       if (F.strokes && Math.round(t * 10) % 2 === 0) {
@@ -946,7 +952,7 @@
             const key = 'stroke|' + x.text; if (seen.has(key)) continue;
             // Line boxes are taller than the ink (space above and below): trim 18% top and bottom, so a line right under the text doesn't count
             const hit = glyphRects(x).some((r) => { const ih = r.height * 0.18; return pv.some(([qx, qy]) => qx > r.left - hw && qx < r.right + hw && qy > r.top + ih - hw && qy < r.bottom - ih + hw); });
-            if (hit) { seen.add(key); add('warn', t, '线穿过字', `一条线（圆环的边 / 细条 / 箭头）从 "${x.text.slice(0, 20)}" 上划过：挪开一点，或者让字躲开它`); }
+            if (hit) { seen.add(key); add('warn', t, M('线穿过字', 'line through text'), M(`一条线（圆环的边 / 细条 / 箭头）从 "${x.text.slice(0, 20)}" 上划过：挪开一点，或者让字躲开它`, `a line (ring edge / thin bar / arrow) crosses "${x.text.slice(0, 20)}": move it a little, or move the text out of its way`)); }
           }
         }
       }
@@ -968,7 +974,7 @@
             const otherRow = (m) => [...m.childNodes].some((q) => { if (q.nodeType !== 3 || !q.textContent.trim()) return false; rg.selectNodeContents(q); const qs = [...rg.getClientRects()]; return !qs.length || qs.some((qq) => qq.bottom <= r.top + th * 0.3 || qq.top >= r.bottom - th * 0.3); });
             if ([...n.querySelectorAll('*')].some((m) => m !== e && !m.contains(e) && !e.contains(m) && otherRow(m))) break;
             const top = r.top - bb.top, bot = bb.bottom - r.bottom;
-            if (Math.abs(top - bot) > Math.max(4, 0.16 * bb.height)) { seen.add(k0); add('warn', t, '字没居中', `"${x.text.slice(0, 24)}" 在它的框里没有上下居中（上 ${Math.round(top)}px / 下 ${Math.round(bot)}px）：多半是 css 里 line-height 写在 font 前面，被 font 简写重置成了 normal——先写 font 再写 line-height，或者写成 font: 600 32px/72px …；也可能是字被 flex-end / 写死的 top 放偏了（输入框里打字用 PROMO.field，单行时字在中线上）`); }
+            if (Math.abs(top - bot) > Math.max(4, 0.16 * bb.height)) { seen.add(k0); add('warn', t, M('字没居中', 'text off-centre'), M(`"${x.text.slice(0, 24)}" 在它的框里没有上下居中（上 ${Math.round(top)}px / 下 ${Math.round(bot)}px）：多半是 css 里 line-height 写在 font 前面，被 font 简写重置成了 normal——先写 font 再写 line-height，或者写成 font: 600 32px/72px …；也可能是字被 flex-end / 写死的 top 放偏了（输入框里打字用 PROMO.field，单行时字在中线上）`, `"${x.text.slice(0, 24)}" is not vertically centred in its box (top ${Math.round(top)}px / bottom ${Math.round(bot)}px): most likely line-height comes before font in the css and the font shorthand reset it to normal — write font first, then line-height, or use font: 600 32px/72px …; or the text is pushed off by flex-end / a fixed top (for typing in an input use PROMO.field, which keeps a single line on the centre line)`)); }
             break;
           }
           if (seen.has(k0)) break;
@@ -981,23 +987,23 @@
         const cut = inside > 0.02 && inside < 0.97;
         x._cut = cut ? (x._cut ?? t) : undefined;
         const k = 'out|' + x.text;
-        if (cut && t - x._cut >= 0.35 && !seen.has(k)) { seen.add(k); add('warn', x._cut, '切边', `"${x.text.slice(0, 24)}" 被画面边缘切掉了 ${Math.round((1 - inside) * 100)}%（持续 ${(t - x._cut).toFixed(1)} 秒）。镜头推近时用 cam.focus 的 fit 选项保住整块区域`); }
+        if (cut && t - x._cut >= 0.35 && !seen.has(k)) { seen.add(k); add('warn', x._cut, M('切边', 'clipped'), M(`"${x.text.slice(0, 24)}" 被画面边缘切掉了 ${Math.round((1 - inside) * 100)}%（持续 ${(t - x._cut).toFixed(1)} 秒）。镜头推近时用 cam.focus 的 fit 选项保住整块区域`, `"${x.text.slice(0, 24)}" is ${Math.round((1 - inside) * 100)}% cut off by the frame edge (for ${(t - x._cut).toFixed(1)} s). When the camera pushes in, use cam.focus's fit option to keep the whole area in frame`)); }
       }
     }
     // Reading time: at least 0.3 s per word for headlines (impact text, one word per beat, excluded)
     for (const x of F.texts.filter((x) => x.kind === 'headline')) {
       const n = x.text.trim().split(/\s+/).length + (x.text.match(/[一-鿿぀-ヿ]/g) || []).length / 3;
       const need = 0.6 + n * 0.3, have = x.win[1] - x.win[0];
-      if (have < need) add('warn', x.win[0], '停留太短', `标题 "${x.text.slice(0, 30)}" 只停留 ${have.toFixed(1)} 秒，读完至少要 ${need.toFixed(1)} 秒`);
+      if (have < need) add('warn', x.win[0], M('停留太短', 'too brief'), M(`标题 "${x.text.slice(0, 30)}" 只停留 ${have.toFixed(1)} 秒，读完至少要 ${need.toFixed(1)} 秒`, `headline "${x.text.slice(0, 30)}" stays only ${have.toFixed(1)} s; reading it needs at least ${need.toFixed(1)} s`));
     }
     // Text must not float free of sound / music: check the music has a matching section at section changes
-    if (!F.sections.length) add('warn', 0, '音乐', '没有用 F.section() 标出音乐段落，配乐会一直是同一个强度');
+    if (!F.sections.length) add('warn', 0, M('音乐', 'music'), M('没有用 F.section() 标出音乐段落，配乐会一直是同一个强度', 'no music sections marked with F.section(): the score will stay at one intensity throughout'));
     // On the beat: sections and hard cuts must land on beats (2+ frames off and the hit and kick drum sound like two hits)
     // Narrated films follow the narration (sections and transitions between sentences); no beat requirement
     const offBeat = (t) => !F.voiced && Math.abs(t - F.snap(t)) > 0.04;
-    F.sections.filter((x) => x.at > 0 && offBeat(x.at)).forEach((x) => add('warn', x.at, '不在拍上', `段落 ${x.at.toFixed(2)} 秒不在拍点上（最近的拍是 ${F.snap(x.at).toFixed(2)}）：段落、转场、重击一起挪到拍点`));
+    F.sections.filter((x) => x.at > 0 && offBeat(x.at)).forEach((x) => add('warn', x.at, M('不在拍上', 'off the beat'), M(`段落 ${x.at.toFixed(2)} 秒不在拍点上（最近的拍是 ${F.snap(x.at).toFixed(2)}）：段落、转场、重击一起挪到拍点`, `section at ${x.at.toFixed(2)} s is not on a beat (nearest beat: ${F.snap(x.at).toFixed(2)}): move the section, transition and hit onto the beat together`)));
     const offHalf = (t) => !F.voiced && Math.abs(t - F.offset - Math.round((t - F.offset) / (F.B / 2)) * (F.B / 2)) > 0.04;   // quick cuts may land on half beats (eighth notes)
-    [...new Set(F.cuts || [])].filter(offHalf).forEach((c) => add('warn', c, '不在拍上', `硬切 ${c.toFixed(2)} 秒不在拍点（或半拍）上（最近的拍是 ${F.snap(c).toFixed(2)}）`));
+    [...new Set(F.cuts || [])].filter(offHalf).forEach((c) => add('warn', c, M('不在拍上', 'off the beat'), M(`硬切 ${c.toFixed(2)} 秒不在拍点（或半拍）上（最近的拍是 ${F.snap(c).toFixed(2)}）`, `hard cut at ${c.toFixed(2)} s is not on a beat (or half beat) (nearest beat: ${F.snap(c).toFixed(2)})`)));
     // Portrait safe area: the platform's top bar covers about the top 8%, the caption / account info covers about the bottom 20% (the right-hand button column covers some too)
     // Text-to-ground contrast (WCAG: large text ≥ 3:1, body ≥ 4.5:1): must stay readable on changed grounds too (light ground, brand-colour ground).
     //   Ground = the layers under the text stacked up (falls back to theme.bg if no solid colour is found); text over images / canvas can't be measured, skipped
@@ -1051,7 +1057,7 @@
         if (!(b > a)) continue;
         // Sample three moments in the window; passes if any one is readable; report only if every measurement is below 2.5:1 (WCAG large-text line is 3:1; light-grey UI placeholders are often around 2.8, not reported)
         const rs = [0.3, 0.55, 0.8].map((q) => ratioAt(x, a + (b - a) * q)).filter((r) => r !== null), best = rs.sort((p, q) => q.r - p.r)[0];
-        if (best && best.r < 2.5) { seen.add(k); add('warn', a, '对比度不够', `"${x.text.slice(0, 20)}" 和底色的对比度只有 ${best.r.toFixed(1)}:1（建议 ≥ 3:1；量的底是 ${best.from}）：字换深一点 / 浅一点，或者换底色`); }
+        if (best && best.r < 2.5) { seen.add(k); add('warn', a, M('对比度不够', 'low contrast'), M(`"${x.text.slice(0, 20)}" 和底色的对比度只有 ${best.r.toFixed(1)}:1（建议 ≥ 3:1；量的底是 ${best.from}）：字换深一点 / 浅一点，或者换底色`, `"${x.text.slice(0, 20)}" has only ${best.r.toFixed(1)}:1 contrast with its ground (aim for ≥ 3:1; measured against ${best.from}): make the text darker / lighter, or change the ground`)); }
       }
     }
     hit.remove();
@@ -1060,13 +1066,13 @@
       const k = (x.win[0] + Math.min(x.win[1], F.duration)) / 2; F.render(Math.min(k, F.duration - 0.05));
       if (!vis(x.el)) continue;
       const b = shown(x.el); if (!b) continue;
-      if (b.y < F.H * 0.09 && b.y + b.h > 0) add('warn', x.win[0], '标题贴顶', `"${x.text.slice(0, 20)}" 离画面上沿只有 ${Math.round((b.y / F.H) * 100)}%：横屏标题至少离上沿约 10%（1080p 约 108px），画面主体跟着往下挪`);
+      if (b.y < F.H * 0.09 && b.y + b.h > 0) add('warn', x.win[0], M('标题贴顶', 'headline too high'), M(`"${x.text.slice(0, 20)}" 离画面上沿只有 ${Math.round((b.y / F.H) * 100)}%：横屏标题至少离上沿约 10%（1080p 约 108px），画面主体跟着往下挪`, `"${x.text.slice(0, 20)}" is only ${Math.round((b.y / F.H) * 100)}% from the top edge: landscape headlines need about 10% (about 108px at 1080p); move the main picture down with it`));
     }
     if (F.portrait) for (const x of F.texts.filter((x) => ['headline', 'slam', 'endcard', 'logo'].includes(x.kind))) {
       const k = (x.win[0] + Math.min(x.win[1], F.duration)) / 2; F.render(Math.min(k, F.duration - 0.05));
       if (!vis(x.el)) continue;
       const b = shown(x.el); if (!b) continue;
-      if (b.y + b.h > F.H * 0.8 || b.y < F.H * 0.08) add('warn', x.win[0], '竖屏安全区', `"${x.text.slice(0, 20)}" 在画面${b.y < F.H * 0.08 ? '顶部 8%' : '底部 20%'} 以内，会被平台的${b.y < F.H * 0.08 ? '顶栏' : '文案 / 账号信息'}挡住`);
+      if (b.y + b.h > F.H * 0.8 || b.y < F.H * 0.08) add('warn', x.win[0], M('竖屏安全区', 'portrait safe area'), M(`"${x.text.slice(0, 20)}" 在画面${b.y < F.H * 0.08 ? '顶部 8%' : '底部 20%'} 以内，会被平台的${b.y < F.H * 0.08 ? '顶栏' : '文案 / 账号信息'}挡住`, `"${x.text.slice(0, 20)}" is within the ${b.y < F.H * 0.08 ? 'top 8%' : 'bottom 20%'} of the frame and will be covered by the platform's ${b.y < F.H * 0.08 ? 'top bar' : 'caption / account info'}`));
     }
     return out;
   }
@@ -1132,7 +1138,7 @@
         // Hand-written films have no rhythm sheet (quick mode lays one out): build one from F.section (name as role), so --check still prints it and it is still compared with measurements after rendering
         if (!window.__rhythm && (F.sections || []).length >= 2) {
           const S2 = [...F.sections].sort((a, b) => a.at - b.at);
-          window.__rhythm = () => S2.map((x, i) => ({ scene: i + 1, from: Math.round(x.at * 100) / 100, to: Math.round(Math.min(S2[i + 1] ? S2[i + 1].at : F.duration, F.duration) * 100) / 100, role: x.name || ['quiet', 'build', 'build', 'burst'][Math.max(0, Math.min(3, x.energy))], energy: x.energy, kind: x.hit ? 'hit' : '', camera: '', music: [x.build ? '蓄力' : '', x.stop ? '急停' : '', x.hit ? '重击' : ''].filter(Boolean).join(' ') }));
+          window.__rhythm = () => S2.map((x, i) => ({ scene: i + 1, from: Math.round(x.at * 100) / 100, to: Math.round(Math.min(S2[i + 1] ? S2[i + 1].at : F.duration, F.duration) * 100) / 100, role: x.name || ['quiet', 'build', 'build', 'burst'][Math.max(0, Math.min(3, x.energy))], energy: x.energy, kind: x.hit ? 'hit' : '', camera: '', music: [x.build ? M('蓄力', 'build') : '', x.stop ? M('急停', 'stop') : '', x.hit ? M('重击', 'hit') : ''].filter(Boolean).join(' ') }));
         }
         // Density check: 4+ separately registered pieces of text truly visible at the same moment (a hand-built UI, a table, labels on a chart) also counts as an information picture;
         //   quick-mode say / line / list / stat text (cue marked slogan) doesn't count — that's big text and lists
@@ -1161,6 +1167,7 @@
         window.__textWins = () => [...F.texts.map((x) => ({ text: x.text, kind: x.kind, a: x.win[0], b: x.win[1] })), ...(F.factWins || [])]; // for the review report and the dead-air check
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
+        window.__stillMax = () => F._stillMax ?? 0.6;
         window.__transitions = () => [...(F.transitions || [])];
         window.__blurs = () => F.blurs || [];
         window.__motion = (o) => motionScan(F, o);
@@ -1185,7 +1192,7 @@
     }
     return obj;
   }
-  window.PROMO = { compose, captions, chapterBar, Film, E, spring, seg, set, el, esc, words, scramble, rgbSplit, develop, pulse, slam, decode, headline, slot, counter, odometer, typing, field, frameT, browser, phone, screen, camera, cursor, reorder, whip, iris, morph, flash, leak, carousel, strips, endcard, gsapTimeline, three, physics, textPath, clamp, lerp };
+  window.PROMO = { M, compose, captions, chapterBar, Film, E, spring, seg, set, el, esc, words, scramble, rgbSplit, develop, pulse, slam, decode, headline, slot, counter, odometer, typing, field, frameT, browser, phone, screen, camera, cursor, reorder, whip, iris, morph, flash, leak, carousel, strips, endcard, gsapTimeline, three, physics, textPath, clamp, lerp };
   // Real UIs in a browser / phone / window, drag-to-reorder demos: information pictures (density check)
   //   Cursor taps (path = [[t, x, y], …], the last may carry a disappear time): act out operations on the UI
   const cursorInfo = (F, parent, path, ...rest) => { const L = path && path[path.length - 1]; if (L && !EV.muted()) EV.info('ui', path[0][0], L[3] ?? L[0] + 0.5); return EV.mute(() => cursor(F, parent, path, ...rest)); };

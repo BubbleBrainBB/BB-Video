@@ -20,7 +20,8 @@
 //   Note: w / h / r of a style's own components (B.shape, C.piece …) are design sizes — don't mix them up in one film (at 1080p they are equal; at another resolution things shift).
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('kit.js 要在 promo.js 之后加载');
+  const M = P && P.M ? P.M : (zh, en) => ((window.__BV_LANG || (/^zh/i.test(document.documentElement.lang || '') ? 'zh' : 'en')) === 'zh' ? zh : en);   // P.M is missing only when promo.js did not load
+  if (!P) throw new Error(M('kit.js 要在 promo.js 之后加载', 'kit.js must load after promo.js'));
   const { E, seg, set, el, clamp } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
   const KITS = {};
@@ -42,8 +43,8 @@
 
   P.kit = (F, name, opt = {}) => {
     const k = KITS[name];
-    if (!k) throw new Error(`没有这种风格的通用接口：${name}（有：${Object.keys(KITS).join(' / ')}）`);
-    if (k.check ? !k.check() : !P[k.runtime]) throw new Error(`风格 ${name} 要先加载 lib/${k.file ?? k.runtime}.js`);
+    if (!k) throw new Error(M(`没有这种风格的通用接口：${name}（有：${Object.keys(KITS).join(' / ')}）`, `No common API for style ${name} (available: ${Object.keys(KITS).join(' / ')})`));
+    if (k.check ? !k.check() : !P[k.runtime]) throw new Error(M(`风格 ${name} 要先加载 lib/${k.file ?? k.runtime}.js`, `Style ${name} needs lib/${k.file ?? k.runtime}.js loaded first`));
     const S = k.make(F, opt);
     S.name = name;
     // Information density check: the info verbs register themselves when called (F.info); other verbs called inside a verb, and things drawn on a board, are not counted twice.
@@ -61,10 +62,10 @@
   };
   const INFO_VERBS = { box: 'box', arrow: 'arrow', mark: 'mark', bars: 'chart', shape: 'shape', steps: 'flow', versus: 'compare', figures: 'chart', spotlight: 'annotate', screen: 'ui', shot: 'ui' };
   P.kit.register = (name, def) => { KITS[name] = def; };
-  P.kit.theme = (name) => { if (!KITS[name]) throw new Error(`没有这种风格：${name}`); return KITS[name].theme; };
+  P.kit.theme = (name) => { if (!KITS[name]) throw new Error(M(`没有这种风格：${name}`, `No such style: ${name}`)); return KITS[name].theme; };
   // Ground: some styles aren't tied to one ground colour (launch can be dark, light or brand colour); whoever makes the film picks it for the product.
   //   P.kit.ground('launch', 'light' | 'dark' | 'brand', { brand: '#RRGGBB', accent }) → full theme (hand-written films pass it to compose; the quick version writes the film's ground / brand)
-  P.kit.ground = (name, ground, o = {}) => { const k = KITS[name]; if (!k) throw new Error(`没有这种风格：${name}`); if (!k.grounds) return k.theme; const g = k.grounds(ground, o); if (!g) throw new Error(`${name} 的底色只能是 ${k.groundNames.join(' / ')}：${ground}`); return { ...k.theme, ...g, fonts: { ...k.theme.fonts, ...(g.fonts || {}) } }; };
+  P.kit.ground = (name, ground, o = {}) => { const k = KITS[name]; if (!k) throw new Error(M(`没有这种风格：${name}`, `No such style: ${name}`)); if (!k.grounds) return k.theme; const g = k.grounds(ground, o); if (!g) throw new Error(M(`${name} 的底色只能是 ${k.groundNames.join(' / ')}：${ground}`, `${name}'s ground must be ${k.groundNames.join(' / ')}: ${ground}`)); return { ...k.theme, ...g, fonts: { ...k.theme.fonts, ...(g.fonts || {}) } }; };
   P.kit.list = () => Object.keys(KITS);
 
   // ---------- Colours taken from the product: brand colour → this style's own material ----------
@@ -84,7 +85,7 @@
   // P.kit.brand(style, { brand, accent, ground }) → { theme, kit, color }: theme goes to compose, kit to the style (the quick version's film kit; hand-written films pass it to PROMO.<style>(F, kit))
   //   color = the colour actually used (brand colour adjusted for this medium); null = the brand is black/white/grey, or this style's colours are fixed (ink), unchanged
   P.kit.brand = (name, o = {}) => {
-    const k = KITS[name]; if (!k) throw new Error(`没有这种风格：${name}`);
+    const k = KITS[name]; if (!k) throw new Error(M(`没有这种风格：${name}`, `No such style: ${name}`));
     const c = colorful(o.brand, o.accent);
     if (k.grounds) { const g = o.ground ?? k.theme.ground, theme = P.kit.ground(name, g, { brand: g === 'brand' ? o.brand : undefined, accent: c, bg: o.bg }); return { theme, kit: {}, color: c ? theme.accent : null }; }
     if (!c || !k.tint) return { theme: k.theme, kit: {}, color: null };
@@ -464,7 +465,7 @@
       if (g === 'light') return { bg: o.bg ?? '#F4F3EE', paper: o.bg ?? '#F4F3EE', fg: '#161616', ink: '#161616', accent: o.accent ?? o.brand ?? '#2F5BEA', muted: '#6B6A64', ground: 'light' };
       if (g === 'dark') return { bg: o.bg ?? '#0C0D0C', paper: o.bg ?? '#0C0D0C', fg: '#E9E7DF', ink: '#E9E7DF', accent: o.accent ?? o.brand ?? '#57E389', muted: '#8C8A82', ground: 'dark' };
       if (g === 'brand') {
-        const b = o.brand; if (!rgbOf(b)) throw new Error("ground: 'brand' 要给品牌色：{ brand: '#RRGGBB' }");
+        const b = o.brand; if (!rgbOf(b)) throw new Error(M("ground: 'brand' 要给品牌色：{ brand: '#RRGGBB' }", "ground: 'brand' needs a brand colour: { brand: '#RRGGBB' }"));
         const fg = lum(b) < 0.55 ? '#FFFFFF' : '#141414';
         return { bg: b, paper: b, fg, ink: fg, accent: o.accent ?? (fg === '#FFFFFF' ? mix(b, '#FFFFFF', 0.75) : mix(b, '#000000', 0.6)), muted: mix(fg, b, 0.35), ground: 'brand' };
       }
@@ -749,7 +750,7 @@
       // page turn: this scene turns over like a page from the left (the spine), revealing the next scene already underneath
       S.wipe = (o) => {
         const d = o.dur ?? 0.9;
-        if (!o.out) throw new Error('折纸的转场是翻页：S.wipe 要给 out（这一场的图层）');
+        if (!o.out) throw new Error(M('折纸的转场是翻页：S.wipe 要给 out（这一场的图层）', "Origami's transition is a page turn: S.wipe needs out (this scene's layer)"));
         O.turn(o.out, { at: o.cover - d / 2, dur: d, edge: (o.index ?? 0) % 2 ? 'right' : 'left' });
         return { show: o.cover - d / 2, hide: o.cover + d / 2 };
       };
@@ -810,7 +811,7 @@
       if (g === 'light') return { bg: o.bg ?? '#F6F5F1', fg: '#141414', ink: '#141414', paper: '#FFFFFF', accent: o.accent ?? o.brand ?? '#2F5BEA', muted: '#6B665E', ground: 'light' };
       if (g === 'dark') return { bg: o.bg ?? '#0F0E0C', fg: '#F2EEE6', ink: '#17150F', paper: '#F4F1EA', accent: o.accent ?? o.brand ?? '#D9B37A', muted: '#8a8375', ground: 'dark' };
       if (g === 'brand') {   // brand colour as the ground: text automatically picks black or white, whichever contrasts more; accent see below
-        const b = o.brand; if (!rgbOf(b)) throw new Error("ground: 'brand' 要给品牌色：{ brand: '#RRGGBB' }（从网站 CSS / App / Logo 里取）");
+        const b = o.brand; if (!rgbOf(b)) throw new Error(M("ground: 'brand' 要给品牌色：{ brand: '#RRGGBB' }（从网站 CSS / App / Logo 里取）", "ground: 'brand' needs a brand colour: { brand: '#RRGGBB' } (take it from the website CSS / app / logo)"));
         const rl = (c) => { const r = rgbOf(c); const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r[0]) + 0.7152 * f(r[1]) + 0.0722 * f(r[2]); };
         const darkBg = 1.05 / (rl(b) + 0.05) >= (rl(b) + 0.05) / (rl('#141414') + 0.05), fg = darkBg ? '#FFFFFF' : '#141414';   // white or black text, whichever contrasts more (WCAG)
         // accent: if the other one (black / white) is still readable on the big text (≥ 2.5:1), use it — on orange, black text with white accent is cleaner than a darker shade of the same hue; only if unreadable use a darker / lighter shade of the brand colour
@@ -1427,7 +1428,7 @@
     runtime: 'chat',
     theme: { bg: '#E9ECF2', fg: '#151821', ink: '#151821', paper: '#FFFFFF', accent: '#4F7CFF', muted: '#7A8191', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"LXGW WenKai", serif', sans: '"Noto Sans SC", sans-serif', script: '"LXGW WenKai", serif', mono: '"Noto Sans SC", sans-serif' } },
     make(F, opt) {
-      const C = P.chat(F, opt), th = C.theme, acc = C.accent, ME = opt.me ?? '我', BRAND = opt.contact ?? '官方';
+      const C = P.chat(F, opt), th = C.theme, acc = C.accent, ME = opt.me ?? M('我', 'Me'), BRAND = opt.contact ?? M('官方', 'Official');   // default names follow the page's language
       C.cast({ [BRAND]: { color: acc, mark: opt.mark ?? [...BRAND][0] }, [ME]: { me: true } });
       const S = { lead: 0.4, push: 0, ink: th.ink, paper: th.card, colors: [acc, '#F2994A', '#27AE60', '#9B51E0'], raw: C };
       const chatOf = (layer) => layer._chat ?? S.bg(layer)._chat;

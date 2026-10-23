@@ -30,7 +30,8 @@
 // Time: at = settled (readable); motion starts earlier; until = fully gone. A figure's x is the centre of its feet (frame px), standing just above the screen's bottom edge.
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('shadow.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('shadow.js 要在 promo.js 之后加载', 'shadow.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -386,11 +387,11 @@
     const seen = new Map();
     Y.puppet = (parent, o) => {
       if (o.who) {
-        const c = Y.castList[o.who]; if (!c) throw new Error(`角色表里没有"${o.who}"：先 Y.cast({ ${o.who}: { kind, look, colors } })`);
+        const c = Y.castList[o.who]; if (!c) throw new Error(M(`角色表里没有"${o.who}"：先 Y.cast({ ${o.who}: { kind, look, colors } })`, `"${o.who}" is not in the cast: first Y.cast({ ${o.who}: { kind, look, colors } })`));
         o = { ...c, ...o, look: { ...(c.look || {}), ...(o.look || {}) }, colors: { ...(c.colors || {}), ...(o.colors || {}) }, size: (o.size ?? (PT ? 420 : 460)) * (c.scale ?? 1) };
       }
       if (o.faceTo && o.faceTo.st) o = { ...o, face: (o.faceTo.now ? o.faceTo.now.x : o.faceTo.st.x) >= (o.x ?? W / 2) ? 'right' : 'left' };   // faces the other figure as soon as it appears
-      { const sig = JSON.stringify([o.kind ?? 'official', o.look || {}, o.colors || {}]), list = seen.get(parent) || []; const twin = list.find((q) => q.sig === sig && q.who !== (o.who ?? null)); if (twin && (o.who || twin.who)) console.warn(`皮影：同一场里"${twin.who ?? twin.kind}"和"${o.who ?? o.kind}"长得一模一样——在角色表里给他们不同的脸色 / 胡子 / 头饰 / 袍色 / 身形`); list.push({ sig, who: o.who ?? null, kind: o.kind }); seen.set(parent, list); }
+      { const sig = JSON.stringify([o.kind ?? 'official', o.look || {}, o.colors || {}]), list = seen.get(parent) || []; const twin = list.find((q) => q.sig === sig && q.who !== (o.who ?? null)); if (twin && (o.who || twin.who)) console.warn(M(`皮影：同一场里"${twin.who ?? twin.kind}"和"${o.who ?? o.kind}"长得一模一样——在角色表里给他们不同的脸色 / 胡子 / 头饰 / 袍色 / 身形`, `shadow: "${twin.who ?? twin.kind}" and "${o.who ?? o.kind}" look identical in the same scene — give them different face colour / beard / headdress / robe colour / build in the cast`)); list.push({ sig, who: o.who ?? null, kind: o.kind }); seen.set(parent, list); }
       const k = { ...KINDS[o.kind ?? 'official'], ...(o.look || {}) }, seed = Math.round(hash(o.x ?? 0, o.size ?? 0, (o.kind ?? '').length) * 1000);
       const col = C('robe', k.robe, o), trim = C('trim', k.trim, o), size = F.px(o.size ?? (PT ? 420 : 460)) * (k.small ?? 1), sc = size / 600;
       // Hide is translucent: multiplied with the screen's lamplight (multiply), two overlapping pieces are darker, and the light's shading and cloth texture show through the hide
@@ -398,7 +399,7 @@
       const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, style: 'position:absolute;left:0;top:0;overflow:visible' }, wrap);
       // Who the motion check reports: the figure's name + which line of the page built it (otherwise only a <g>)
       const made = ((new Error().stack || '').split('\n').find((l) => /\.html:\d+/.test(l)) || '').match(/([\w.-]+\.html:\d+)/);
-      wrap.dataset.what = svg.dataset.what = `皮影「${o.who ?? o.name ?? o.kind ?? 'official'}」${made ? `（${made[1]}）` : ''}`;
+      wrap.dataset.what = svg.dataset.what = M(`皮影「${o.who ?? o.name ?? o.kind ?? 'official'}」${made ? `（${made[1]}）` : ''}`, `shadow figure "${o.who ?? o.name ?? o.kind ?? 'official'}"${made ? ` (${made[1]})` : ''}`);
       const rods = sv('g', { stroke: '#2A1A10', 'stroke-width': f1(4 / Math.max(0.4, sc) * sc * 1.6), 'stroke-linecap': 'round', opacity: 0.85 }, svg);
       rods.dataset.motion = 'skip';   // the rods move with the figure; measuring the figure is enough
       const rodN = sv('line', {}, rods), rodF = sv('line', {}, rods), rodB = sv('line', {}, rods);
@@ -628,7 +629,7 @@
       const dia = (x, y, r, ang) => poly([[x + Math.cos(ang) * r * 1.4, y + Math.sin(ang) * r * 1.4], [x - Math.sin(ang) * r, y + Math.cos(ang) * r], [x - Math.cos(ang) * r * 1.4, y - Math.sin(ang) * r * 1.4], [x + Math.sin(ang) * r, y - Math.cos(ang) * r]]);
       let body, edge, spine, eye, tongue, slash;
       const L = leather(parent, {   // called internally (not through infoKit, so it isn't registered twice)
-        ...o, what: o.what ?? '皮影 蛇', draw: (g) => {
+        ...o, what: o.what ?? M('皮影 蛇', 'shadow snake'), draw: (g) => {
         body = sv('path', { fill: o.color ? Y.colors[o.color] ?? o.color : Y.colors.white, 'fill-opacity': 0.96, 'fill-rule': 'evenodd' }, g);
         edge = sv('path', { fill: 'none', stroke: INK, 'stroke-width': F.px(2.8), 'stroke-linejoin': 'round' }, g);
         spine = sv('path', { fill: INK, 'fill-opacity': 0.85 }, g);

@@ -21,7 +21,7 @@
 // Safety: garbage characters flip at most 12 times a second, only in small areas; the whole screen never flashes (transitions sweep across, they don't flip the whole screen).
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('ascii.js 要在 promo.js 之后加载');
+  if (!P) throw new Error(/^zh/i.test(document.documentElement.lang || '') ? 'ascii.js 要在 promo.js 之后加载' : 'ascii.js must load after promo.js');
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;

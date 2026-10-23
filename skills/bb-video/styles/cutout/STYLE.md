@@ -5,7 +5,7 @@
 > Paper brushed with opaque gouache, cut with scissors into seaweed, coral, stars, spirals, waves and figures, and pasted piece by piece onto off-white base paper. Everything in the frame is "cut out and pasted on": the logo is a few pieces of paper put together, UI cards are sheets of coloured paper, titles are cut-out letters, a transition is a big sheet covering the frame and then tearing open.
 > Reference (learn the grammar only): Matisse's late cut-outs (*Jazz*, *Blue Nudes*, *Oceania*, *Polynesia*). Never copy the composition of any work.
 
-Runtime: `runtime/cutout.js` (`PROMO.cutout(F)`), loaded after `promo.js`. New project: `node scripts/new.mjs <dir> --style cutout`. Sample film: `videos/youvibe-cutout` (30 s, all material is real screenshots).
+Runtime: `runtime/cutout.js` (`PROMO.cutout(F)`), loaded after `promo.js`. New project: `node scripts/new.mjs <dir> --style cutout`. Starter page: `styles/cutout/index.html`.
 
 ## 1. What products it suits
 

@@ -39,6 +39,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { renderPlan, writeWav, SR, loadScore, loadModule } from './music.mjs';
 import { makeProjectBgm, voiceRms } from './bgm.mjs';
+import { isZh } from './lang.mjs';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -46,8 +47,9 @@ import { pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 const proj = path.resolve(args[0] && !args[0].startsWith('--') ? args[0] : '.');
-// Output language: English when run from explainer/, Chinese when run from promo/ (each GUIDE.md quotes its own messages)
-const ZH = (process.env.BV_LANG || 'en') === 'zh';
+// Output language: BV_LANG if set, otherwise the project's own language (lang.mjs); passed on to the sound scripts and the page
+const ZH = isZh(proj);
+process.env.BV_LANG = ZH ? 'zh' : 'en';
 const M = (zh, en) => (ZH ? zh : en);
 // The music seed defaults to the project folder name: the same project gets the same music every time; different projects get different chord progressions and motifs
 const withMusic = (plan) => ({ ...plan, music: { seed: path.basename(proj), ...(plan.music || {}) } });
@@ -180,7 +182,7 @@ async function openPage(cdp, scale) {
   const s = (m, p) => cdp.send(m, p, sessionId);
   await s('Page.enable');
   await s('Runtime.enable');
-  await s('Page.addScriptToEvaluateOnNewDocument', { source: 'window.__RENDER__ = true;' });
+  await s('Page.addScriptToEvaluateOnNewDocument', { source: `window.__RENDER__ = true; window.__BV_LANG = '${ZH ? 'zh' : 'en'}';` });   // the page's own checks speak the run's language
   if (!flag('offline') && !flag('no-font-cache')) {
     await s('Fetch.enable', { patterns: [{ urlPattern: '*', resourceType: 'Font' }, { urlPattern: '*', resourceType: 'Stylesheet' }] });
     cdp.listeners.push(async (m) => {
@@ -287,7 +289,7 @@ async function buildAudio(page, comp, tmp) {
     }
     music = path.join(tmp, 'plan.wav'); writeWav(music, L, R);
     parts.push(SCORE_FROM + M(`；${plan.sfx.length} 个音效`, `; ${plan.sfx.length} sound effect(s)`));
-    if (voice && res.info) { const u = res.info.underDb; if (u !== null && u !== undefined) parts.push(M(`说话时配乐比人声低 ${(-u).toFixed(0)} dB`, `music sits ${(-u).toFixed(0)} dB under the voice while speaking`)); if (res.info.sfxDropped) parts.push(M(`说话时去掉 ${res.info.sfxDropped} 个轻音效`, `${res.info.sfxDropped} light effect(s) dropped under speech`)); for (const w of res.info.warnings || []) if (/^旁白/.test(w)) console.log('  ! ' + w); }
+    if (voice && res.info) { const u = res.info.underDb; if (u !== null && u !== undefined) parts.push(M(`说话时配乐比人声低 ${(-u).toFixed(0)} dB`, `music sits ${(-u).toFixed(0)} dB under the voice while speaking`)); if (res.info.sfxDropped) parts.push(M(`说话时去掉 ${res.info.sfxDropped} 个轻音效`, `${res.info.sfxDropped} light effect(s) dropped under speech`)); for (const w of res.info.warnings || []) if (/^(旁白|Narration)/.test(w)) console.log('  ! ' + w); }
     target = voice ? 'I=-16:TP=-1.5:LRA=11' : SCORE ? 'I=-14:TP=-2:LRA=11' : 'I=-16:TP=-2:LRA=15'; // -16 when there are only effects: sparse effects pushed to -14 are too loud
   } else if (fs.existsSync(path.join(proj, 'script.json')) && !opt('bgm') && !flag('no-bgm') && voice) {
     const gen = makeProjectBgm(proj, dur, { style: opt('bgm-style'), volume: Number(opt('bgm-volume', 1)) });
@@ -387,7 +389,7 @@ function quietGaps(nFrames, fps, from, acts, cuts = [], minLen = 1.5, d = null) 
 }
 // Final-video check: a frame that differs a lot from both neighbours (a sudden one-frame jump), or a frame that differs from both sides while the sides look alike (a one-frame flash);
 //   without narration also check for long freezes (with narration, a still picture while listening is normal); check both dead air and no new action (with narration, only where no one speaks)
-async function popScan(file, fps, from, cuts, acts, appears = [], voice = false, trans = []) {
+async function popScan(file, fps, from, cuts, acts, appears = [], voice = false, trans = [], stillMax = 0.6) {   // stillMax: the style's allowed still hold (F.stillMax)
   const Wd = 160, Ht = 90, p = spawn('ffmpeg', ['-v', 'error', '-i', file, '-vf', `scale=${Wd}:${Ht},format=gray`, '-f', 'rawvideo', '-']);
   const chunks = []; p.stdout.on('data', (d) => chunks.push(d));
   await new Promise((r) => p.on('close', r));
@@ -407,7 +409,7 @@ async function popScan(file, fps, from, cuts, acts, appears = [], voice = false,
     for (let i = 0, run = 0; i <= d.length; i++) {
       // Thresholds calibrated by measurement: a fully frozen frame has diff 0.00; a slow push / drift over a large flat background is only 0.1–0.3 (still counts as moving)
       if (i < d.length && d[i] < 0.06 && (i + 1) / fps < n / fps - 1.5) { run++; continue; }
-      if (run >= Math.round(0.6 * fps)) hits.push(M(`${(from + (i - run + 1) / fps).toFixed(2)}–${(from + (i + 1) / fps).toFixed(2)}s 画面静止 ${(run / fps).toFixed(1)} 秒（加一点慢推、漂移或镜头呼吸 breathe）`, `${(from + (i - run + 1) / fps).toFixed(2)}–${(from + (i + 1) / fps).toFixed(2)}s frozen for ${(run / fps).toFixed(1)} s (add a slow push, drift or camera breathe)`));
+      if (run >= Math.round(stillMax * fps)) hits.push(M(`${(from + (i - run + 1) / fps).toFixed(2)}–${(from + (i + 1) / fps).toFixed(2)}s 画面静止 ${(run / fps).toFixed(1)} 秒（加一点慢推、漂移或镜头呼吸 breathe）`, `${(from + (i - run + 1) / fps).toFixed(2)}–${(from + (i + 1) / fps).toFixed(2)}s frozen for ${(run / fps).toFixed(1)} s (add a slow push, drift or camera breathe)`));
       run = 0;
     }
   }
@@ -526,16 +528,16 @@ async function motionSheet(proj, first, issues, asp) {
   // Board-style explainers have no per-element motion sheet: say so (otherwise it looks as if motion was checked); motion is reviewed by eye with --strip, jumps by the final-video check
   if (!r) { console.log(M('动效：画板风格（白板 / 孔版 / 水墨）的讲解视频没有按元素的动效单；动作用 --strip 开始秒,结束秒 自己看，跳变由成片检查查', 'Motion: board-style explainers (whiteboard / riso / ink) have no per-element motion sheet; look at the motion with --strip start,end; jumps are caught by the final frame check')); return; }
   if (!r.tracks) { console.log(M('动效：这种风格的动作画在画板 / 画布里（白板、孔版、水墨、欧普的条纹……），没法按元素量；看成片检查和节奏实测', 'Motion: this style draws on a board / canvas, so motion is not measured per element; see the final-video check and the rhythm scan')); return; }
-  const W2 = (x, n = 3) => x.slice(0, n).map((y) => `${y.t.toFixed(2)}s ${y.what}`).join('；');
+  const W2 = (x, n = 3) => x.slice(0, n).map((y) => `${y.t.toFixed(2)}s ${y.what}`).join(M('；', '; '));
   const spark = r.perSec.map((v) => '▁▂▃▄▅▆▇█'[Math.min(7, Math.round((v / Math.max(r.th.crowd, r.peak.v || 1)) * 7))]).join('');
   console.log(M(`动效（每帧量 ${r.tracks} 个被动画的元素；canvas / WebGL 里画的动作不算）`, `Motion (${r.tracks} animated elements measured per frame; canvas / WebGL drawing not included)`));
   console.log(M(`  同时在动  ${spark}  最多 ${r.peak.v} 个（${r.peak.t}s 附近；超过 ${r.th.crowd} 个会乱）`, `  moving at once  ${spark}  peak ${r.peak.v} (around ${r.peak.t}s; above ${r.th.crowd} reads as clutter)`));
   if (r.families.length) console.log(M(`  时长家族  ${r.families.map(([d, c]) => `${d}s ×${c}`).join(' · ')}（前三种占 ${Math.round(r.top3 * 100)}%；越集中越统一）`, `  duration families  ${r.families.map(([d, c]) => `${d}s ×${c}`).join(' · ')} (top three = ${Math.round(r.top3 * 100)}%)`));
   const rows = [['start', '匀速起步', 'linear start'], ['stop', '匀速停下', 'linear stop'], ['jitter', '位置来回抖', 'jitter'], ['flicker', '透明度来回闪', 'flicker'], ['fast', '太快', 'too fast'], ['cam', '镜头急变', 'camera jerk']];
   console.log('  ' + rows.map(([k, zh, en]) => `${M(zh, en)} ${r[k].length}`).join(' · ') + M(`（${r.segs} 段明显的动作）`, ` (${r.segs} clear moves)`));
-  for (const [k, zh, en] of rows) if (r[k].length) console.log(`    ${M(zh, en)}：${W2(r[k])}${r[k].length > 3 ? M(` …（共 ${r[k].length} 条）`, ` … (${r[k].length} in all)`) : ''}`);
+  for (const [k, zh, en] of rows) if (r[k].length) console.log(`    ${M(zh, en)}${M('：', ': ')}${W2(r[k])}${r[k].length > 3 ? M(` …（共 ${r[k].length} 条）`, ` … (${r[k].length} in all)`) : ''}`);
   // Write the full list to review/motion-<aspect>.txt (the terminal lists only 3 per kind)
-  { const txt = path.join(proj, 'review', `motion-${asp}.txt`); fs.mkdirSync(path.dirname(txt), { recursive: true }); fs.writeFileSync(txt, rows.map(([k, zh, en]) => `${M(zh, en)}（${r[k].length}）\n` + r[k].map((y) => `  ${y.t.toFixed(2)}s ${y.what}`).join('\n')).join('\n\n') + '\n'); if (rows.some(([k]) => r[k].length > 3)) console.log(M(`  完整列表：${txt}`, `  Full list: ${txt}`)); }
+  { const txt = path.join(proj, 'review', `motion-${asp}.txt`); fs.mkdirSync(path.dirname(txt), { recursive: true }); fs.writeFileSync(txt, rows.map(([k, zh, en]) => `${M(zh, en)}${M(`（${r[k].length}）`, ` (${r[k].length})`)}\n` + r[k].map((y) => `  ${y.t.toFixed(2)}s ${y.what}`).join('\n')).join('\n\n') + '\n'); if (rows.some(([k]) => r[k].length > 3)) console.log(M(`  完整列表：${txt}`, `  Full list: ${txt}`)); }
   // Logged as warnings: flicker, camera jerks, crowding (always problems); starts/stops, too fast and jitter are only listed in the motion sheet (sometimes intentional: impact type, whip pans, screen shake)
   for (const x of r.flicker.slice(0, 3)) issues.push({ level: 'warn', t: x.t, src: '', what: M('动效', 'motion'), msg: M(`${x.what} 1 秒里透明度来回变了 7 次以上（超过每秒 3 次的闪，容易引起不适）：检查是不是两段动画在抢同一个属性`, `${x.what} flips opacity several times within 0.5 s (flicker): two animations may be fighting over it`) });
   for (const x of r.cam.slice(0, 3)) issues.push({ level: 'warn', t: x.t, src: '', what: M('动效', 'motion'), msg: M(`镜头急变：${x.what} 突然加速 / 减速（不在硬切上）——镜头的起停要缓`, `camera jerk: ${x.what} suddenly speeds up / slows down (not on a cut) — ease camera moves`) });
@@ -707,7 +709,7 @@ async function main() {
       if (!video) { console.error(M(`没有成片（out/${nameFor('video', plan0)}）：先渲染`, `No video (out/${nameFor('video', plan0)}): render it first`)); return; }
       const ev = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], appears: window.__appears ? window.__appears() : [], trans: window.__transitions ? window.__transitions() : [], sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
       console.log(M(`成片：${video}`, `Video: ${video}`));
-      await popScan(video, fps, 0, ev.cuts || [], { sfx: ev.sfx, texts: ev.texts }, ev.appears || [], voice, ev.trans || []);
+      await popScan(video, fps, 0, ev.cuts || [], { sfx: ev.sfx, texts: ev.texts }, ev.appears || [], voice, ev.trans || [], (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);
       return;
     }
     const lint = await first.eval('window.__lint ? window.__lint() : []');
@@ -966,7 +968,7 @@ async function main() {
     const acts = (await first.eval('({ sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
     const appears = (await first.eval('window.__appears ? window.__appears() : []')).result.value || [];
     const trans = (await first.eval('window.__transitions ? window.__transitions() : []')).result.value || [];
-    const dScan = await popScan(out, fps, from, cuts, acts, appears, voice, trans);
+    const dScan = await popScan(out, fps, from, cuts, acts, appears, voice, trans, (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);
     const rhythmF = (await first.eval('window.__rhythm ? window.__rhythm() : null')).result.value;
     if (rhythmF && rhythmF.length && dScan && !flag('from') && !flag('to')) await rhythmScan(proj, dScan, fps, from, to - from, rhythmF, { cuts, sfx: acts.sfx || [], texts: (acts.texts || []).map((x) => x.a) }, (opt('aspect') || '16:9').replace(':', 'x'));
     if (!draft && !flag('from') && !flag('to')) {

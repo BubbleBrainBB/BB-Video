@@ -2,7 +2,7 @@
 // Types the ASCII components emit: type (typing, a run of key sounds), decode (scrambled characters settling), ping (a sonar ring of characters), wipe (inverted characters sweeping across), impact (big type landing), logo.
 // Pitched sounds (notifications, sonar) are in the F major pentatonic (F G A C D) — change it per product, in the same key as score.js.
 export default {
-  name: '一句话：这个产品在终端里听起来是什么样的（例：安静的工作室、轻的机械键盘、干净的提示音）',
+  name: 'One line: what this product sounds like in a terminal (e.g. a quiet studio, a light mechanical keyboard, clean prompt beeps)',
   space: { size: 0.2, mix: 0.08 },
   ambience: { use: 'roomtone', bright: 520, gain: 0.05 },
   vary: 0.08,

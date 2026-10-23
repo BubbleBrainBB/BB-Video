@@ -20,7 +20,8 @@
 //   await K.warhol(parent, { src, at, cols, rows, palettes })  one image repeated in different colours as a grid, one cell per beat
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('pop.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('pop.js 要在 promo.js 之后加载', 'pop.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -100,7 +101,7 @@
     const LAYOUTS = { row3: [[0, 0, 1 / 3, 1], [1 / 3, 0, 1 / 3, 1], [2 / 3, 0, 1 / 3, 1]], stack3: [[0, 0, 1, 1 / 3], [0, 1 / 3, 1, 1 / 3], [0, 2 / 3, 1, 1 / 3]], 'big+2': [[0, 0, 0.58, 1], [0.58, 0, 0.42, 0.5], [0.58, 0.5, 0.42, 0.5]], 'top+2': [[0, 0, 1, 0.52], [0, 0.52, 0.5, 0.48], [0.5, 0.52, 0.5, 0.48]], '2+1': [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 1, 0.5]], grid4: [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]] };
     K.page = (parent, o) => {
       const lay = Array.isArray(o.layout) ? o.layout : LAYOUTS[o.layout ?? 'row3'];
-      if (!lay) throw new Error(`没有这种分格：${o.layout}（有：${Object.keys(LAYOUTS).join(' / ')}，或者自己写 [[fx, fy, fw, fh], …]）`);
+      if (!lay) throw new Error(M(`没有这种分格：${o.layout}（有：${Object.keys(LAYOUTS).join(' / ')}，或者自己写 [[fx, fy, fw, fh], …]）`, `No such panel layout: ${o.layout} (available: ${Object.keys(LAYOUTS).join(' / ')}, or write your own [[fx, fy, fw, fh], …])`));
       const g = F.px(o.gutter ?? 26), every = o.every ?? F.B, enters = ['left', 'top', 'right', 'bottom'];
       return lay.map(([fx, fy, fw, fh], i) => {
         const q = (o.panels || [])[i] || {}, x = o.x + fx * o.w + (fx > 0 ? g / 2 : 0), y = o.y + fy * o.h + (fy > 0 ? g / 2 : 0);
@@ -316,7 +317,7 @@
           g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fill();
         }
         return c.toDataURL('image/png');
-      } catch (e) { console.warn('halftone 失败（读不到图片像素），用原图：' + e.message); return src; }
+      } catch (e) { console.warn(M('halftone 失败（读不到图片像素），用原图：', 'halftone failed (cannot read image pixels), using the original image: ') + e.message); return src; }
     };
     // screen print (Warhol): brightness split into a few levels, one colour per level. o: { colors: [darkest, …, lightest], width, dots: halftone on the middle level (colour) }
     K.posterize = async (src, o = {}) => {
@@ -329,7 +330,7 @@
         for (let i = 0; i < d.length; i += 4) { const v = lumOf(d, i); let k = 0; while (k < th.length && v > th[k]) k++; const cc = cols[k]; d[i] = cc[0]; d[i + 1] = cc[1]; d[i + 2] = cc[2]; }
         g.putImageData(id, 0, 0);
         return c.toDataURL('image/png');
-      } catch (e) { console.warn('posterize 失败（读不到图片像素），用原图：' + e.message); return src; }
+      } catch (e) { console.warn(M('posterize 失败（读不到图片像素），用原图：', 'posterize failed (cannot read image pixels), using the original image: ') + e.message); return src; }
     };
     // Warhol grid: one image in several colourways, arranged cols × rows, one cell pops in per beat. o: { src, at, every, x, y, w, h, cols, rows, palettes: [[dark, mid, light], …], bgs: [ground colours …], until, gap }
     K.warhol = async (parent, o) => {

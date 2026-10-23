@@ -1,7 +1,7 @@
 // Sound design (starting point for the pop-art style): comic sound effects. Principles and usage in the skill's references/sound.md; style notes in styles/pop/STYLE.md.
 // The types the pop components emit are already written here (pow / pop / whoosh) — then adapt to the product: pitched accents in the score's key (C major below).
 export default {
-  name: '一句话：这个产品的漫画听起来是什么样的（例：明亮、俏皮、有点夸张）',
+  name: 'One line: what this product sounds like as a comic (e.g. bright, playful, a bit over the top)',
   space: { size: 0.3, mix: 0.1 },
   vary: 0.08,
   sounds: {

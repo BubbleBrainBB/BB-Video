@@ -1,7 +1,7 @@
 // Sound design (starting point for a riso promo): a print shop — ink drum, paper being pressed, stamps. Principles and how to write it: promo/references/sound.md; adapt to the product.
 // Types the shared API emits: print (one block printed), stamp (halftone / stamp), roll (drum page turn), flood (ink-flood page turn), logo
 export default {
-  name: '一句话：这个产品印在纸上听起来是什么样的（例：小印刷工作室、滚筒、纸张）',
+  name: 'One line: what this product sounds like printed on paper (e.g. a small print shop, rollers, paper)',
   space: { size: 0.28, mix: 0.1 },
   vary: 0.07,
   sounds: {

@@ -13,7 +13,8 @@
 //   checks  reported automatically in --check: text printed in 3D too small / squashed / cut off / inside the portrait safe zone; shot lengths too even; cutting back and forth between sides; hard cuts without carry; wrong sums
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('toy3d.js 要在 promo.js 之后加载');
+  const MSG = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(MSG('toy3d.js 要在 promo.js 之后加载', 'toy3d.js must load after promo.js'));
   const { E, seg } = P;
   const backOut = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
   const backIn = (x) => x * x * (2.70158 * x - 1.70158);
@@ -63,7 +64,7 @@
     // ---------- Helpers ----------
     const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
     const tex = (src) => { const t = src instanceof HTMLCanvasElement ? new THREE.CanvasTexture(src) : src; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t; };
-    const loadTex = (url) => new Promise((ok, no) => new THREE.TextureLoader().load(url, (t) => ok(tex(t)), undefined, () => no(new Error('toy3d：图片加载失败 ' + url))));
+    const loadTex = (url) => new Promise((ok, no) => new THREE.TextureLoader().load(url, (t) => ok(tex(t)), undefined, () => no(new Error(MSG('toy3d：图片加载失败 ', 'toy3d: image failed to load ') + url))));
     const font = (o) => o.font ?? (F.theme && F.theme.fonts && F.theme.fonts.sans) ?? 'sans-serif';
     Object.assign(T, { mkCanvas, tex, loadTex });
     // Glowing plane (fades in and out by opacity only; colour brightness fixed above the threshold)
@@ -131,7 +132,7 @@
     // Raised key: "cut" a patch of screenshot out of the slab into a key (top face shows the same patch), rise it; it sinks when the toy lands on it (like the toolbar keys in the reference film)
     const keys = [];
     function liftKey(s, u0, v0, u1, v1, k) {
-      if (!s.map) throw new Error('toy3d：只有印着截图的平台能做 key');
+      if (!s.map) throw new Error(MSG('toy3d：只有印着截图的平台能做 key', 'toy3d: only a platform printed with a screenshot can be a key'));
       const c0 = s.local(u0, v0), c1 = s.local(u1, v1), w = c1.x - c0.x, d = c1.z - c0.z, h = k.height ?? 0.09;
       const t2 = s.map.clone(); t2.needsUpdate = true; t2.repeat.set(u1 - u0, v1 - v0); t2.offset.set(u0, 1 - v1);
       const top = new THREE.MeshStandardMaterial({ map: t2, emissive: '#FFFFFF', emissiveMap: t2, emissiveIntensity: 0.4, roughness: 0.55 });
@@ -230,14 +231,14 @@
       async load(name, spec = (window.TOY3D_SPECS || {})[name]) {
         const b64 = (window.TOY3D_GLB || {})[name], hh = (window.TOY3D_GLB_HASH || {})[name];
         const fresh = b64 && (!spec || !hh || hh === hash(JSON.stringify(spec)));
-        if (b64 && !fresh && !warned[name]) { warned[name] = 1; console.warn(`toy3d：${name} 的零件表改过了，Blender 做的 GLB 是旧的——先用 three.js 版；重跑 node promo/scripts/toy3d-model.mjs <项目>`); }
+        if (b64 && !fresh && !warned[name]) { warned[name] = 1; console.warn(MSG(`toy3d：${name} 的零件表改过了，Blender 做的 GLB 是旧的——先用 three.js 版；重跑 node promo/scripts/toy3d-model.mjs <项目>`, `toy3d: the parts list of ${name} has changed and the Blender GLB is stale — using the three.js version for now; rerun node promo/scripts/toy3d-model.mjs <project>`)); }
         if (fresh) {
           glbCache[name] ??= new Promise((ok, no) => new GLTFLoader().parse(Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)).buffer, '', ok, no));
           const root = (await glbCache[name]).scene.clone(true), joints = { root };
           root.traverse((x) => { if (x.name && x.name.startsWith('joint_')) joints[x.name.slice(6)] = x; if (x.isMesh) { const eye = /^eye/i.test(x.name) || /^eye/i.test(x.material?.name ?? ''); const col = x.material?.color ?? new THREE.Color('#ccc'), k = col.getHexString(); x.material = eye ? eyeMat : (matCache[k] ??= vinyl({ color: col.clone(), ...(spec?.material || {}) })); } });
           const t = finishToy(root, joints, spec || {}); t.source = 'blender'; return t;
         }
-        if (!spec) throw new Error(`toy3d：没有玩具 ${name}（toys.js 里写 window.TOY3D_SPECS.${name}）`);
+        if (!spec) throw new Error(MSG(`toy3d：没有玩具 ${name}（toys.js 里写 window.TOY3D_SPECS.${name}）`, `toy3d: no toy ${name} (define window.TOY3D_SPECS.${name} in toys.js)`));
         const t = T.toy.build(spec, name); t.source = 'three'; return t;
       },
     };
@@ -250,7 +251,7 @@
       const M = { toy, moves, born: o.born ?? 0, from: o.from ?? 'pop', face: o.face ?? 'camera', yaw: o.yaw ?? -0.35, pose: o.pose, info: o.info !== false };
       let last = start, lastT = M.born;
       if (o.sfx !== false) F.sfx(M.born, M.from === 'drop' ? 'whoosh' : 'pop', 0.5);   // entrance has a sound (the first 0.5 s of the film won't be silent on phones)
-      const push = (mv) => { if (mv.a < lastT - 1e-6) console.warn(`toy3d：动作 ${mv.kind} 在 ${r2(mv.a)}s 开始，上一个动作 ${r2(lastT)}s 才结束`); mv.from = last; moves.push(mv); last = mv.to ?? last; lastT = mv.b; if (M.info && mv.kind !== 'set') F.info('toy', mv.a, mv.b + 0.6, { group: 'toy' }); return M; };
+      const push = (mv) => { if (mv.a < lastT - 1e-6) console.warn(MSG(`toy3d：动作 ${mv.kind} 在 ${r2(mv.a)}s 开始，上一个动作 ${r2(lastT)}s 才结束`, `toy3d: action ${mv.kind} starts at ${r2(mv.a)}s, but the previous action only ends at ${r2(lastT)}s`)); mv.from = last; moves.push(mv); last = mv.to ?? last; lastT = mv.b; if (M.info && mv.kind !== 'set') F.info('toy', mv.a, mv.b + 0.6, { group: 'toy' }); return M; };
       // Hop: h = how high (world units); kf = an important landing (squashes more, the mark scatters and rejoins, a heavy sound); spin = turns in the air
       M.hop = (to, at, o2 = {}) => { const d = o2.dur ?? 0.55, h = o2.h ?? 0.8; push({ kind: 'hop', to: T.anchor(to), a: at, b: at + d, h, kf: !!o2.kf, spin: o2.spin ?? 0 }); if (o2.sfx !== false) { if (h >= 0.9) F.sfx(at, 'whoosh', 0.3, { dur: d, size: 0.3 }); F.sfx(at + d, o2.kf ? 'stamp' : 'land', o2.kf ? 0.6 : 0.45); } return M; };
       // Roll (a standing mark, a wheel): roll along a straight line
@@ -437,11 +438,11 @@
           if (inside === 0) continue;
           const sh = shots.findIndex((x) => t >= x.at && t < x.b), tag = (k) => { const id = L.text + k + ':' + sh; if (!reported.has(id)) { reported.set(id, t); return true; } return false; };   // reported once per shot
           const [top, bot, lef, rig] = L.emBox().map((v) => nv(v, camera)), hgt = Math.hypot(top.x - bot.x, top.y - bot.y), wid = Math.hypot(lef.x - rig.x, lef.y - rig.y);
-          if (inside < 4 && hgt >= minPx * 0.75 && tag('cut')) add('warn', t, '3D 字被切', `"${String(L.text).slice(0, 24)}" 一部分在画面外（镜头装不下这行字）：调机位（fit 里加上这行字的两端），或者这一镜让它整行出画`);
+          if (inside < 4 && hgt >= minPx * 0.75 && tag('cut')) add('warn', t, MSG('3D 字被切', '3D text cut off'), MSG(`"${String(L.text).slice(0, 24)}" 一部分在画面外（镜头装不下这行字）：调机位（fit 里加上这行字的两端），或者这一镜让它整行出画`, `"${String(L.text).slice(0, 24)}" is partly out of frame (the shot can't fit this line): adjust the camera (add both ends of the line to fit), or let the whole line leave frame in this shot`));
           const reading = L._read.some(([a, b]) => t >= a && t <= b);
-          if (reading && inside === 4 && hgt < minPx && tag('small')) add('warn', t, '3D 字读不清', `"${String(L.text).slice(0, 24)}" 投影后一个字只有 ${Math.round(hgt / F.px(1))}px 高（1080p 下至少 24px）：字印大一点，或者这一镜离它近一点 / 正一点`);
-          else if (reading && inside === 4 && wid > 0 && hgt / wid < 0.6 && tag('squash')) add('warn', t, '3D 字读不清', `"${String(L.text).slice(0, 24)}" 被透视压扁了（高 / 宽 = ${(hgt / wid).toFixed(2)} < 0.6）：俯角太低，镜头抬高一点、正对着这行字`);
-          if (PT && L.key && inside === 4 && cs.some((q) => q.y < H * 0.08 || q.y > H * 0.8) && tag('safe')) add('warn', t, '竖屏安全区', `"${String(L.text).slice(0, 24)}" 在画面顶部 8% 或底部 20% 以内，会被平台的界面挡住`);
+          if (reading && inside === 4 && hgt < minPx && tag('small')) add('warn', t, MSG('3D 字读不清', '3D text unreadable'), MSG(`"${String(L.text).slice(0, 24)}" 投影后一个字只有 ${Math.round(hgt / F.px(1))}px 高（1080p 下至少 24px）：字印大一点，或者这一镜离它近一点 / 正一点`, `"${String(L.text).slice(0, 24)}" projects to only ${Math.round(hgt / F.px(1))}px per character (at least 24px at 1080p): print it larger, or bring this shot closer / more head-on`));
+          else if (reading && inside === 4 && wid > 0 && hgt / wid < 0.6 && tag('squash')) add('warn', t, MSG('3D 字读不清', '3D text unreadable'), MSG(`"${String(L.text).slice(0, 24)}" 被透视压扁了（高 / 宽 = ${(hgt / wid).toFixed(2)} < 0.6）：俯角太低，镜头抬高一点、正对着这行字`, `"${String(L.text).slice(0, 24)}" is squashed by perspective (height / width = ${(hgt / wid).toFixed(2)} < 0.6): the camera angle is too low — raise the camera and face the line`));
+          if (PT && L.key && inside === 4 && cs.some((q) => q.y < H * 0.08 || q.y > H * 0.8) && tag('safe')) add('warn', t, MSG('竖屏安全区', 'portrait safe zone'), MSG(`"${String(L.text).slice(0, 24)}" 在画面顶部 8% 或底部 20% 以内，会被平台的界面挡住`, `"${String(L.text).slice(0, 24)}" is within the top 8% or bottom 20% of the frame and will be covered by the platform's UI`));
         }
       }
       // ①b Toy stopped in mid-air (M.set to a high spot not followed at once by a hop): hanging still in frame looks fake
@@ -451,26 +452,26 @@
         const st2 = solve(M, t + 0.25); if (st2.air || st2.p.distanceTo(st.p) > 0.01) continue;   // still in place 0.25 s later and not hopping: only then does it count as stopped
         const q = R.position.clone().project(camera); if (q.z > 1 || Math.abs(q.x) > 1.15 || Math.abs(q.y) > 1.15) continue;
         const sh = shots.findIndex((x) => t >= x.at && t < x.b); if (hung.has(sh)) continue; hung.add(sh);
-        add('warn', t, '玩具', `${r2(t)}s 玩具停在半空不动（高 ${st.p.y.toFixed(2)}）：M.set 到高处以后马上接一个跳（同一时刻开始），切过来时它就在往下掉`);
+        add('warn', t, MSG('玩具', 'toy'), MSG(`${r2(t)}s 玩具停在半空不动（高 ${st.p.y.toFixed(2)}）：M.set 到高处以后马上接一个跳（同一时刻开始），切过来时它就在往下掉`, `${r2(t)}s toy hangs still in mid-air (height ${st.p.y.toFixed(2)}): after M.set to a high spot, follow at once with a hop (starting at the same moment), so it is already falling when we cut to it`));
       }
       // ② Camera: shot lengths too even (coefficient of variation < 0.25 feels like a metronome), cutting back and forth between sides, hard cuts without carry
       if (shots.length >= 4) {
         const ls = shots.map((s) => s.b - s.at), mu = ls.reduce((a, b) => a + b, 0) / ls.length, cv = Math.sqrt(ls.reduce((a, b) => a + (b - mu) ** 2, 0) / ls.length) / mu;
-        if (cv < 0.25) add('warn', 0, '节奏', `镜头长度太平均（变异系数 ${cv.toFixed(2)} < 0.25，最短 ${Math.min(...ls).toFixed(1)}s、最长 ${Math.max(...ls).toFixed(1)}s）：像节拍器——有的镜头一拍就切，有的停住多看一会儿`);
+        if (cv < 0.25) add('warn', 0, MSG('节奏', 'rhythm'), MSG(`镜头长度太平均（变异系数 ${cv.toFixed(2)} < 0.25，最短 ${Math.min(...ls).toFixed(1)}s、最长 ${Math.max(...ls).toFixed(1)}s）：像节拍器——有的镜头一拍就切，有的停住多看一会儿`, `shot lengths are too even (coefficient of variation ${cv.toFixed(2)} < 0.25, shortest ${Math.min(...ls).toFixed(1)}s, longest ${Math.max(...ls).toFixed(1)}s): it feels like a metronome — cut some shots on a single beat, let others hold longer`));
       }
       let prevSide = 0;
       shots.forEach((s, i) => {
         update(s.at + 0.02); const look = new THREE.Vector3(); camera.getWorldDirection(look); const side = Math.sign(-look.x * 1) * (Math.abs(look.x) > 0.35 ? 1 : 0);
-        if (i >= 2 && side && prevSide && side !== prevSide && shots[i - 2]._side === side) add('warn', s.at, '镜头', `${r2(s.at)}s：连续几个镜头左右来回换边（画面里的方向每切一次就反一次）：一段里镜头保持在同一边，换边的那一刀要有理由`);
+        if (i >= 2 && side && prevSide && side !== prevSide && shots[i - 2]._side === side) add('warn', s.at, MSG('镜头', 'camera'), MSG(`${r2(s.at)}s：连续几个镜头左右来回换边（画面里的方向每切一次就反一次）：一段里镜头保持在同一边，换边的那一刀要有理由`, `${r2(s.at)}s: several shots in a row flip sides (screen direction reverses on every cut): keep the camera on one side within a sequence; a cut that changes sides needs a reason`));
         s._side = side; prevSide = side;
-        if (i > 0 && !s.carry) { const burst = shots.filter((x) => Math.abs(x.at - s.at) <= 0.75).length >= 3; if (!burst) add('warn', s.at, '衔接', `${r2(s.at)}s 的硬切没写 carry：每一刀都要有东西接过来（玩具在半空中跨过切点 carry: 'toy'、同一个东西从远景切到近景……），写在镜头表里`); }
+        if (i > 0 && !s.carry) { const burst = shots.filter((x) => Math.abs(x.at - s.at) <= 0.75).length >= 3; if (!burst) add('warn', s.at, MSG('衔接', 'continuity'), MSG(`${r2(s.at)}s 的硬切没写 carry：每一刀都要有东西接过来（玩具在半空中跨过切点 carry: 'toy'、同一个东西从远景切到近景……），写在镜头表里`, `the hard cut at ${r2(s.at)}s has no carry: something must carry across every cut (the toy in mid-air across the cut, carry: 'toy'; the same object from wide to close…) — write it in the shot list`)); }
       });
       // ③ Sum self-check: keycaps like "a × b = c" are worked out
       const num = (s0) => Number(String(s0).replace(/,/g, ''));
       for (const r of capRows) {
         if (!r.check) continue; const m = /^(-?[\d,.]+)\s*([+\-−×x*÷/])\s*(-?[\d,.]+)\s*=\s*(-?[\d,.]+)$/.exec(r.text.replace(/\s+/g, ''));
         if (!m) continue; const a = num(m[1]), b = num(m[3]), c = num(m[4]), op = m[2], v = op === '+' ? a + b : '−-'.includes(op) ? a - b : '×x*'.includes(op) ? a * b : a / b;
-        if (Math.abs(v - c) > 1e-9 * Math.max(1, Math.abs(v))) add('error', r.at, '算式', `键帽上的 "${r.text}" 算错了（应该是 ${v}）`);
+        if (Math.abs(v - c) > 1e-9 * Math.max(1, Math.abs(v))) add('error', r.at, MSG('算式', 'sum'), MSG(`键帽上的 "${r.text}" 算错了（应该是 ${v}）`, `the sum "${r.text}" on the keycaps is wrong (should be ${v})`));
       }
       update(0);
       return out;

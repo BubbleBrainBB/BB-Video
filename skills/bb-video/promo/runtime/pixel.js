@@ -29,7 +29,8 @@
 // Timing: at = settled (readable, on the beat); until = fully gone. Coordinates: x, y are the centre (for characters, the midpoint of the feet), in frame px; size is the design size (1080p).
 (function () {
   const P = window.PROMO;
-  if (!P) throw new Error('pixel.js 要在 promo.js 之后加载');
+  const M = (P && P.M) || ((zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en));
+  if (!P) throw new Error(M('pixel.js 要在 promo.js 之后加载', 'pixel.js must load after promo.js'));
   const { clamp, lerp } = window.EV;
   const { E, seg, set, el } = P;
   const f1 = (n) => Math.round(n * 10) / 10;
@@ -172,6 +173,7 @@
 
   P.pixel = function (F, opt = {}) {
     const X = { F }, PT = F.portrait, W = F.W, H = F.H;
+    F.stillMax(1.0);   // game screens hold still between moves (sprites step at 2–4 fps): up to 1 s of stillness is the medium, not a freeze
     const U = F.px(opt.unit ?? 4);                       // one cell on screen
     const LW = Math.ceil(W / U), LH = Math.ceil(H / U);   // cell count of the low-resolution frame
     const pal = { ...(PALETTES[opt.palette ?? 'night'] || PALETTES.night) };
@@ -285,7 +287,7 @@
     // ---------- props ----------
     X.item = (parent, o) => {
       const rows = Array.isArray(o.art) ? o.art : ART[o.art ?? 'coin'];
-      if (!rows) throw new Error(`没有这种道具：${o.art}（有：${Object.keys(ART).join(' / ')}，或者自己写字符行）`);
+      if (!rows) throw new Error(M(`没有这种道具：${o.art}（有：${Object.keys(ART).join(' / ')}，或者自己写字符行）`, `No such prop: ${o.art} (available: ${Object.keys(ART).join(' / ')}, or write your own character rows)`));
       const g = gridOf(rows, o.outline !== false), gw = g[0].length, gh = g.length, ps = U * (o.scale ?? 3);
       const { box, cv } = spriteBox(parent, gw, gh, ps, o.z);
       box.dataset.what = `X.item ${typeof o.art === 'string' ? o.art : 'art'}`;
@@ -320,9 +322,9 @@
     };
     const seen = new Map();   // two identical-looking people in the same scene: warn
     X.char = (parent, o = {}) => {
-      if (o.who && !X.castList[o.who]) throw new Error(`角色表里没有"${o.who}"：先 X.cast({ ${o.who}: { hair, hairColor, shirt } })`);
+      if (o.who && !X.castList[o.who]) throw new Error(M(`角色表里没有"${o.who}"：先 X.cast({ ${o.who}: { hair, hairColor, shirt } })`, `"${o.who}" is not in the cast: first X.cast({ ${o.who}: { hair, hairColor, shirt } })`));
       const look = o.who ? X.castList[o.who] : { ...LOOK0, ...(o.look || {}) };
-      { const sig = JSON.stringify(look), list = seen.get(parent) || []; const twin = list.find((q) => q.sig === sig && q.who !== (o.who ?? null)); if (twin) console.warn(`像素：同一场里"${twin.who ?? '路人'}"和"${o.who ?? '路人'}"长得一模一样——在角色表里给他们不同的发型 / 发色 / 衣服 / 帽子`); list.push({ sig, who: o.who ?? null }); seen.set(parent, list); }
+      { const sig = JSON.stringify(look), list = seen.get(parent) || []; const twin = list.find((q) => q.sig === sig && q.who !== (o.who ?? null)); if (twin) console.warn(M(`像素：同一场里"${twin.who ?? '路人'}"和"${o.who ?? '路人'}"长得一模一样——在角色表里给他们不同的发型 / 发色 / 衣服 / 帽子`, `pixel: "${twin.who ?? 'passer-by'}" and "${o.who ?? 'passer-by'}" look identical in the same scene — give them different hair / hair colour / clothes / hat in the cast`)); list.push({ sig, who: o.who ?? null }); seen.set(parent, list); }
       const ps = U * (o.scale ?? 3), { box, cv } = spriteBox(parent, CW, CH, ps, o.z ?? 12);
       box.dataset.what = `X.char ${o.who ?? ''}`.trim();
       const at = o.at ?? 0, until = o.until ?? 1e9, wPx = CW * ps, hPx = CH * ps;

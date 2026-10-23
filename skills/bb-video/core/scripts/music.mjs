@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { renderSfx, DEFAULT_PALETTE } from './sound.mjs';
+import { M } from './lang.mjs';
 
 export const SR = 44100;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -199,11 +200,11 @@ const QUAL = { '': [0, 4, 7], m: [0, 3, 7], 7: [0, 4, 7, 10], maj7: [0, 4, 7, 11
 function parseChord(c, key) {
   if (typeof c === 'number') { const sc = MODES[key.mode], d = c - 1; const iv = [0, 2, 4].map((k) => { const x = d + k; return sc[x % 7] + 12 * Math.floor(x / 7) - sc[d % 7]; }); return { root: (key.root + sc[d % 7]) % 12, iv, bass: null, name: `${c}` }; }
   const m = String(c).trim().match(/^([A-G][#b]?)(maj9|maj7|madd9|m7b5|m9|m7|m6|add9|sus2|sus4|dim|aug|m|9|7|6|5)?(?:\/([A-G][#b]?))?$/);
-  if (!m) throw new Error(`看不懂的和弦：${c}（写法如 Am7、Fmaj7、G/B、Csus4）`);
+  if (!m) throw new Error(M(`看不懂的和弦：${c}（写法如 Am7、Fmaj7、G/B、Csus4）`, `Unreadable chord: ${c} (write it like Am7, Fmaj7, G/B, Csus4)`));
   return { root: NOTE[m[1]], iv: QUAL[m[2] || ''], bass: m[3] ? NOTE[m[3]] : null, name: String(c) };
 }
 // Notes: 'D5', 'F#4', 'Bb3'; or MIDI numbers
-function parseNote(s) { if (typeof s === 'number') return s; const m = String(s).match(/^([A-G][#b]?)(-?\d)$/); if (!m) throw new Error(`看不懂的音符：${s}（写法如 D5、F#4、Bb3）`); return 12 * (Number(m[2]) + 1) + NOTE[m[1]]; }
+function parseNote(s) { if (typeof s === 'number') return s; const m = String(s).match(/^([A-G][#b]?)(-?\d)$/); if (!m) throw new Error(M(`看不懂的音符：${s}（写法如 D5、F#4、Bb3）`, `Unreadable note: ${s} (write it like D5, F#4, Bb3)`)); return 12 * (Number(m[2]) + 1) + NOTE[m[1]]; }
 // Motif: 'D5:1 F#5:.5 A5:.5 r:1 B5:2' (beats after the colon, r is a rest)
 function parseMotif(s) { let at = 0; const out = []; for (const tok of String(s || '').trim().split(/\s+/).filter((x) => x && x !== '|')) { /* | is just a bar line */ const [n, d] = tok.split(':'); const dur = Number(d || 1); if (n !== 'r' && n !== '-') out.push({ at, m: parseNote(n), dur }); at += dur; } return { notes: out, beats: at }; }
 const inScale = (m, key) => MODES[key.mode].includes(((m - key.root) % 12 + 12) % 12);
@@ -214,7 +215,7 @@ export async function loadScore(spec) {
   if (spec && typeof spec === 'object') return spec;
   const name = spec || 'minimal';
   const file = /[\\/]|\.m?js$/.test(name) ? path.resolve(name) : path.join(path.dirname(fileURLToPath(import.meta.url)), 'scores', `${name}.mjs`);
-  if (!fs.existsSync(file)) throw new Error(`找不到乐谱 ${file}`);
+  if (!fs.existsSync(file)) throw new Error(M(`找不到乐谱 ${file}`, `Score not found: ${file}`));
   // A project's score.js has no package.json declaring the module type, so Node prints a string of warnings: copy it to .mjs before loading
   const tmp = path.join(os.tmpdir(), `promo-score-${hashStr(file)}-${Math.round(fs.statSync(file).mtimeMs)}.mjs`);
   fs.copyFileSync(file, tmp);
@@ -285,7 +286,7 @@ export function renderPlan(plan, o = {}) {
   const dia = (m, steps, k) => { const sc2 = MODES[k.mode]; let x = snapScale(m, k); for (let q = 0; q < Math.abs(steps); q++) { let y = x + Math.sign(steps); while (!inScale(y, k)) y += Math.sign(steps); x = y; } return x; };
   for (const [pi, p] of (sc.parts || []).entries()) {
     const fn = syn(p);
-    if (!fn) { warnings.push(`第 ${pi + 1} 层"${p.name || p.synth}"：没有这个音色 ${p.synth}`); continue; }
+    if (!fn) { warnings.push(M(`第 ${pi + 1} 层"${p.name || p.synth}"：没有这个音色 ${p.synth}`, `Layer ${pi + 1} "${p.name || p.synth}": no such instrument ${p.synth}`)); continue; }
     const bus = new Bus(duration), from = p.from ?? 0, to = p.to ?? 3;
     const isDrum = p.play === 'drum' || DRUMS.has(p.synth), role = isDrum ? (['snare', 'clap', 'rim', 'chipsnare'].includes(p.synth) ? 'back' : 'drum') : p.play === 'bass' ? 'bass' : 'keys';
     const JIT = { drum: 3, back: 3, bass: 6, keys: 10 }[role], vary = sc.vary !== false && p.vary !== false;
@@ -361,7 +362,7 @@ export function renderPlan(plan, o = {}) {
         } else if (p.play === 'bass') {
           const offs = p.offsets ?? [0], root = 12 * ((p.octave ?? 2) + 1) + (c.bass ?? c.root) + L;
           put(fn([root + offs[offI++ % offs.length]], len, r, p), t, g);
-        } else { warnings.push(`第 ${pi + 1} 层"${p.name || p.synth}"：play 只能是 chord / arp / bass / motif / drum 或一个函数`); break; }
+        } else { warnings.push(M(`第 ${pi + 1} 层"${p.name || p.synth}"：play 只能是 chord / arp / bass / motif / drum 或一个函数`, `Layer ${pi + 1} "${p.name || p.synth}": play must be chord / arp / bass / motif / drum or a function`)); break; }
       }
       // Bass leads to the next chord: on the last half-beat, play the scale note just below (or above) the next chord's root, like a passing note a bassist would add
       if (bassWalk) {
@@ -399,10 +400,10 @@ export function renderPlan(plan, o = {}) {
       // Before an impact section: the next chord's pad reversed for a beat and a half, sucked into the impact
       if (sc.swell !== false && f.s.hit) { const nc = chordAtBar(barOf(f.b + 1e-3)), sw = padChord(voice(nc, 4, liftOf(f.b + 1e-3)), 1.5 * B, r, 2600, 0.01).slice(0, Math.round(1.5 * B * SR)).reverse(); for (let i = 0; i < sw.length; i++) sw[i] *= (i / sw.length) ** 2; fb.put(sw, f.b - 1.5 * B, 0.16, 0); }
     }
-    buses.push({ p: {}, bus: fb, name: '过门', isDrum: true, duck: false });
+    buses.push({ p: {}, bus: fb, name: M('过门', 'fills'), isDrum: true, duck: false });
   }
   // Noise / ambience layer (optional)
-  if (sc.bed) { const b = new Bus(duration); b.put(typeof sc.bed === 'function' ? sc.bed(duration, r, LIB) : crackle(duration, r), 0, sc.bedGain ?? 1, 0); buses.push({ p: {}, bus: b, name: '底噪', isDrum: false, duck: false }); }
+  if (sc.bed) { const b = new Bus(duration); b.put(typeof sc.bed === 'function' ? sc.bed(duration, r, LIB) : crackle(duration, r), 0, sc.bedGain ?? 1, 0); buses.push({ p: {}, bus: b, name: M('底噪', 'noise bed'), isDrum: false, duck: false }); }
   // Sections: a riser in the bar before intensity rises; hit sections open with an impact
   for (let i = 0; i < secs.length; i++) {
     const s = secs[i], prev = secs[i - 1];
@@ -444,7 +445,7 @@ export function renderPlan(plan, o = {}) {
   if (hasMusic && o.palette) {
     const off = new Set(), walk = (x) => { if (!x || typeof x !== 'object') return; if (Array.isArray(x)) return x.forEach(walk); for (const [k, v] of Object.entries(x)) { if ((k === 'note' || k === 'notes') && v) [].concat(v).forEach((nt) => { if (typeof nt === 'string' && /^[A-G][#b]?-?\d$/.test(nt) && !inScale(parseNote(nt), key)) off.add(nt); }); else walk(v); } };
     walk(o.palette);
-    if (off.size) warnings.push(`声音设计里这些音不在配乐的调（${key.name}）里：${[...off].join('、')}——改成调内音，否则和配乐会打架`);
+    if (off.size) warnings.push(M(`声音设计里这些音不在配乐的调（${key.name}）里：${[...off].join('、')}——改成调内音，否则和配乐会打架`, `These notes in the sound design are not in the music's key (${key.name}): ${[...off].join(', ')} — use notes in the key, or they clash with the music`));
   }
   warnings.push(...sx.warnings);
   const n0 = Math.ceil(duration * SR);
@@ -526,8 +527,8 @@ export function renderPlan(plan, o = {}) {
     L[i] = (ml * k + sfx.L[i] * sfxK * sv) * fade; R[i] = (mr * k + sfx.R[i] * sfxK * sv) * fade; sum += L[i] * L[i] + R[i] * R[i];
   }
   const underDb = V && hasMusic && uc ? 20 * Math.log10((Math.sqrt(us / uc) || 1e-9) / (V.rms || 0.07)) : null;
-  if (lev && underDb !== null && underDb > -15) warnings.push(`旁白：说话时配乐只比人声低 ${(-underDb).toFixed(0)} dB（要 15 dB 以上，人声才清楚）——乐谱的 level 调小，或者 underVoice 别用 'full'`);
-  if (V) { const ss = spoken.reduce((a2, l) => a2 + (l.end - l.start), 0), inS = (planS.sfx || []).filter((e) => speaking(e.t)).length; if (ss > 0 && inS / ss > 0.6) warnings.push(`旁白：说话时平均每秒 ${(inS / ss).toFixed(1)} 个音效——和人声抢，只留关键时刻（换场、大标题、人物倒下），其余写小的 gain（< 0.45，说话时自动不播）`); }
+  if (lev && underDb !== null && underDb > -15) warnings.push(M(`旁白：说话时配乐只比人声低 ${(-underDb).toFixed(0)} dB（要 15 dB 以上，人声才清楚）——乐谱的 level 调小，或者 underVoice 别用 'full'`, `Narration: while speaking the music is only ${(-underDb).toFixed(0)} dB under the voice (needs 15 dB or more for a clear voice) — lower the score's level, or don't use underVoice 'full'`));
+  if (V) { const ss = spoken.reduce((a2, l) => a2 + (l.end - l.start), 0), inS = (planS.sfx || []).filter((e) => speaking(e.t)).length; if (ss > 0 && inS / ss > 0.6) warnings.push(M(`旁白：说话时平均每秒 ${(inS / ss).toFixed(1)} 个音效——和人声抢，只留关键时刻（换场、大标题、人物倒下），其余写小的 gain（< 0.45，说话时自动不播）`, `Narration: ${(inS / ss).toFixed(1)} sound effects per second while speaking — they fight the voice; keep only key moments (scene changes, big titles, a character falling), give the rest a small gain (< 0.45, dropped while speaking)`)); }
   if (lev) { for (let i = 0; i < n; i++) { L[i] = Math.tanh(L[i]); R[i] = Math.tanh(R[i]); } }
   else {
     // With music: align by average loudness; effects only: align by peak (sparse effects pulled up by average loudness get pushed too loud and clip)
@@ -559,14 +560,14 @@ export function renderPlan(plan, o = {}) {
     const kinds = []; for (let i = 0; i < nb; i++) if (!kinds.some((k) => same(i, k))) kinds.push(i);
     const setOf = (sct) => (sc.parts || []).filter((p) => partOn(p, sct.at + 1e-3)).map((p) => p.name || p.synth).join('|');
     const sets = new Set(secs.filter((x) => x.at < end).map(setOf));
-    const secV = secs.filter((x) => x.at < end).map((x, i, arr) => { const a = Math.max(0, Math.floor((x.at - b0) / bar)), b = Math.min(nb, Math.floor(((arr[i + 1]?.at ?? end) - b0) / bar)); if (b <= a) return null; const v = spN[0].map((_, k) => spN.slice(a, b).reduce((y, w) => y + w[k], 0) / (b - a)); return { name: x.name || `强度 ${x.energy}`, v, lv: LV.slice(a, b).reduce((y, w) => y + w, 0) / (b - a), set: setOf(x) }; });
-    if (best.k >= 4 && best.k * bar >= 10) warnings.push(`配乐：${(b0 + best.a * bar).toFixed(1)}–${(b0 + (best.a + best.k) * bar).toFixed(1)} 秒同一个小节原样循环了 ${best.k} 小节——这一段换节奏型（pattern 按段落写）、加 / 减一层（in），或者让旋律进来`);
-    for (let i = 1; i < secV.length; i++) { const A2 = secV[i - 1], B2 = secV[i]; if (A2 && B2 && A2.name !== B2.name && A2.set === B2.set && cosv(A2.v, B2.v) > 0.995 && Math.abs(A2.lv - B2.lv) < 1.5) warnings.push(`配乐："${A2.name}"段和"${B2.name}"段听起来几乎一样（同样的配器、同样的音色和响度）——换配器（in）、换节奏型，或者拉开强弱`); }
-    if (nb >= 8 && kinds.length / nb < 0.4) warnings.push(`配乐：整首只有 ${kinds.length} 种小节（共 ${nb} 小节）——同样的东西一直在重复：按段落换和弦（chords 写对象）、换节奏型、让乐器进出`);
-    if (secs.length >= 3 && sets.size <= 1) warnings.push('配乐：每一段的配器都一样——用 in 让乐器按段落进出（开头少、高潮多、收尾回到开头的乐器），这是最能听出变化的');
-    if (widthDb < -20) warnings.push(`配乐几乎是单声道（立体声宽度 ${widthDb.toFixed(0)} dB）：铺底写 width、分解和弦写 spread，混响 space 别关`);
+    const secV = secs.filter((x) => x.at < end).map((x, i, arr) => { const a = Math.max(0, Math.floor((x.at - b0) / bar)), b = Math.min(nb, Math.floor(((arr[i + 1]?.at ?? end) - b0) / bar)); if (b <= a) return null; const v = spN[0].map((_, k) => spN.slice(a, b).reduce((y, w) => y + w[k], 0) / (b - a)); return { name: x.name || M(`强度 ${x.energy}`, `intensity ${x.energy}`), v, lv: LV.slice(a, b).reduce((y, w) => y + w, 0) / (b - a), set: setOf(x) }; });
+    if (best.k >= 4 && best.k * bar >= 10) warnings.push(M(`配乐：${(b0 + best.a * bar).toFixed(1)}–${(b0 + (best.a + best.k) * bar).toFixed(1)} 秒同一个小节原样循环了 ${best.k} 小节——这一段换节奏型（pattern 按段落写）、加 / 减一层（in），或者让旋律进来`, `Music: ${(b0 + best.a * bar).toFixed(1)}–${(b0 + (best.a + best.k) * bar).toFixed(1)} s loops the same bar verbatim for ${best.k} bars — change the rhythm pattern here (pattern per section), add / drop a layer (in), or bring in the melody`));
+    for (let i = 1; i < secV.length; i++) { const A2 = secV[i - 1], B2 = secV[i]; if (A2 && B2 && A2.name !== B2.name && A2.set === B2.set && cosv(A2.v, B2.v) > 0.995 && Math.abs(A2.lv - B2.lv) < 1.5) warnings.push(M(`配乐："${A2.name}"段和"${B2.name}"段听起来几乎一样（同样的配器、同样的音色和响度）——换配器（in）、换节奏型，或者拉开强弱`, `Music: sections "${A2.name}" and "${B2.name}" sound almost the same (same instruments, timbre and loudness) — change the orchestration (in), the rhythm pattern, or the dynamics`)); }
+    if (nb >= 8 && kinds.length / nb < 0.4) warnings.push(M(`配乐：整首只有 ${kinds.length} 种小节（共 ${nb} 小节）——同样的东西一直在重复：按段落换和弦（chords 写对象）、换节奏型、让乐器进出`, `Music: only ${kinds.length} distinct bars in the whole piece (${nb} bars) — the same thing keeps repeating: change chords per section (chords as an object), change the rhythm pattern, bring instruments in and out`));
+    if (secs.length >= 3 && sets.size <= 1) warnings.push(M('配乐：每一段的配器都一样——用 in 让乐器按段落进出（开头少、高潮多、收尾回到开头的乐器），这是最能听出变化的', 'Music: every section has the same instruments — use in to bring instruments in and out by section (few at the start, more at the climax, back to the opening ones at the end); that is the most audible change'));
+    if (widthDb < -20) warnings.push(M(`配乐几乎是单声道（立体声宽度 ${widthDb.toFixed(0)} dB）：铺底写 width、分解和弦写 spread，混响 space 别关`, `Music is nearly mono (stereo width ${widthDb.toFixed(0)} dB): give pads a width, arpeggios a spread, and keep the reverb (space) on`));
     const nHit = mom.filter((m) => m.kind !== 'name' && (m.kind !== 'cut' || energyAt(m.t + 1e-3) >= 3)).length;
-    sheet.push(`配乐：不同的小节 ${kinds.length}/${nb} · 最长原样循环 ${best.k} 小节 · 段落配器 ${sets.size} 种 · 立体声宽度 ${widthDb.toFixed(0)} dB · 跟着画面：重音 ${nHit} 处${nameM ? '、产品名出现时唱动机' : ''}`);
+    sheet.push(M(`配乐：不同的小节 ${kinds.length}/${nb} · 最长原样循环 ${best.k} 小节 · 段落配器 ${sets.size} 种 · 立体声宽度 ${widthDb.toFixed(0)} dB · 跟着画面：重音 ${nHit} 处${nameM ? '、产品名出现时唱动机' : ''}`, `Music: distinct bars ${kinds.length}/${nb} · longest verbatim loop ${best.k} bars · ${sets.size} section orchestration(s) · stereo width ${widthDb.toFixed(0)} dB · following the picture: ${nHit} accent(s)${nameM ? ', motif on the product name' : ''}`));
   }
   // ---- Checks: each layer's share of perceived loudness, how much is audible on phone speakers, how many layers sound at once (the Agent can't hear, so it judges the mix by these numbers) ----
   // Perceived loudness: filter out below 150Hz before measuring energy (the ear is insensitive to lows; raw energy would always make kick and bass "the loudest")
@@ -580,19 +581,19 @@ export function renderPlan(plan, o = {}) {
     return { name: b.name, share: t2 ? a / t2 : 0 };
   });
   for (const x of layers) {
-    if (x.share > 0.5 && layers.length > 2) warnings.push(`"${x.name}"在它出现的段落里占了听感响度的 ${(x.share * 100).toFixed(0)}%，盖住了其他层：把它的 gain 调低`);
-    if (x.share < 0.01) warnings.push(`"${x.name}"在它出现的段落里几乎听不到（占 ${(x.share * 100).toFixed(1)}%）：调高 gain，或者删掉这一层`);
+    if (x.share > 0.5 && layers.length > 2) warnings.push(M(`"${x.name}"在它出现的段落里占了听感响度的 ${(x.share * 100).toFixed(0)}%，盖住了其他层：把它的 gain 调低`, `"${x.name}" takes ${(x.share * 100).toFixed(0)}% of the perceived loudness where it plays and covers the other layers: lower its gain`));
+    if (x.share < 0.01) warnings.push(M(`"${x.name}"在它出现的段落里几乎听不到（占 ${(x.share * 100).toFixed(1)}%）：调高 gain，或者删掉这一层`, `"${x.name}" is almost inaudible where it plays (${(x.share * 100).toFixed(1)}%): raise its gain, or remove the layer`));
   }
   // Phone speakers: how many dB the energy above 150Hz is below the full band (phone speakers can't play lower). Films approved in earlier reviews were about -3 to -5 dB
   const energy = (x) => { let s = 0; for (let i = 0; i < x.length; i += 4) s += x[i] * x[i]; return s; };
   const mono = new Float32Array(n); for (let i = 0; i < n; i++) mono[i] = (L[i] + R[i]) / 2;
   const phoneDb = 10 * Math.log10((energy(svf(mono, 150, 0.7, 'hp')) + 1e-12) / (energy(mono) + 1e-12));
-  if (phoneDb < -8) warnings.push(`手机外放只听得到 ${phoneDb.toFixed(1)} dB（150Hz 以上比全频段低这么多；正常约 -3 ~ -5）：低音太重——减底鼓 / 贝斯 / 低音铺底，或加中音区的层`);
+  if (phoneDb < -8) warnings.push(M(`手机外放只听得到 ${phoneDb.toFixed(1)} dB（150Hz 以上比全频段低这么多；正常约 -3 ~ -5）：低音太重——减底鼓 / 贝斯 / 低音铺底，或加中音区的层`, `Phone speakers get only ${phoneDb.toFixed(1)} dB (energy above 150Hz vs the full band; normal is about -3 to -5): too much low end — cut the kick / bass / low pad, or add mid-range layers`));
   const bands = { phoneDb };
   // Layers sounding at once (each section counted by its intensity and name — layers with in only count in their sections)
   const crowd = new Set();
-  for (const sct of secs) { const t0 = sct.at + 1e-3, mel = (sc.parts || []).filter((p) => partOn(p, t0) && !(p.play === 'drum' || DRUMS.has(p.synth))); const k = sct.name || `强度 ${sct.energy}`; if (mel.length > 5 && !crowd.has(k)) { crowd.add(k); warnings.push(`"${k}"段同时有 ${mel.length} 层有音高的乐器：太挤、会糊——最多 4–5 层`); } }
-  return { L, R, leveled: lev, info: { underDb, sfxDropped, hasMusic, sound: (o.palette && o.palette.name) || DEFAULT_PALETTE.name, sfxUsed: sx.used, name: hasMusic ? sc.name || '乐谱' : '（不要配乐）', key: key.name, chords: [...progs.values()].map((P) => P.L.map((x) => x.c.name + (x.bars > 1 ? `×${x.bars}` : '')).join(' ')).join(' / '), layers, bands, warnings, sheet } };
+  for (const sct of secs) { const t0 = sct.at + 1e-3, mel = (sc.parts || []).filter((p) => partOn(p, t0) && !(p.play === 'drum' || DRUMS.has(p.synth))); const k = sct.name || M(`强度 ${sct.energy}`, `intensity ${sct.energy}`); if (mel.length > 5 && !crowd.has(k)) { crowd.add(k); warnings.push(M(`"${k}"段同时有 ${mel.length} 层有音高的乐器：太挤、会糊——最多 4–5 层`, `Section "${k}" has ${mel.length} pitched layers at once: too crowded, it will blur — 4–5 at most`)); } }
+  return { L, R, leveled: lev, info: { underDb, sfxDropped, hasMusic, sound: (o.palette && o.palette.name) || DEFAULT_PALETTE.name, sfxUsed: sx.used, name: hasMusic ? sc.name || M('乐谱', 'score') : M('（不要配乐）', '(no music)'), key: key.name, chords: [...progs.values()].map((P) => P.L.map((x) => x.c.name + (x.bars > 1 ? `×${x.bars}` : '')).join(' ')).join(' / '), layers, bands, warnings, sheet } };
 }
 export function writeWav(file, L, R) {
   const n = L.length, buf = Buffer.alloc(44 + n * 4);
@@ -625,7 +626,7 @@ if (isMain) {
   const { L, R, info } = renderPlan(plan, { score, palette });
   const out = arg('out', 'sound-demo.wav');
   writeWav(out, L, R);
-  console.log(`试听：${out}（声音设计：${info.sound}；配乐：${info.name}）`);
-  console.log(`  用到的声音：${Object.entries(info.sfxUsed).map(([k, v]) => `${k}×${v}`).join('，')}；手机外放 ${info.bands.phoneDb.toFixed(1)} dB`);
+  console.log(M(`试听：${out}（声音设计：${info.sound}；配乐：${info.name}）`, `Audition: ${out} (sound design: ${info.sound}; music: ${info.name})`));
+  console.log(M(`  用到的声音：${Object.entries(info.sfxUsed).map(([k, v]) => `${k}×${v}`).join('，')}；手机外放 ${info.bands.phoneDb.toFixed(1)} dB`, `  Sounds used: ${Object.entries(info.sfxUsed).map(([k, v]) => `${k}×${v}`).join(', ')}; phone speakers ${info.bands.phoneDb.toFixed(1)} dB`));
   for (const w of info.warnings) console.log('  ! ' + w);
 }
