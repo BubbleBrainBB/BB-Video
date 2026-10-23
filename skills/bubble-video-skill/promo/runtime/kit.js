@@ -63,7 +63,7 @@
   P.kit.register = (name, def) => { KITS[name] = def; };
   P.kit.theme = (name) => { if (!KITS[name]) throw new Error(`没有这种风格：${name}`); return KITS[name].theme; };
   // Ground: some styles aren't tied to one ground colour (launch can be dark, light or brand colour); whoever makes the film picks it for the product.
-  //   P.kit.ground('launch', 'light' | 'dark' | 'brand', { brand: '#FF5A1F', accent }) → full theme (hand-written films pass it to compose; the quick version writes the film's ground / brand)
+  //   P.kit.ground('launch', 'light' | 'dark' | 'brand', { brand: '#RRGGBB', accent }) → full theme (hand-written films pass it to compose; the quick version writes the film's ground / brand)
   P.kit.ground = (name, ground, o = {}) => { const k = KITS[name]; if (!k) throw new Error(`没有这种风格：${name}`); if (!k.grounds) return k.theme; const g = k.grounds(ground, o); if (!g) throw new Error(`${name} 的底色只能是 ${k.groundNames.join(' / ')}：${ground}`); return { ...k.theme, ...g, fonts: { ...k.theme.fonts, ...(g.fonts || {}) } }; };
   P.kit.list = () => Object.keys(KITS);
 

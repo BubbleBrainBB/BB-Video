@@ -200,7 +200,8 @@
       this.B = 60 / this.bpm;
       this.offset = o.offset ?? 0;
       this.duration = o.duration;
-      this.theme = { bg: '#0F0E0C', fg: '#F2EEE6', muted: '#8a8375', accent: '#D9B37A', paper: '#F4F1EA', ink: '#17150F', ...(o.theme || {}) };
+      // no theme given: the launch style's light ground (same as P.kit.ground('launch', 'light')); dark and brand grounds are chosen per product
+      this.theme = { bg: '#F6F5F1', fg: '#141414', muted: '#6B665E', accent: '#2F5BEA', paper: '#FFFFFF', ink: '#141414', ...(o.theme || {}) };
       this.theme.fonts = { display: 'Inter, sans-serif', serif: 'Georgia, serif', sans: 'Inter, -apple-system, "PingFang SC", sans-serif', script: 'cursive', ...((o.theme || {}).fonts || {}) };
       this.fns = [];
       this.sfxList = [];
