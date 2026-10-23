@@ -69,6 +69,14 @@ async function prepareScore(plan) {
 const NARRATION = path.join(proj, 'audio', 'narration.m4a');
 const tlLines = () => { try { return JSON.parse(fs.readFileSync(path.join(proj, 'timeline.json'), 'utf8')).lines || []; } catch { return []; } };
 const hasVoice = () => fs.existsSync(NARRATION) && tlLines().length > 0;
+// The voice's colour: script.json "voice_fx": a preset or an ffmpeg audio filter chain. optical = a 1930s optical soundtrack (narrow band,
+//   pressed hard, a little saturated); radio = an old radio set; phone = a telephone line
+const VOICE_FX = {
+  optical: 'highpass=f=280,lowpass=f=3600,acompressor=threshold=-20dB:ratio=4:attack=4:release=90:makeup=4,asoftclip=type=tanh,volume=-1dB',
+  radio: 'highpass=f=400,lowpass=f=3000,acompressor=threshold=-18dB:ratio=6:attack=3:release=60:makeup=5,asoftclip=type=atan',
+  phone: 'highpass=f=500,lowpass=f=2800,acompressor=threshold=-16dB:ratio=5:attack=3:release=50:makeup=4',
+};
+const voiceFx = () => { try { const v = JSON.parse(fs.readFileSync(path.join(proj, 'script.json'), 'utf8')).voice_fx; return v ? VOICE_FX[v] ?? String(v) : ''; } catch { return ''; } };
 // Spans where someone is speaking (count as "something happening" in the dead-air check); the cover before the first line (up to 2.5 s) is the title being read, so it counts too — a longer silence is still reported
 const speechSpans = () => { const L = tlLines().filter((l) => !l.silence && l.end > l.start).map((l) => [l.start, l.end]); return L.length ? [[0, Math.min(L[0][0], 2.5)], ...L] : L; };
 const play = (plan, duration, voice) => renderPlan({ ...withMusic(plan), duration }, { score: SCORE, palette: PALETTE, voice });
@@ -301,7 +309,7 @@ async function buildAudio(page, comp, tmp) {
   // Mix: narration (padded with silence if too short) + score / background music / the user's own music file
   const out = path.join(tmp, 'mix.wav'), inputs = [], chains = [];
   let k = 0;
-  if (voice) { inputs.push('-i', NARRATION); chains.push(`[${k++}:a]aresample=${SR},apad=whole_dur=${dur}[v]`); }
+  if (voice) { inputs.push('-i', NARRATION); chains.push(`[${k++}:a]aresample=${SR},${voiceFx() ? voiceFx() + ',' : ''}apad=whole_dur=${dur}[v]`); }
   if (music) { inputs.push('-i', music); chains.push(`[${k++}:a]aresample=${SR},apad=whole_dur=${dur}[m]`); }
   else if (opt('bgm')) {
     inputs.push('-stream_loop', '-1', '-t', String(dur), '-i', path.resolve(opt('bgm')));
@@ -400,7 +408,8 @@ async function popScan(file, fps, from, cuts, acts, appears = [], voice = false,
     const tA = from + (i + 1) / fps;
     const atCut = cuts.some((c) => Math.abs(c - tA) < 2.5 / fps) || appears.some((c) => tA - c > -1.5 / fps && tA - c < 3.5 / fps) || trans.some(([a, b]) => tA > a - 1.5 / fps && tA < b + 1.5 / fps); // Don't report registered hard cuts, intentional appearances (F.appear), or whole transitions (F.transition)
     if (!atCut && d[i] > 3 * Math.max(d[i - 1], d[i + 1], 0.3) && d[i] > 4) hits.push(M(`${tA.toFixed(2)}s 画面突然跳变（差异 ${d[i].toFixed(1)}，前后 ${Math.max(d[i - 1], d[i + 1]).toFixed(1)}）`, `${tA.toFixed(2)}s sudden jump (difference ${d[i].toFixed(1)}, around it ${Math.max(d[i - 1], d[i + 1]).toFixed(1)})`));
-    if (Math.min(d[i - 1], d[i]) > 4 && diff(i - 1, i + 1) < 0.35 * Math.min(d[i - 1], d[i])) hits.push(M(`${(from + i / fps).toFixed(2)}s 闪了一帧（这一帧和前后都不同，前后两帧却很像）`, `${(from + i / fps).toFixed(2)}s one-frame flash (this frame differs from both neighbours, which look alike)`));
+    const inTrans = trans.some(([a, b]) => tA > a - 1.5 / fps && tA < b + 1.5 / fps);   // an iris / wipe registered as a transition is meant to change fast
+    if (!inTrans && Math.min(d[i - 1], d[i]) > 4 && diff(i - 1, i + 1) < 0.35 * Math.min(d[i - 1], d[i])) hits.push(M(`${(from + i / fps).toFixed(2)}s 闪了一帧（这一帧和前后都不同，前后两帧却很像）`, `${(from + i / fps).toFixed(2)}s one-frame flash (this frame differs from both neighbours, which look alike)`));
   }
   if (acts) acts = { ...acts, speech: voice ? speechSpans() : [] };
   const gapWhy = voice ? M('旁白停下来的这一段：', 'narration paused: ') : '';
@@ -486,7 +495,9 @@ async function infoDensity(first, comp, issues) {
   if (!scenes.length && pg.rhythm && pg.rhythm.length >= 2) scenes = pg.rhythm.filter((r) => r.kind !== 'end').map((r) => ({ a: r.from, b: r.to, name: String(r.scene), role: r.role }));
   // Look line by line of narration (explainers, narrated promos); without narration, scene by scene. Skip the opening line / scene (hook), the drop (the most important line, may be big type), the end card, and anything under 1.5 s
   const byLine = pg.lines.length > 0, sum = [];
-  const units = (byLine ? pg.lines.map((l, i) => ({ ...l, i })) : scenes.map((x, i) => ({ ...x, i }))).filter((u) => u.i > 0 && u.role !== 'drop' && u.a < body - 0.5 && Math.min(u.b, body) - u.a >= 1.5);
+  // a narrated film marks its turn / question card with F.scene(a, b, { role: 'drop' }): the line under it may be words only
+  const dropAt = (t) => pg.scenes.some((x) => x.role === 'drop' && t >= x.a && t < x.b);
+  const units = (byLine ? pg.lines.map((l, i) => ({ ...l, i, role: dropAt((l.a + l.b) / 2) ? 'drop' : l.role })) : scenes.map((x, i) => ({ ...x, i }))).filter((u) => u.i > 0 && u.role !== 'drop' && u.a < body - 0.5 && Math.min(u.b, body) - u.a >= 1.5);
   if (units.length) {
     const step = 0.25, ts = units.map((u) => { const a = u.a + 0.15, b = Math.min(u.b, body) - 0.15, n = Math.max(3, Math.floor((b - a) / step) + 1); return Array.from({ length: n }, (_, k) => Math.round((a + ((b - a) * k) / (n - 1)) * 1000) / 1000); });
     const seen = (await first.eval(`window.__infoAt(${JSON.stringify(ts.flat())})`)).result.value;
@@ -824,7 +835,7 @@ async function main() {
     if (flag('stills') || flag('sheet') || flag('strip')) {
       fs.mkdirSync(review, { recursive: true });
       let times;
-      if (flag('stills')) times = opt('stills').split(',').map(Number);
+      if (flag('stills') && typeof opt('stills') === 'string') times = opt('stills').split(',').map(Number);   // bare --stills = one still per line, like --sheet
       else if (flag('strip')) {
         let [a, b, n = 8] = opt('strip').split(',').map(Number);
         if (!(b > a) || n <= 1) { b = a; n = 1; }   // A single frame: --strip 12.6,12.6,1 or --strip 12.6,13,1
@@ -836,7 +847,7 @@ async function main() {
         // Frames that fall inside a transition (line end + 0.3 s often lands right in a scene-change wedge / big circle): take the frame just before the transition instead, to see how the scene ends
         const tr = (await first.eval('window.__transitions ? window.__transitions() : []')).result.value || [], cs = (await first.eval('window.__cuts ? window.__cuts() : []')).result.value || [];
         const wins = [...tr, ...cs.filter((c) => !tr.some(([a, b]) => c >= a && c <= b)).map((c) => [c - 0.3, c + 0.3])];
-        times = times.map((t) => { const w = wins.find(([a, b]) => t > a - 0.02 && t < b + 0.02); return w ? Math.max(0, w[0] - 0.05) : t; });
+        times = times.map((t) => { for (let k = 0; k < 8; k++) { const w = wins.find(([a, b]) => t > a - 0.02 && t < b + 0.02); if (!w) break; t = Math.max(0, w[0] - 0.05); } return t; });   // back-to-back transitions (an iris out then in): keep stepping back
       }
       const sheetScale = flag('sheet') ? 0.25 : flag('strip') ? 0.3 : 1;
       const page = sheetScale === scale ? first : await openPage(cdp, sheetScale);
@@ -877,11 +888,14 @@ async function main() {
     for (let i = 1; i < workers; i++) pages.push(await openPage(cdp, scale));
     let doneFrames = 0, lastPct = -1;
     // Motion blur: N subframes per frame spread over a 180° shutter (half a frame interval), merged into one frame by ffmpeg's tmix. On by default for final promo videos (6), off otherwise
-    const N = Math.max(1, Math.round(Number(opt('blur', draft || !plan0 ? 1 : 6)))), SHUTTER = 0.5;
+    // a style may set its own default (F.blurBase: 1 for slow archive pushes); --blur on the command line wins
+    const blurBase = (await first.eval('window.__blurBase ? window.__blurBase() : null')).result.value, blurGiven = args.includes('--blur');
+    const N = Math.max(1, Math.round(Number(blurGiven ? opt('blur') : draft || !plan0 ? 1 : blurBase ?? 6))), SHUTTER = 0.5;
+    const spansOn = !draft && !(blurGiven && N === 1);   // F.blur spans still apply when the style's base is 1
     const cuts = (await first.eval('window.__cuts ? window.__cuts() : []')).result.value || [];
     // Very fast moves (cube transitions, whip pans, hard push-ins) show separate ghost streaks with 6: spans registered with F.blur(start, end, count) use more subframes
     const blurs = (await first.eval('window.__blurs ? window.__blurs() : []')).result.value || [];
-    const nAt = (f) => (N === 1 ? 1 : blurs.reduce((m, b) => (f / fps >= b[0] && f / fps < b[1] ? Math.max(m, b[2]) : m), N));
+    const nAt = (f) => (!spansOn ? N : blurs.reduce((m, b) => (f / fps >= b[0] && f / fps < b[1] ? Math.max(m, b[2]) : m), N));
     const posterAt = flag('poster') ? (await first.eval('window.__coverAt')).result.value ?? null : null;
     const subTimes = (f, n) => {
       const tc = f / fps;
@@ -979,6 +993,21 @@ async function main() {
       const board = path.join(outDir, opt('aspect') ? nameFor('board', null, 'png') : 'board.png');   // The portrait contact sheet gets a suffix so it doesn't overwrite the landscape one
       const v = await first.snapshot(board);
       if (v) console.log(`${v.label}${M('：', ': ')}${board} (${v.w}×${v.h})`);
+      // Subtitles as a file (platforms want a sidecar .srt; the burned-in captions stay in the picture)
+      const caps = (await first.eval('window.__captions ? window.__captions() : []')).result.value || [];
+      if (caps.length) {
+        const ts = (s) => { const ms = Math.round(s * 1000), h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, sec = Math.floor(ms / 1000) % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`; };
+        const srt = path.join(outDir, nameFor('captions', plan0, 'srt'));
+        fs.writeFileSync(srt, caps.map((c, i) => `${i + 1}\n${ts(c.start)} --> ${ts(c.end)}\n${c.text}\n`).join('\n'));
+        console.log(M(`字幕文件：${srt}`, `Subtitles: ${srt}`));
+      }
+      // Third-party assets shown in the film (F.credit / photos fetched with footage.mjs): source and licence of each, for the delivery
+      const credits = (await first.eval('window.__credits ? window.__credits() : []')).result.value || [];
+      if (credits.length) {
+        const cf = path.join(outDir, 'CREDITS.txt');
+        fs.writeFileSync(cf, credits.map((c) => [c.title, c.author && M(`作者：${c.author}`, `Author: ${c.author}`), c.date, c.licence && M(`许可：${c.licence}`, `Licence: ${c.licence}`), c.url].filter(Boolean).join('\n')).join('\n\n') + '\n');
+        console.log(M(`素材来源：${cf}（${credits.length} 项）`, `Credits: ${cf} (${credits.length})`));
+      }
     }
   } finally {
     await close();

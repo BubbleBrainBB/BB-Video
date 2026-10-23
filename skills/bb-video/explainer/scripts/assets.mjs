@@ -36,7 +36,7 @@ const cache = fs.existsSync(cachePath) ? JSON.parse(fs.readFileSync(cachePath, '
 const stamp = (f, extra) => { const st = fs.statSync(f); return `${st.size}|${st.mtimeMs}|${JSON.stringify(extra || {})}`; };
 
 const manifest = { images: {}, clips: {} };
-const files = fs.readdirSync(srcDir).filter((f) => !f.startsWith('.'));
+const files = fs.readdirSync(srcDir).filter((f) => !f.startsWith('.') && !f.endsWith('.json'));   // <name>.json = the file's credit (footage.mjs), not media
 const clipsJson = path.join(dir, 'clips.json');
 const clipDefs = fs.existsSync(clipsJson) ? JSON.parse(fs.readFileSync(clipsJson, 'utf8')) : {};
 const usedByDefs = new Set(Object.values(clipDefs).map((d) => d.src));
@@ -56,6 +56,9 @@ const names = jobs.map((j) => j.name);
 const dup = names.filter((n, i) => names.indexOf(n) !== i);
 if (dup.length) { console.error(`Duplicate media names: ${[...new Set(dup)].join(', ')} (an image and a video can't share a name)`); process.exit(1); }
 
+// A sidecar assets/src/<name>.json ({ title, author, licence, url, date, source }, written by footage.mjs or by hand) goes into the manifest as
+//   credit: styles that show archive material put it on screen as a source tag, and the render writes it to out/CREDITS.txt
+const creditOf = (name) => { const f = path.join(srcDir, `${name}.json`); try { return fs.existsSync(f) ? { credit: JSON.parse(fs.readFileSync(f, 'utf8')) } : {}; } catch { console.log(`  ${name}.json is not valid JSON (ignored)`); return {}; } };
 let made = 0;
 for (const j of jobs) {
   const file = path.join(srcDir, j.src);
@@ -70,7 +73,7 @@ for (const j of jobs) {
       console.log(`  image ${j.name}`);
     }
     const o = probe(out);
-    manifest.images[j.name] = { w: o.w, h: o.h, file: rel };
+    manifest.images[j.name] = { w: o.w, h: o.h, file: rel, ...creditOf(j.name) };
     cache[j.name] = { key };
   } else {
     const outDir = path.join(dir, 'clips', j.name);
@@ -85,7 +88,7 @@ for (const j of jobs) {
     }
     const frames = fs.readdirSync(outDir).filter((f) => f.endsWith('.jpg')).length;
     const o = probe(path.join(outDir, '0001.jpg'));
-    manifest.clips[j.name] = { frames, fps: FPS, w: o.w, h: o.h };
+    manifest.clips[j.name] = { frames, fps: FPS, w: o.w, h: o.h, ...creditOf(j.name) };
     if (frames > FPS * 90) console.log(`  note: video ${j.name} is ${(frames / FPS).toFixed(0)} s long and its extracted frames take a lot of space; if you only use part of it, set from / dur in clips.json`);
     cache[j.name] = { key };
   }

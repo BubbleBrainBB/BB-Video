@@ -229,6 +229,8 @@ Pacing: `PROMO.kit.pace(style)` = `{ lead (how early it starts to appear), hold 
 
 Toy 3D (`toy3d`) is three-dimensional (three.js) and doesn't implement the common interface's moves yet: hand-written only (`await PROMO.toy3d(F)`, `styles/toy3d/STYLE.md`); `--quick` fails with an error, and explainers use the style's own `styles/toy3d/explain.html`.
 
+Old newsreel (`newsreel`) has no adapter yet either: hand-written only (`PROMO.newsreel(F, opt)`, `styles/newsreel/STYLE.md`), with its own `styles/newsreel/index.html` (promo) and `explain.html` (narrated report).
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

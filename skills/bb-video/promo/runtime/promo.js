@@ -102,13 +102,16 @@
     const fps = o.fps ?? 30, sr = F.stage.getBoundingClientRect(), W = F.W, H = F.H, A0 = W * H, TH = { mov: 0.0008, peak: 0.004, abrupt: 0.6, fast: 0.06, cam: 0.006, crowd: 16, ...(o.th || {}) };
     // Fast motion around hard cuts and inside whip / transition blur windows (registered by F.blur) is by design: not counted
     const cuts = [...new Set(F.cuts || [])], blurs = F.blurs || [], nearCut = (f) => cuts.some((c) => Math.abs(c - f / fps) < 2.5 / fps) || blurs.some(([a, b]) => f / fps > a - 2 / fps && f / fps < b + 2 / fps);
-    const els = [...MOVERS].filter((e) => e !== F.stage && F.stage.contains(e) && e.dataset.motion !== 'skip');   // texture layers (grain, noise) are marked data-motion="skip"
+    const els = [...MOVERS].filter((e) => e !== F.stage && F.stage.contains(e) && e.dataset.motion !== 'skip' && e.dataset.motion !== 'texture');   // texture layers (grain, noise) are marked data-motion="skip"
+    // data-motion="texture": the element's own movement is film texture (gate weave, camera shake); measure what's inside it as if it stood still
+    const tex = [...F.stage.querySelectorAll('[data-motion="texture"]')];
     const n = Math.floor(F.duration * fps), tr = els.map(() => new Array(n).fill(null)), ops = els.map(() => new Array(n).fill(null));   // ops: opacity recorded separately (frames at 0 too, so flicker can be measured)
     const effOp = (e) => { let v = 1; for (let m = e; m && m !== F.stage; m = m.parentElement) { if (m.style.display === 'none') return 0; const x = m.style.opacity; if (x !== '') v *= +x; } return v; };
     // Parts clipped by an ancestor are invisible: find each element's nearest overflow-clipping ancestor once, and measure only the visible area per frame (a full-page screenshot scrolling in a window is not a "camera")
     const clipAnc = els.map((e) => { for (let m = e.parentElement; m && m !== F.stage; m = m.parentElement) { const cs = getComputedStyle(m); if (cs.overflow !== 'visible' || cs.clipPath !== 'none') return m; } return null; });
     for (let i = 0; i < n; i++) {
       F.render(i / fps);
+      const held = tex.map((e) => [e, e.style.transform]); for (const [e] of held) e.style.transform = 'none';
       const rc = new Map();
       for (let k = 0; k < els.length; k++) {
         const e = els[k], op = effOp(e); let r = e.getBoundingClientRect();
@@ -118,6 +121,7 @@
         if (op < 0.02 || ar < A0 * 0.0005) continue;
         tr[k][i] = [(r.left - sr.left + r.width / 2) / H, (r.top - sr.top + r.height / 2) / H, Math.sqrt(ar) / H, op, ar / A0];
       }
+      for (const [e, v] of held) e.style.transform = v;
     }
     // Moving with the parent (camera push-in, a whole window flying in) does not count as moving itself: convert each element to proportional coordinates inside its nearest animated ancestor (x, y, size divided by the parent's size);
     //   movement = change in proportional coordinates × the parent's current size. No such ancestor = measure against the frame directly (sc = 1)
@@ -160,7 +164,7 @@
           }
           for (let x = f; x <= g; x++) {
             // data-motion="snap": the style's signature move is a sudden snap (colour block shooting out, thick bar growing): not counted as too fast
-            if (!big && a[x][4] >= 0.02 && mp[x] > TH.fast && !nearCut(x) && els[k].dataset.motion !== 'snap') note('fast', x, k, M(`（每帧 ${Math.round(mp[x] * H)}px）`, ` (${Math.round(mp[x] * H)}px per frame)`));
+            if (!big && a[x][4] >= 0.02 && mp[x] > TH.fast && !nearCut(x) && els[k].dataset.motion !== 'snap' && els[k].dataset.motion !== 'exit') note('fast', x, k, M(`（每帧 ${Math.round(mp[x] * H)}px）`, ` (${Math.round(mp[x] * H)}px per frame)`));
             if (big && L >= 6 && x >= f + 2 && x <= g - 2 && !onHit(x) && m[x] - m[x - 1] > TH.cam && m[x] > 2 * m[x - 1] && !nearCut(x) && !nearCut(x - 1)) note('cam', x, k);   // only sudden acceleration counts (ease-out deceleration is by design; abrupt stops are caught by the linear-stop rule)   // camera: speed jumped by more than half in one frame (eased starts / stops never do)
           }
           f = g + 1;
@@ -257,6 +261,13 @@
     // How long the picture may hold completely still before the frame check calls it frozen (default 0.6 s). A style whose medium
     //   holds still between moves (pixel art steps in whole cells at 2–4 fps) raises it; the dead-air check (≥ 1.2 s) still applies
     stillMax(sec) { this._stillMax = Math.max(this._stillMax ?? 0.6, sec); }
+    // Default motion-blur sub-frames for the final render (promo default 6). A style whose camera only pushes slowly (archive photos, a newsreel)
+    //   sets 1: every frame is rendered once, which matters when the page is heavy (film damage). Spans registered with F.blur still get theirs
+    blurBase(n) { this._blurBase = n; }
+    // A third-party asset shown in the film (photo, footage, music, font): { title, author, licence, url, date, file }. The render writes
+    //   out/CREDITS.txt from these; a style's end card can roll them. Media from footage.mjs carry this in the manifest (credit), and photo
+    //   components register it themselves
+    credit(c) { if (!c) return; const L = (this.credits ??= []); const k = c.url || c.file || c.title; if (!L.some((x) => (x.url || x.file || x.title) === k)) L.push(c); }
     // Fast motion in this span: motion blur uses n sub-frames (the default 6 would stack into separate ghost copies)
     blur(a, b, n = 16) { (this.blurs ??= []).push([a, b, n]); }
     // At the start of each frame swap Math.random for a time-seeded version: random effects in animation libraries (scrambled text etc.) render the same every time
@@ -1136,7 +1147,7 @@
         if (voiced && o.captions !== false && !F.caps) captions(F, o.captions || {});
         if (voiced && o.chapters !== false) chapterBar(F, typeof o.chapters === 'object' ? o.chapters : {});
         // Hand-written films have no rhythm sheet (quick mode lays one out): build one from F.section (name as role), so --check still prints it and it is still compared with measurements after rendering
-        if (!window.__rhythm && (F.sections || []).length >= 2) {
+        if (!window.__rhythm && !voiced && (F.sections || []).length >= 2) {   // a narrated film is paced by its lines, not by a rhythm sheet: no comparison
           const S2 = [...F.sections].sort((a, b) => a.at - b.at);
           window.__rhythm = () => S2.map((x, i) => ({ scene: i + 1, from: Math.round(x.at * 100) / 100, to: Math.round(Math.min(S2[i + 1] ? S2[i + 1].at : F.duration, F.duration) * 100) / 100, role: x.name || ['quiet', 'build', 'build', 'burst'][Math.max(0, Math.min(3, x.energy))], energy: x.energy, kind: x.hit ? 'hit' : '', camera: '', music: [x.build ? M('蓄力', 'build') : '', x.stop ? M('急停', 'stop') : '', x.hit ? M('重击', 'hit') : ''].filter(Boolean).join(' ') }));
         }
@@ -1168,6 +1179,8 @@
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
         window.__stillMax = () => F._stillMax ?? 0.6;
+        window.__blurBase = () => F._blurBase ?? null;
+        window.__credits = () => F.credits || [];
         window.__transitions = () => [...(F.transitions || [])];
         window.__blurs = () => F.blurs || [];
         window.__motion = (o) => motionScan(F, o);

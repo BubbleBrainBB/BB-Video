@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 14 visual styles |
+| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 15 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -29,6 +29,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `pixel` | 8-bit game: sprites, game UI, chiptune |
 | `chat` | the story told in a messaging app: bubbles, typing, voice notes, cards |
 | `toy3d` | toy 3D: the product's real UI as physical slabs on a desk, a matte vinyl toy hopping across it (three.js) |
+| `newsreel` | a 1930s cinema newsreel: archive photos with source tags, supers and rubber stamps on scratchy black-and-white film, intertitles, a brass march |
 
 What it covers:
 
@@ -93,6 +94,7 @@ Each frame is a pure function of time, so renders are deterministic and parallel
 
 - **Narration text is sent to Microsoft's online speech service** (that is how edge-tts works). Don't put confidential material in the narration.
 - **Promo research opens the website you give it** in headless Chrome and takes screenshots (no logins, no downloads of site files).
+- **Archive photo search** (`footage.mjs`, used when a film needs real photos you didn't supply) sends the search words to the Wikimedia Commons API, and downloads only the files you approve, with their licence and credit.
 - Web fonts and libraries come from jsDelivr / unpkg at pinned versions. Nothing else goes over the network: no telemetry, no API keys, no accounts.
 - `render.mjs` opens a project's `index.html` in headless Chrome with local file access, which means running that project's code. Render only projects you or your agent made.
 

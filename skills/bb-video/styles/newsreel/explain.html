@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · newsreel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/special-elite@5/400.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/newsreel.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · old newsreel report (narrated). Hand-written PROMO.compose: every shot is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (and FACTS.md for a news film), the treatment (styles/newsreel/STYLE.md), then the material:
+//   the user's own first; otherwise licence-clean photos with promo/scripts/footage.mjs (tell the user what, from where, which licence, and wait for
+//   their OK), then explainer/scripts/assets.mjs. Each photo's credit becomes its source tag and a line in out/CREDITS.txt.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#000', fg: '#efe6d2', ink: '#efe6d2', muted: '#9d968a', accent: '#efe6d2', paper: '#15120e', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    // a fictional brand of your own: never a real broadcaster's name, ident or music
+    const R = PROMO.newsreel(F, { brand: { name: M('电光新闻', 'Lightplay Newsreel'), en: 'LIGHTPLAY NEWSREEL', issue: M('第 1 号', 'No. 1') }, tone: 'silver' });
+
+    // 0 · ident (the lead-in before the first line)
+    const t1 = s('l1') - 0.12;
+    R.ident({ at: 0, until: t1 });
+
+    // l1 · the headline card, then the first picture. One shot per line or per phrase: R.shot(a, b) is a hard cut with a splice tick.
+    const a1 = t1, m1 = (s('l1') + e('l1')) / 2, b1 = e('l1') + 0.3;
+    { const L = R.shot(a1, m1); R.card(L, { a: a1, b: m1, main: M('标题？', 'Title?'), sub: M('一句话', 'One line') }); }
+    // a photo: R.photo(L, 'key', { a, b, from: { s: 1, x: .5, y: .5 }, to: { s: 1.12, x: .55, y: .4 } }) — here a reconstruction stands in
+    { const L = R.shot(m1, b1, { bg: '#1a1712' }), D = R.diagram(L, { a: m1, b: b1 });
+      D.draw(D.path('M120,760 L1250,760'), m1 + 0.1, 0.8);
+      R.super(L, M('示意', 'Diagram'), { x: 120, y: 640, size: 60, a: m1 + 0.2, b: b1 });
+      R.rebuilt(m1, b1); }
+
+    // … one block per line. Period pieces: R.calendar (dates), R.stopwatch (a measured time), R.ledger (a price list / table),
+    //   R.verdict (seen / not seen), R.stamp (a verdict slammed on a photo). The turn of the story: an intertitle question with the music dropped,
+    //   and F.scene(a, b, { role: 'drop' }) so the information check knows it is meant to be words only.
+
+    // the end: 完, then the sources and the picture credits
+    const z = b1;
+    R.end({ a: z, b: F.duration, sub: M('电光新闻 · 为您报道', 'Lightplay Newsreel reporting'), sources: [M('资料来源写在这里（媒体 · 日期）', 'Sources here (outlet · date)')] });
+
+    F.section(0, 3, { hit: true, name: 'ident' });
+    F.section(a1, 1, { name: 'report' });
+    F.section(z, 3, { hit: true, name: 'end' });
+  },
+});
+</script></body></html>

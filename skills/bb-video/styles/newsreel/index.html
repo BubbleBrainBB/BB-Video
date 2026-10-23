@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · newsreel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/special-elite@5/400.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/newsreel.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · old newsreel (promo, no narration). Starting point: one of each piece, timed on the beat. Replace the content; read styles/newsreel/STYLE.md.
+// Photos: find licence-clean ones with promo/scripts/footage.mjs (ask the user before fetching), run assets.mjs, then R.photo(L, 'key', { a, b, from, to }).
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0, duration: 29, grain: false, chapters: false,
+  theme: { bg: '#000', fg: '#efe6d2', ink: '#efe6d2', muted: '#9d968a', accent: '#efe6d2', paper: '#15120e', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const R = PROMO.newsreel(F, { brand: { name: M('电光新闻', 'Lightplay Newsreel'), en: 'LIGHTPLAY NEWSREEL', issue: M('第 1 号', 'No. 1') }, tone: 'silver' });
+
+    R.ident({ at: 0, until: 3 });                                                        // ident: sunburst, brand, issue, fanfare
+    { const L = R.shot(3, 5); R.card(L, { a: 3, b: 5, main: M('标题？', 'Title?'), sub: M('一句话', 'One line') }); }   // intertitle
+
+    // a dated event: a tear-off calendar (each page stamped, torn off at the next one)
+    { const a = 5, b = 10.5, L = R.shot(a, b, { bg: '#14120f' });
+      R.calendar(L, { a, b, title: M('投产日期', 'Launch date'), pages: [{ label: '2020', at: a + 0.2 }, { label: '2022', at: a + 1.5 }, { label: '2024', at: a + 2.8 }, { label: '2026', at: a + 4.0 }], note: { text: M('一再延期', 'Delayed again and again'), at: a + 4.3 } }); }
+
+    // a measured number: the stopwatch
+    { const a = 10.5, b = 14, L = R.shot(a, b, { bg: '#14120f' });
+      R.stopwatch(L, { a, b, from: a + 0.5, to: a + 1.6, value: 0.81, label: M('0–100 公里/小时', '0–60 mph'), note: { text: M('厂家自测', "Maker's own timing"), at: a + 2.3 } }); }
+
+    // something no licensed footage shows: an animated diagram, labelled as a reconstruction
+    { const a = 14, b = 18, L = R.shot(a, b, { bg: '#1a1712' }), D = R.diagram(L, { a, b });
+      const ramp = D.path('M80,770 L700,770 Q980,770 1000,460'), car = D.g();
+      D.draw(ramp, a + 0.2, 1.0);
+      D.el('rect', { x: -60, y: -40, width: 120, height: 40, rx: 10, fill: '#d9d0bd', stroke: '#efe6d2', 'stroke-width': 4 }, car);
+      F.add((t) => { const q = PROMO.seg(t, a + 1.2, b - 0.8, PROMO.E.sine); car.setAttribute('transform', `translate(${(120 + q * 560).toFixed(1)},770)`); });
+      F.sfx(a + 1.2, 'whoosh', 0.3, { dur: 2 });
+      R.super(L, M('示意', 'Diagram'), { x: 80, y: 120, size: 56, a: a + 0.3, b });
+      R.super(L, M('坡道', 'Ramp'), { x: 1010, y: 420, size: 46, weight: 700, a: a + 1.3, b });
+      R.stamp(L, M('一跃', 'One hop'), { x: 760, y: 220, size: 70, rot: -5, a: a + 2.6, b });
+      R.rebuilt(a, b); }
+
+    // a table: the printed price list
+    { const a = 18, b = 22, L = R.shot(a, b);
+      R.ledger(L, { a, b, title: M('三种版本', 'Three versions'), cols: [{ label: M('版本', 'Model'), x: 110 }, { label: M('配置', 'Spec'), x: 520 }, { label: M('价格', 'Price'), x: 900 }],
+        rows: [{ at: a + 0.4, cells: ['A', M('标准', 'Base'), '$50,000'] }, { at: a + 1.0, cells: ['B', M('加强', 'Plus'), '$80,000'] }, { at: a + 1.6, cells: ['C', M('限量', 'Limited'), M('仅限邀请', 'By invitation')] }],
+        stamp: { text: M('售价未公布', 'Price not announced'), at: a + 2.5 } }); }
+
+    // a verdict: what was seen / what was not
+    { const a = 22, b = 25, L = R.shot(a, b, { bg: '#14120f' });
+      R.verdict(L, { a, b, left: { title: M('现场看到的', 'Seen'), items: [{ text: M('一次短跳', 'A short hop'), at: a + 0.4 }, { text: M('落回地面', 'A landing'), at: a + 1.1 }] },
+        right: { title: M('没有看到的', 'Not seen'), items: [{ text: M('持续飞行', 'Sustained flight'), at: a + 1.8 }] } }); }
+
+    R.end({ a: 25, b: 29, sub: M('电光新闻 · 为您报道', 'Lightplay Newsreel reporting') });
+
+    F.section(0, 3, { hit: true, name: 'hook' }); F.section(5, 2, { name: 'build' });   // ident + headline card = the hook
+    F.section(14, 3, { hit: true, name: 'burst' }); F.section(22, 1, { name: 'resolve' }); F.section(25, 3, { hit: true, name: 'end' });
+  },
+});
+</script></body></html>

@@ -30,6 +30,7 @@ Relative paths in this file are relative to this folder (`bb-video/promo/`).
 | shadow puppetry (皮影戏) `shadow` | `new.mjs <dir> --style shadow` | an oil-lamp-lit screen; carved translucent leather figures walk on in profile, speak, bow, ride, fall; red paper strips hang down with names and years; scenes change as the lamp dims and brightens | stories with people and conflict: history, folklore, founder stories; not for products that are mainly UI screenshots |
 | chat log `chat` | `new.mjs <dir> --style chat` | story and information all happen inside a messaging app: someone is typing, messages pop up and push upward, quote cards carry their source, a poem lights up line by line, chain games, polls, map routes, "X joined the group", unsent messages; the camera pushes in on one message while the rest dim | allusions and short history stories told as dialogue, explainers with many quotes (who said what at a glance), AI assistant / customer service / collaboration / social products |
 | toy 3D `toy3d` | `new.mjs <dir> --style toy3d` | on a dark warm desk, the product's real UI is a set of physical slabs, and a matte soft-vinyl toy (extruded from the logo, or a mascot) operates the UI with its body: landing = a click, hopping along a row = typing, pushing along = a drag; keys rise out of the slab and get stepped down; low, long-lens shots with very shallow focus, separate shots hard-cut on the beat (the toy mid-air across the cut); only what is being talked about glows. Toys are made in Blender when it's available, otherwise assembled in three.js. Hand-written only (no quick version) | software with a real UI and step-by-step operation (editors, boards, IDEs, apps), brands with a logo / mascot |
+| old newsreel `newsreel` | `new.mjs <dir> --style newsreel` | a 1930s cinema newsreel in a 1.37:1 gate: archive photos (licence-clean, credited, dated) with slow pushes, supers printed on the film, rubber stamps, intertitles, a tear-off calendar, a stopwatch, a printed price list, a drafting-grid diagram tagged as a reconstruction; grain, scratches, weave, flicker; brass march and a projector. Hand-written only (no quick version) | launches told as "today's big news", products with real photos, history and anniversaries |
 | pixel `pixel` | `new.mjs <dir> --style pixel` | a low-resolution game screen scaled up to full frame: dithered sky bands, parallax hills stepping back tile by tile, outlined little characters walking, jumping, talking, fighting; dialogue boxes typed out character by character, the menu's ▶ cursor, health bars filling notch by notch, level maps; block-dissolve / iris transitions; chiptune music | games, developer / productivity tools, AI products; step-by-step flows and choices; short stories with characters; tech and gaming history |
 | constructivism / Bauhaus `bauhaus` | `new.mjs <dir> --style bauhaus` | red and black on cream printing paper (Bauhaus yellow and blue as accents), big circles, thick bars and wedges driven diagonally into the frame, bold sans slogans set on a slant and slammed in one character at a time, things assembled from circles, squares and triangles, a red wedge sweeping across as the transition | manifesto-style launches, "what it's made of", processes and comparisons, design / architecture / industrial history, productivity tools |
 | hand-drawn whiteboard `whiteboard` | `new.mjs <dir> --style whiteboard [--quick]` | text written stroke by stroke on a whiteboard, key points circled in red pen, photos taped on, the camera panning across the board | education, tools, "explaining one idea clearly"; the explainer's board inside a promo (`references/kit.md`) |
@@ -41,7 +42,7 @@ When the user hasn't said, recommend one that fits the product's character (put 
 
 ### 1. New project, research
 ```bash
-node scripts/new.mjs videos/<short-english-name>                    # add --style origami / pop / op / cutout / ascii / shadow / bauhaus / pixel / chat / toy3d for that visual style (add --quick too for the quick version)
+node scripts/new.mjs videos/<short-english-name>                    # add --style origami / pop / op / cutout / ascii / shadow / bauhaus / pixel / chat / toy3d / newsreel for that visual style (add --quick too for the quick version)
 node scripts/capture.mjs videos/<name> --research <url>            # desktop
 node scripts/capture.mjs videos/<name> --research <url> --mobile   # mobile
 ```
@@ -72,6 +73,8 @@ node scripts/capture.mjs videos/<name> --only logo,hero  # only some
 ```
 Common ones: desktop first screen, full-page long shot (`fullpage`), mobile first screen and long shot (for portrait), logo (`clip`, 4× sharpness), key cards / charts (element screenshots), a clean homepage hero (`clean`).
 Afterwards look through them with Read: blank captures, wrong elements, anything covered by the nav bar.
+
+**Archive photos** (a launch told as news, history, the product's real hardware — when the user has none): `node scripts/footage.mjs videos/<name> search "<query>"` lists licence-clean files from Wikimedia Commons (CC0 / public domain / CC BY by default); tell the user what you want to fetch (title, source, licence, size), wait for their OK, then `fetch <n>` → `assets/src/` with a credit sidecar, and run `node ../explainer/scripts/assets.mjs videos/<name>`. Credits end up in `out/CREDITS.txt`.
 
 **When you can't capture it, or it isn't sharp** (sharpness from high to low, try in order; no step ever bypasses bot checks or logs into someone else's account):
 1. `capture.mjs` (headless Chrome, 2–4× sharpness) — sites with Cloudflare-style bot checks will block it: don't get around it, move to the next option.
@@ -118,7 +121,7 @@ node scripts/render.mjs videos/<name>                  # → out/video-16x9.mp4 
 node scripts/render.mjs videos/<name> --aspect 9:16    # → out/video-9x16.mp4 + cover-9x16.png
 ```
 The final render does automatically: motion blur (6 subframes per frame, no extra time on still frames; fast moves registered with `F.blur` get more), BT.709 colour, loudness -14 LUFS, dropped / flash frame checks; the quick version also **measures the rhythm**: planned energy and measured energy are printed side by side, with a comparison chart in `review/rhythm-<ratio>.png`; too flat, no hook, and fast cuts not where planned all get flagged.
-Rendering takes about 4–5× as long as without blur (45 s takes about 2.5 minutes); to just check the rhythm use `--draft` or `--blur 1`.
+Rendering takes about 4–5× as long as without blur (45 s takes about 2.5 minutes); to just check the rhythm use `--draft` or `--blur 1`. Every final render also writes `out/captions-<ratio>.srt` when the film has captions, and `out/CREDITS.txt` when it registered picture credits (`F.credit`).
 
 ### 8. Review (the judge ≠ the maker) — on drafts, 2 rounds by default
 First clear every `--check` warning (on the beat, portrait safe zone, unreadable on a phone, silent on a phone speaker… don't leave these for the reviewers to find).

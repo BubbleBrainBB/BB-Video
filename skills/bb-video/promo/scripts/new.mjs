@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // new.mjs: create a new promo project
-// Usage: node new.mjs <project dir> [--title name] [--style origami | pop | op | cutout | ascii | shadow | bauhaus | pixel | chat | toy3d] [--quick]
+// Usage: node new.mjs <project dir> [--title name] [--style origami | pop | op | cutout | ascii | shadow | bauhaus | pixel | chat | toy3d | newsreel] [--quick]
 //       --style: visual style (a folder name under styles/); omitted = the default launch motion. The style's index.html / sound.js replace the generic skeleton
 //       --quick: quick mode (use with --style): index.html becomes the "write a script, PROMO.film renders it" skeleton, fonts taken from the style (references/kit.md)
 //       node new.mjs <project dir> --update-lib     only refresh lib/ (after a runtime update)
@@ -22,7 +22,7 @@ fs.cpSync(path.join(skill, '..', 'core', 'runtime', 'core.js'), path.join(lib, '
 const BOARDS = { whiteboard: { files: ['whiteboard.js', 'whiteboard.css', 'media.js'], fonts: 'fonts.css' }, riso: { files: ['riso.js', 'riso.css', 'media.js'], fonts: 'fonts-riso.css' }, ink: { files: ['ink.js', 'ink.css', 'media.js'], fonts: 'fonts-ink.css' } };
 const boardStyle = opt('style', null) && BOARDS[opt('style')] ? opt('style') : Object.keys(BOARDS).find((k) => fs.existsSync(path.join(lib, `${k}.js`)));
 if (boardStyle) { const ert = path.join(skill, '..', 'explainer', 'runtime'); for (const f of BOARDS[boardStyle].files) fs.cpSync(path.join(ert, f), path.join(lib, f)); fs.cpSync(path.join(ert, BOARDS[boardStyle].fonts), path.join(lib, 'fonts.css')); }
-for (const f of ['promo.js', 'origami.js', 'pop.js', 'op.js', 'cutout.js', 'ascii.js', 'shadow.js', 'bauhaus.js', 'pixel.js', 'chat.js', 'toy3d.js', 'kit.js', 'formats.js']) fs.cpSync(path.join(skill, 'runtime', f), path.join(lib, f));
+for (const f of ['promo.js', 'origami.js', 'pop.js', 'op.js', 'cutout.js', 'ascii.js', 'shadow.js', 'bauhaus.js', 'pixel.js', 'chat.js', 'toy3d.js', 'newsreel.js', 'kit.js', 'formats.js']) fs.cpSync(path.join(skill, 'runtime', f), path.join(lib, f));
 if (args.includes('--update-lib')) { console.log(M('已刷新 ', 'Refreshed ') + lib); process.exit(0); }
 if (fs.existsSync(path.join(proj, 'index.html'))) { console.error(M('项目已存在（只想刷新运行时请加 --update-lib）', 'Project already exists (to refresh only the runtime, add --update-lib)')); process.exit(1); }
 const title = opt('title', path.basename(proj));
@@ -40,7 +40,9 @@ if (style && (format === 'kinetic' || (format === 'explain' && !ownExplain)) && 
 const fmtFile = format && (format === 'explain' && ownExplain ? path.join(STYLES, style, 'explain.html') : path.join(skill, 'templates', 'formats', format + '.html'));
 if (format && !style) { console.error(M('--quick 要和 --style 一起用：快速版也要先选一种风格', '--quick needs --style: quick mode also starts from a style')); process.exit(1); }
 if (format && !fs.existsSync(fmtFile)) { console.error(M(`快速版没有这种讲法：${format}（有：${fs.readdirSync(path.join(skill, 'templates', 'formats')).map((f) => f.replace('.html', '')).join(' / ')}）`, `Quick mode has no such format: ${format} (available: ${fs.readdirSync(path.join(skill, 'templates', 'formats')).map((f) => f.replace('.html', '')).join(' / ')})`)); process.exit(1); }
-for (const d of ['shots', 'research', 'review', 'out']) fs.mkdirSync(path.join(proj, d), { recursive: true });
+for (const d of ['shots', 'research', 'review', 'out', 'assets/src']) fs.mkdirSync(path.join(proj, d), { recursive: true });
+// the media manifest (photos / footage in assets/src/ → explainer/scripts/assets.mjs writes it; footage.mjs adds each file's credit)
+if (!fs.existsSync(path.join(proj, 'assets', 'manifest.js'))) fs.writeFileSync(path.join(proj, 'assets', 'manifest.js'), 'window.MEDIA_ASSETS = { images: {}, clips: {} };\n');
 for (const f of ['index.html', 'brief.md', 'shots.json', 'score.js', 'sound.js', ...(style && fs.existsSync(path.join(styleDir, 'toys.js')) ? ['toys.js'] : [])]) {   // toys.js: the toy3d parts list
   // Explainers (--explain) use the explainer brief template (sources / original text / facts / common knowledge / illustration / music), not the promo product fact sheet
   const src = f === 'brief.md' && explain ? path.join(skill, 'templates', 'project', 'brief-explain.md') : style && fs.existsSync(path.join(styleDir, f)) ? path.join(styleDir, f) : path.join(skill, 'templates', 'project', f);
@@ -71,7 +73,7 @@ if (explain) {
   // bgm: true = use the project's score.js as a music bed (ducks under the voice automatically); false = no music (see "Sound with narration" in promo/references/kit.md)
   // The style's explainer defaults (styles/<style>/explain.json: lead_in, default voice per language, bgm), e.g. shadow puppetry telling history defaults to a male voice and a longer lead-in
   const D = style && fs.existsSync(path.join(STYLES, style, 'explain.json')) ? JSON.parse(fs.readFileSync(path.join(STYLES, style, 'explain.json'), 'utf8')) : {}, lk = lang.toLowerCase().split('-')[0];
-  fs.writeFileSync(path.join(proj, 'script.json'), JSON.stringify({ voice: opt('voice', (D.voice && D.voice[lk]) || VOICES[lk] || VOICES.en), rate: '+0%', lead_in: D.lead_in ?? 0.8, gap: 0.35, tail: 1.5, bgm: D.bgm ?? true, lines: [{ id: 'l1', text: zh ? '在这里写第一句旁白。' : 'Write the first line of narration here.' }] }, null, 2) + '\n');
+  fs.writeFileSync(path.join(proj, 'script.json'), JSON.stringify({ voice: opt('voice', (D.voice && D.voice[lk]) || VOICES[lk] || VOICES.en), rate: '+0%', lead_in: D.lead_in ?? 0.8, ...(D.voice_fx ? { voice_fx: D.voice_fx } : {}), gap: 0.35, tail: 1.5, bgm: D.bgm ?? true, lines: [{ id: 'l1', text: zh ? '在这里写第一句旁白。' : 'Write the first line of narration here.' }] }, null, 2) + '\n');
   fs.writeFileSync(path.join(proj, 'timeline.js'), 'window.TIMELINE = {"duration": 5, "lines": [{"id": "l1", "text": "", "start": 0.8, "end": 3, "words": []}]};\n');
 }
 if (explain) {
