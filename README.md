@@ -54,7 +54,6 @@ git clone https://github.com/DylanDDeng/BubbleSkill.git
 cp -r BubbleSkill/skills/bubble-video-skill ~/.claude/skills/
 ```
 
-> Upgrading from `explainer-video`: it is now part of `bubble-video-skill` (the explainer styles live in `explainer/`). Remove the old `explainer-video` folder and install `bubble-video-skill`.
 
 ### Requirements
 

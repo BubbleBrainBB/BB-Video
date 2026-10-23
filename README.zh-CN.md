@@ -54,7 +54,6 @@ git clone https://github.com/DylanDDeng/BubbleSkill.git
 cp -r BubbleSkill/skills/bubble-video-skill ~/.claude/skills/
 ```
 
-> 从 `explainer-video` 升级：它现在是 `bubble-video-skill` 的一部分（讲解视频的几种风格在 `explainer/` 里）。删掉旧的 `explainer-video` 文件夹，装 `bubble-video-skill`。
 
 ### 需要
 
