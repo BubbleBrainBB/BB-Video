@@ -33,6 +33,16 @@ def ensure_edge_tts():
 
 ensure_edge_tts()
 import edge_tts  # noqa: E402
+import edge_tts.communicate as _communicate  # noqa: E402
+from edge_tts.constants import TRUSTED_CLIENT_TOKEN  # noqa: E402
+
+# Microsoft is moving Read Aloud from speech.platform.bing.com to api.msedgeservices.com, and the old
+# host now refuses many regions with a 403 (rany2/edge-tts#490, October 2026). The new host still takes
+# the legacy token, so point edge-tts there. EDGE_TTS_WSS_URL overrides it once edge-tts ships a fix.
+_communicate.WSS_URL = os.environ.get(
+    "EDGE_TTS_WSS_URL",
+    f"wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?Ocp-Apim-Subscription-Key={TRUSTED_CLIENT_TOKEN}",
+)
 
 
 def decode_pcm(mp3: Path) -> array:
