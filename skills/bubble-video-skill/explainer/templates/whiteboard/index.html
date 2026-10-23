@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="lib/katex/katex.min.css">
+<link rel="stylesheet" href="lib/whiteboard.css">
+<script src="lib/katex/katex.min.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/whiteboard.js"></script>
+<script src="lib/character.js"></script>
+<script src="characters.js"></script>
+<script src="lib/media.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+EV.composition({
+  audio: 'audio/narration.m4a',
+  build: async ({ T }) => {
+    const b = WB.board({ T, paper: 'plain', seed: '__SLUG__', lang: '__LANG__' });
+
+    // ===== Cover (first frame) =====
+    const cover = b.cover({ title: 'Write the {red:title} here', subtitle: 'A one-line subtitle' });
+    b.at(cover.end);
+
+    // ===== Shot 1: opening question =====
+    // Always take times from the timeline: T.start('id') / T.end('id') / T.word('id', 'some word')
+    b.at(T.start('l1'));
+    b.text('Write the opening question here', { x: b.W / 2, y: EV.L(420, 600), size: 88, align: 'center' });   // EV.L(landscape, portrait): positions for --aspect 9:16
+
+    return b;
+  },
+});
+</script>
+</body>
+</html>

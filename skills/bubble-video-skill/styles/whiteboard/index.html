@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>__TITLE__</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="lib/whiteboard.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/whiteboard.js"></script>
+<script src="lib/media.js"></script>   <!-- load after the board: it adds photo / image to the board -->
+<script src="lib/kit.js"></script>
+<script src="lib/formats.js"></script>
+</head><body><div id="stage"></div><script>
+// Promo · style: whiteboard (the explainer's board, set into a beat-cut promo). How to write it: the skill's styles/whiteboard/STYLE.md and promo/references/kit.md.
+// The shared moves S.word / S.line / S.shot / S.accent / S.wipe / S.end play out in this style's materials; for finer control, S.board() gives you the board itself (API in STYLE.md).
+// Every piece of on-screen text must be traceable to brief.md. For a faster start: node promo/scripts/new.mjs <dir> --style whiteboard --quick
+const { E } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 12, cover: 10, grain: false,
+  theme: PROMO.kit.theme('whiteboard'),
+  build: async (F) => {
+    const b = (n) => F.beat(n), S = PROMO.kit(F, 'whiteboard');
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(b(16), 1);
+    const L1 = F.layer('', 50);
+    S.bg(L1, { variant: 0 });
+    S.word(L1, { at: b(1), until: b(5) - S.lead, text: 'PRODUCT', y: F.H * 0.42, accent: true });
+    S.accent(L1, { at: b(1), until: b(5) - S.lead, x: F.W / 2, y: F.H * 0.42 });
+    S.line(L1, { at: b(5), text: 'One sentence about what it does.', y: F.H * 0.6 });
+    S.wipe({ cover: b(9), out: L1, index: 0 });
+    const L2 = F.layer('', 49);
+    S.bg(L2, { variant: 1 });
+    S.end(L2, { at: b(10), title: 'Product', tagline: 'The tagline', url: 'example.com' });
+  },
+});
+</script></body></html>

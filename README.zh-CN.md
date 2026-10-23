@@ -1,85 +1,102 @@
 # BubbleSkill
 
-用**纯代码**做视频的 Agent Skills——不用剪辑软件、不用动画库、不用素材库。
-每一帧都由 HTML + SVG 按时间画出来（画面是时间的纯函数），用无界面 Chrome 逐帧渲染，再用 ffmpeg 编码成视频。
+一个**用代码做视频**的 Agent 技能：不用剪辑软件，不用素材库。
+每一帧都是 HTML / SVG / canvas 画出来的、只由时间决定的画面，在无界面 Chrome 里逐帧渲染；配乐和音效用代码合成，最后由 ffmpeg 编码成 mp4。
 
 [English](README.md)
 
-> Skill 本身（SKILL.md、文档、代码注释）是英文写的，但完全支持制作中文视频：中文字幕、中文标点断句、中文字体、中文配音都处理好了，用中文提需求也能正常触发。
->
-> **视频语言跟着你提需求的语言走**：用中文说就做中文视频，用英文说就做英文视频；想要别的语言直接说明即可（比如"用中文讲解这个英文单词"）。
+## 技能
 
-## 包含的 Skills
-
-| Skill | 做什么 |
+| 技能 | 做什么 |
 |---|---|
-| [`explainer-video`](skills/explainer-video) | 带配音、字幕和配乐的知识讲解视频，两种画面风格：**手绘白板**和**孔版印刷**（杂志 / 报刊风） |
+| [`bubble-video-skill`](skills/bubble-video-skill) | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，14 种画面风格 |
 
-### explainer-video
+你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
-给 Agent 一个话题、一道题、一个单词或一个故事，它会写旁白、做分镜、配音、作画，最后渲染成 mp4。
+| 风格 | 样子 |
+|---|---|
+| `whiteboard` 白板 | 一块无限大的手绘白板：手写字、箭头、KaTeX 公式、会说话会指的卡通人物；结尾拉远成带编号的"知识地图" |
+| `riso` 孔版印刷 | 专色套印、网点、轻微错版，一章一页杂志 |
+| `ink` 水墨 | 手卷：笔触、印章、国画人物 |
+| `launch` 发布会动效 | 大字、产品界面，浅色 / 深色 / 品牌色舞台 |
+| `origami` 折纸 | 折痕、明暗，纸展开成下一个画面 |
+| `pop` 波普 | 网点、粗描边、漫画格 |
+| `op` 欧普 | 黑白错视图案在动（WebGL） |
+| `cutout` 剪纸 | 马蒂斯的剪纸拼贴 |
+| `ascii` 字符画 | ASCII 字符拼出的画面 |
+| `shadow` 皮影戏 | 刻花、透光的牛皮人物，油灯照着的幕布 |
+| `bauhaus` 构成主义 / 包豪斯 | 几何、三原色、斜排的大字 |
+| `pixel` 像素 | 8-bit 游戏：像素小人、游戏界面、芯片音乐 |
+| `chat` 聊天记录 | 在聊天软件里讲故事：气泡、正在输入、语音、卡片 |
+| `toy3d` 玩具三维 | 产品真实的界面变成桌上的立体平台，一个哑光软胶玩具在上面跳（three.js） |
 
-- **内容类型**：现象科普（"为什么天空是蓝的"）、题目讲解（数学 / 物理 / 化学题，可以直接给题目截图）、英文单词、概念讲解、典故和历史故事、做法教程、生活冷知识、新闻解读和数据类干货。
-- **两种风格**
-  - `whiteboard` 手绘白板：无限画布 + 镜头移动，手写文字、箭头、圈注、KaTeX 公式，还有会说话、会指东西、会换表情的卡通人物。
-  - `riso` 孔版印刷：专色叠印、网点、轻微的套色错位；一章一页杂志版面，印刷滚筒翻页。
-- **全部内置**：edge-tts 配音（带逐词时间轴）、跟着语音走的字幕、代码合成的背景音乐、图片和视频素材、封面帧、整片的"全貌图"。
-- **自动检查**：渲染之前先检查文字重叠、元素停留太短、超出画面等问题。
+能做什么：
+
+- **讲解**：现象（"天为什么是蓝的"）、解题（可以直接给题目截图）、单词、概念、历史故事和典故、操作教程、冷知识、新闻和数据。
+- **宣传片**：给一个网址，它先调研网站（文字、数字、颜色），截取素材，再做一支卡拍的宣传片，用产品真实的界面和品牌色。
+- **都是内置的**：edge-tts 配音（逐词时间）、字幕、代码合成的配乐和音效、封面、竖屏版本。
+- **自己检查**：渲染前查重叠、字没读完就消失、出画、画面上的事实在 brief 里查不到、信息太少、动效问题；渲染后查跳帧、闪一帧、空放（几秒只有音乐、画面上没有新东西）。
+- **跟着你的语言走**：用什么语言提要求，视频就用什么语言。中文和英文调得最好，其他语言用任意 [edge-tts 声音](https://github.com/rany2/edge-tts)。
 
 ## 安装
 
-用 [`skills`](https://github.com/vercel-labs/skills) 命令行工具安装（支持 Claude Code、Codex、Cursor、OpenCode 等几十种 Agent）：
+用 [`skills`](https://github.com/vercel-labs/skills) 命令（Claude Code、Codex、Cursor、OpenCode 等都能用）：
 
 ```bash
-npx skills add DylanDDeng/BubbleSkill                       # 交互式选择要装的 skill 和 Agent
-npx skills add DylanDDeng/BubbleSkill --skill explainer-video -a claude-code -g   # 直接全局装到 Claude Code
+npx skills add DylanDDeng/BubbleSkill                                          # 交互式选择
+npx skills add DylanDDeng/BubbleSkill --skill bubble-video-skill -a claude-code -g   # 全局装到 Claude Code
 ```
 
-或者手动复制：
+或者自己拷文件夹：
 
 ```bash
 git clone https://github.com/DylanDDeng/BubbleSkill.git
-cp -r BubbleSkill/skills/explainer-video ~/.claude/skills/
+cp -r BubbleSkill/skills/bubble-video-skill ~/.claude/skills/
 ```
 
-### 运行环境
+> 从 `explainer-video` 升级：它现在是 `bubble-video-skill` 的一部分（讲解视频的几种风格在 `explainer/` 里）。删掉旧的 `explainer-video` 文件夹，装 `bubble-video-skill`。
 
-这个 skill **没有任何 npm 依赖**，需要：
+### 需要
+
+没有 npm 依赖。需要：
 
 - **Node.js 18+**
 - **Google Chrome** 或 Chromium（不在默认位置时设置 `CHROME_PATH`）
 - **ffmpeg**（在 `PATH` 里）
-- **Python 3** 和 **[edge-tts](https://github.com/rany2/edge-tts)**，用来配音（`pip install edge-tts`；没装时脚本会告诉你怎么建虚拟环境）
-- 联网：配音和网络字体需要联网（没网时字体会回退到本机字体）
+- **Python 3** 和 **[edge-tts](https://github.com/rany2/edge-tts)**（配音用，`pip install edge-tts`）
+- 联网：配音、网页字体，以及个别风格从 jsDelivr 加载的库（`toy3d` 用 three.js；GSAP / Matter.js 只在页面用到时加载）
+- 可选：[Blender](https://www.blender.org) 3.6+，给 `toy3d` 做吉祥物模型（没有就用 three.js 搭）
 
-## 怎么用
+## 用法
 
-直接对 Agent 说，例如：
+直接跟 Agent 说，比如：
 
-- "做一个白板动画：为什么天空是蓝的？"
+- "用白板动画讲一下：天为什么是蓝的？"
 - "把这道几何题做成讲解视频"（附上截图）
-- "做个短视频讲解单词 serendipity"
-- "做一个杂志风的新闻解读视频：鸡蛋为什么涨价？"
-- "萧何月下追韩信，做成白板动画"
+- "给 https://example.com 做一支发布视频，横屏竖屏都要"
+- "用皮影戏讲刘邦斩白蛇"
+- "用聊天记录风格讲一个历史典故"
 
-Agent 会先给你看旁白和分镜，确认后再配音、作画、渲染。成片在 `videos/<名字>/out/`：mp4、封面图和全貌图。也可以在浏览器里直接打开 `videos/<名字>/index.html` 预览、拖动进度条。
+Agent 会先给你看事实、旁白和分镜，再配音、画、渲染。成片在 `videos/<名字>/out/`（mp4、封面；白板和孔版还有一张全貌图）。用浏览器打开 `videos/<名字>/index.html` 可以预览、拖动进度。
 
 ## 原理
 
 ```
-script.json（旁白）──► tts.py ──► 配音 + 逐词时间轴
-index.html（作画代码，renderFrame(t)）──► render.mjs ──► Chrome 逐帧截图 ──► ffmpeg ──► mp4
-                                                   └─► 自动检查、字幕、背景音乐
+script.json（旁白）──► tts.py ──► 音频 + 逐词时间轴
+index.html（画画的代码，renderFrame(t)）──► render.mjs ──► Chrome 逐帧截图 ──► ffmpeg ──► mp4
+                                                     ├─► 自动检查、字幕、配乐 + 音效
+                                                     └─► 成片检查（跳帧、闪帧、空放）
 ```
 
-因为每一帧都是时间的纯函数，渲染结果是确定的、可以并行；Agent 也可以在渲染整片之前，先截任意时刻的画面检查。
+每一帧只由时间决定，所以渲染结果每次都一样、可以并行；Agent 也能在渲染整支片子之前，先看任意一个时刻的截图。
 
 ## 隐私与安全
 
-- **旁白文字会发送到微软的在线语音服务**（edge-tts 就是这样工作的），不要把机密内容写进旁白。
-- 网络字体从 jsDelivr / unpkg 下载，版本是固定的，只下载字体文件，不加载脚本。除此之外不联网：没有数据上报，不需要 API Key，不需要注册账号。
-- `render.mjs` 会用无界面 Chrome 打开项目的 `index.html`，并允许读取本地文件，等于运行这个项目里的代码。只渲染你自己或你的 Agent 做的项目，和运行任何别的代码一样。
+- **旁白文字会发给微软的在线语音服务**（edge-tts 就是这样工作的）。不要把机密内容写进旁白。
+- **做宣传片时会用无界面 Chrome 打开你给的网站**并截图（不登录，不下载网站文件）。
+- 网页字体和库从 jsDelivr / unpkg 按固定版本加载。除此之外不联网：没有统计上报、不需要 API key、不需要账号。
+- `render.mjs` 会在无界面 Chrome 里打开项目的 `index.html`（可以读本地文件），也就是运行这个项目的代码。只渲染你自己或你的 Agent 做的项目。
 
 ## 许可
 
-[MIT](LICENSE)。打包的第三方代码：[KaTeX](https://katex.org)（MIT，见 `skills/explainer-video/runtime/katex/LICENSE`）。字体从公共 CDN 加载，遵循各自的许可（霞鹜文楷 LXGW WenKai、Excalifont、Noto Sans/Serif SC、Oswald，均为 SIL OFL 1.1）。
+[MIT](LICENSE)。附带的第三方代码：[KaTeX](https://katex.org)（MIT，见 `skills/bubble-video-skill/explainer/runtime/katex/LICENSE`）。从 CDN 加载、各自的许可：three.js（MIT）、GSAP（Standard "no charge" 许可）、Matter.js（MIT）；字体 霞鹜文楷、Excalifont、Noto Sans / Serif SC、Inter、Oswald 等（SIL OFL 1.1）。

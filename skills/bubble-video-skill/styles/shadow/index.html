@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Brush-feel kaishu (楷体) font: 霞鹜文楷 / LXGW WenKai (OFL) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/shadow.js"></script>
+</head><body><div id="stage"></div><script>
+// Shadow puppetry (皮影戏) style: how to write it is in the skill's styles/shadow/STYLE.md
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0.5, duration: 16, grain: false,
+  theme: { bg: '#140C07', fg: '#22140B', ink: '#22140B', paper: '#F3D9A4', accent: '#B5321F', muted: '#6B4A2A', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", serif', script: '"LXGW WenKai", serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), Y = PROMO.shadow(F), W = F.W;
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(F.duration - 4, 1);
+    const st = Y.stage(F.layer('', 1), {}), sc = st.screen;
+    Y.prop(sc, { kind: 'palace', x: W / 2, size: 420, at: b(1), depth: 0.6 });
+    Y.placard(sc, { text: '标题', at: b(2), until: b(12) });                       // every piece of text must be findable in brief.md
+    const a = Y.puppet(sc, { kind: 'emperor', x: W * 0.35, at: b(3), enter: 'left' });
+    const c = Y.puppet(sc, { kind: 'official', x: W * 0.65, at: b(4), enter: 'right', face: 'left' });
+    a.talk(b(6), 1.6); c.bow(b(8));
+    Y.endcard(F.layer('', 3), { at: F.duration - 4, title: '标题', sub: '一句话' });
+  },
+});
+</script></body></html>

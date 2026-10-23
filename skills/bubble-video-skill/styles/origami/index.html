@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Brand fonts: use the font found in brief.md, loaded from @fontsource on jsDelivr (only the weights used) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5/400-italic.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/origami.js"></script>
+</head><body><div id="stage"></div><script>
+// Origami (折纸) style: how to write it is in the skill's styles/origami/STYLE.md (its own moves, colours, common pitfalls, API cheat sheet)
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 100, offset: 0.5, duration: 30,
+  grain: false,   // paper has its own texture; full-frame grain makes the film very hard to compress
+  theme: { bg: '#E7E1D6', fg: '#2A2520', ink: '#2A2520', paper: '#F5F2ED', accent: '#C9563A', muted: '#6F685F', fonts: { display: '"Instrument Serif", serif', serif: '"Instrument Serif", serif', sans: 'Inter, sans-serif', script: '"Instrument Serif", serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n);
+    const O = PROMO.origami(F, { paper: '#F5F2ED' });   // paper colour: take it from the brand colours, nudged towards "paper"
+    O.desk(F.layer('', 0), { color: '#E7E1D6' });
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(F.duration - 5, 1);
+    // Opening: paper cards drop one per beat (every word must be traceable to brief.md)
+    O.cards(F.layer('', 2), { at: b(1), items: [{ text: 'WORD.' }, { text: 'WORD.' }], papers: ['#F5F2ED', '#EFD9C3'], until: b(4) });
+    // Product reveal: paper folded into a small square drops, unfolds, and shows the screenshot printed on it
+    const w = F.px(F.portrait ? 900 : 1300), h = F.px(F.portrait ? 1300 : 800);
+    const S = O.sheet(F.layer('', 3), { x: (F.W - w) / 2, y: (F.H - h) / 2, w, h, fold: { type: 'grid', cols: 2, rows: 2 }, folded: true, show: [b(4), b(16)] });
+    O.print(S.front, 'shots/hero.jpg', `left:${F.px(24)}px;top:${F.px(24)}px;width:${w - F.px(48)}px;height:${h - F.px(48)}px`);
+    S.unfold(b(5), 1.2);
+    // End card: if there is an app icon, add icon: { src: 'assets/icon.svg' } (placed above the logo)
+    O.endcard(F.layer('', 9), { at: F.duration - 4.5, logo: { text: 'Brand' }, tagline: 'Tagline from brief', url: 'example.com' });
+  },
+});
+</script></body></html>

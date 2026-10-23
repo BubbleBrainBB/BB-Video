@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="__LANG__"><head><meta charset="utf-8"><title>__TITLE__</title>
+__FONTS__
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/__STYLE__.js"></script>
+<script src="lib/kit.js"></script>
+<script src="lib/formats.js"></script>
+</head><body><div id="stage"></div><script>
+// Explainer · style: __STYLE__ (follows the narration). How to write it: "Following the voiceover" in the skill's promo/references/kit.md; the style in styles/__STYLE__/STYLE.md
+// All times come from the narration: at: 'l1' (this line starts) | ['l1', 'some word'] (when this word is said). Captions are added automatically; music ducks while someone speaks.
+// Every piece of on-screen text must be traceable in brief.md (narration text itself isn't checked, but facts in the narration must be verified and written into brief.md first)
+PROMO.film({
+  style: '__STYLE__', format: 'explain', bpm: 120,
+  scenes: [
+    { cues: [{ at: 'l1', say: '__Q__', accent: true }] },
+  ],
+  end: { title: '__T__', tagline: '__TAG__' },
+});
+</script></body></html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Chat UI: Source Han Sans (思源黑体) / Noto Sans SC 400, 500, 700 (OFL); quotes and poems: LXGW WenKai (霞鹜文楷, OFL; only regular is loaded: the full style.css has six sub-styles and the first download is slow) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/chat.js"></script>
+</head><body><div id="stage"></div><script>
+// Chat log style: how to write it is in the skill's styles/chat/STYLE.md
+PROMO.compose({
+  bpm: 100, offset: 0.4, duration: 12, grain: false,
+  theme: { bg: '#E9ECF2', fg: '#151821', ink: '#151821', paper: '#FFFFFF', accent: '#4F7CFF', muted: '#7A8191', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"LXGW WenKai", serif', sans: '"Noto Sans SC", sans-serif', script: '"LXGW WenKai", serif', mono: '"Noto Sans SC", sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), C = PROMO.chat(F, { theme: 'light' });
+    C.cast({ 我: { me: true }, 小明: {} });
+    const L = F.layer('', 1); C.stage(L);
+    const A = C.app(L, { at: b(1) }), T = A.thread({ title: '标题' });   // every piece of text must be traceable in brief.md
+    C.aside(L, { text: '一句话', at: b(1) });
+    T.msg(b(3), '小明', '第一条消息', { typing: 0.8 });
+    A.type(b(6), '回一句');
+    T.card(b(9), '小明', { kind: 'quote', text: '引用的原文', source: '出处' });
+    const E2 = F.layer('', 3); F.add((t) => PROMO.set(E2, { display: t >= b(14) ? '' : 'none' })); C.stage(E2);
+    C.wipe({ at: b(14) });
+    C.endcard(E2, { at: b(14), title: '标题', sub: '一句话' });
+    F.section(0, 1); F.section(b(8), 2); F.section(b(14), 1);
+  },
+});
+</script></body></html>

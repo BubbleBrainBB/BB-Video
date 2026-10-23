@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="lib/riso.css">
+<script src="lib/core.js"></script>
+<script src="lib/riso.js"></script>
+<script src="lib/media.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+EV.composition({
+  audio: 'audio/narration.m4a',
+  build: async ({ T }) => {
+    // palette: lively / news (newspaper) / food / tech / mind / nature; see styles/riso/STYLE.md
+    const b = RISO.board({ T, palette: 'lively', seed: '__SLUG__' });
+
+    // ===== Cover =====
+    const cover = b.cover({ title: 'Write the {accent:title} here', kicker: 'Section name' });
+
+    // ===== Page 1 =====
+    b.page(cover.hold);
+    b.title('Write the opening question here', { x: 110, y: 200 });
+
+    return b;
+  },
+});
+</script>
+</body>
+</html>

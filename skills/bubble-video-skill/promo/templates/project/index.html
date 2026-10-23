@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Brand fonts: use the fonts found in brief.md, loaded from @fontsource on jsDelivr (only the weights you use) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+</head><body><div id="stage"></div><script>
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 30,
+  // Ground is chosen per product (light / dark / brand colour, styles/launch/STYLE.md section 3): take colours from the website / UI / logo. Below is a light ground; dark: bg #0F0E0C, fg #F2EEE6, accent #D9B37A
+  theme: { bg: '#F6F5F1', fg: '#141414', muted: '#6B665E', ink: '#141414', paper: '#FFFFFF', accent: '#2F5BEA', fonts: { display: 'Inter, sans-serif', serif: 'Georgia, serif', sans: 'Inter, sans-serif', script: 'cursive' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n);
+    // Music sections: intensity 0–3; hit = a heavy hit at the start of the section
+    F.section(0, 1); F.section(b(8), 3, { hit: true }); F.section(F.duration - 4, 1);
+    const L = F.layer('', 1);
+    PROMO.slam(F, L, { at: b(0), items: [{ text: 'WORD.', sub: 'from brief.md' }] });
+    PROMO.endcard(F, F.stage, { at: F.duration - 4, logo: { text: 'Brand' }, tagline: 'Tagline from brief', url: 'example.com' });
+  },
+});
+</script></body></html>

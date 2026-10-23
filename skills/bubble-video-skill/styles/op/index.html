@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Titles: Unbounded (geometric bold, OFL) + body: Inter -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/op.js"></script>
+</head><body><div id="stage"></div><script>
+// Op art style: how to write it is in the skill's styles/op/STYLE.md (read section 0, "Safety", first)
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 24, grain: false,
+  theme: { bg: '#F7F5F0', fg: '#111111', ink: '#111111', paper: '#F7F5F0', accent: '#E8312A', muted: '#555555', fonts: { display: '"Unbounded", sans-serif', serif: '"Unbounded", sans-serif', sans: 'Inter, sans-serif', script: '"Unbounded", sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n);
+    const Q = PROMO.op(F);
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(F.duration - 4, 1);
+    // a field of stripes with a lens bulging in the middle; the logo sits in the lens
+    const f = Q.field(F.layer('', 0), { pattern: 'stripes', period: F.px(40), amp: F.px(30), speed: 1.5, angle: -8 });
+    f.lens(0, { x: F.W / 2, y: F.H / 2, r: 0, s: 0.6 }); f.lensTo(0, b(1), 0.6, { r: F.px(420) });
+    Q.word(F.layer('', 2), { at: b(2), until: b(8), text: 'WORD', size: 200 });   // every piece of text must be traceable in brief.md
+    f.morph(b(8), 0.8, 'rings');
+    Q.card(F.layer('', 3), { x: F.px(560), y: F.px(380), w: F.px(800), h: F.px(320), at: b(9), until: b(16) });
+  },
+});
+</script></body></html>

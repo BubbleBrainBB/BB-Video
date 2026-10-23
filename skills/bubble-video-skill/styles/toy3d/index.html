@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: the font the product's site uses (Inter as a placeholder) + Noto Sans SC for Chinese. three.js loads from jsDelivr (import map); time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/toy3d.js"></script>
+<script src="toys.js"></script>
+<script src="assets/toys-glb.js"></script>
+</head><body><div id="stage"></div><script>
+// Toy 3D (玩具三维): how to write it is in the skill's styles/toy3d/STYLE.md. Every piece of on-screen text must be traceable to brief.md
+// This skeleton: one slab (a drawn interface; for a real screenshot: T.slab({ image: 'shots/app.jpg' })), one toy (parts list in toys.js; brand marks use T.toy.svg),
+//   the toy presses a key → types along a row → hops onto a row of keycaps → closing close-up. Camera framed by fit (the points it must contain); landscape/portrait automatic
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 12, grain: false,
+  theme: { bg: '#221B17', fg: '#F7F8F8', muted: '#8A8F98', ink: '#F7F8F8', paper: '#0F1011', accent: '#5E6AD2', fonts: { display: 'Inter, "Noto Sans SC", sans-serif', serif: 'Inter, sans-serif', sans: 'Inter, "Noto Sans SC", sans-serif', script: 'Inter, sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), T = await PROMO.toy3d(F, { accent: '#8E97FF' });
+    F.section(0, 1, { name: 'hook' }); F.section(b(8), 2, { name: 'build' }); F.section(b(16), 1, { name: 'resolve' });
+    // Slab: a title band + a drawn interface (a few list rows, an input box, a button)
+    const s = await T.slab({ x: 0, z: 0, w: 12, d: 6, draw: (c, w, h, u) => {
+      c.fillStyle = '#121316'; c.fillRect(0, 0, w, h);
+      for (let i = 0; i < 4; i++) { c.fillStyle = '#1B1C20'; c.fillRect(u * 0.6, u * (0.6 + i * 0.9), w - u * 1.2, u * 0.7); c.fillStyle = '#3A3D45'; c.fillRect(u * 1.0, u * (0.85 + i * 0.9), u * (3 + i), u * 0.2); }
+      c.fillStyle = '#1B1C20'; c.fillRect(u * 0.6, u * 4.4, w - u * 3.2, u * 0.9); c.fillStyle = '#5E6AD2'; c.fillRect(w - u * 2.3, u * 4.4, u * 1.7, u * 0.9);
+    }, band: { depth: 1.6 } });
+    T.label(s, { text: '标题', u: 0.05, v: -0.17, size: 0.7, at: 0, key: true });                 // read: [[a, b]…] = the spans when it must be read (default: 2 s after it appears); text size is checked only in those spans
+    const toy = await T.toy.load('bean');
+    const M = T.mascot(toy, { start: s.anchor(0.2, 0.25), born: 0.3, from: 'drop' });
+    const K = s.key(0.81, 0.733, 0.96, 0.883, { at: b(5) });                       // the button rises into a key
+    M.hop(s.anchor(0.5, 0.3), b(1), { h: 0.6 });
+    M.click(K, b(6), { kf: true });                                                // landing on the key = a click
+    const typed = []; M.type([0.15, 0.25, 0.35, 0.45].map((u) => s.anchor(u, 0.81)), b(8), { step: 0.25, onKey: (i, t) => typed.push(t) });
+    T.keycaps({ x: 0, z: 5.4, tokens: ['1', '+', '1', '=', '2'], at: b(13), until: F.duration });
+    M.hop(T.point(2.6, 0, 5.4), b(13.5), { h: 1.0, kf: true });
+    T.shots([
+      { at: 0, fit: [s.at(0, -0.3), s.at(1, -0.3), s.at(0, 1), s.at(1, 1)], el: 0.95, fov: 30, aperture: 0.0012 },
+      { at: b(4), fit: [s.at(0.45, 0.25), s.at(1, 0.95)], el: 0.45, az: -0.3, fov: 28, aperture: 0.004, carry: 'toy' },
+      { at: b(8), fit: [s.at(0.05, 0.7), s.at(0.6, 0.95)], el: 0.55, az: -0.25, fov: 28, aperture: 0.004, carry: 'toy' },
+      { at: b(12.5), fit: [T.point(-2.2, 0, 5.4), T.point(3, 0.6, 5.6)], el: 0.6, az: -0.2, fov: 28, aperture: 0.003, carry: 'toy' },
+    ]);
+    T.run();
+  },
+});
+</script></body></html>

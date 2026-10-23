@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Pixel font: Fusion Pixel 12px (OFL, covers Chinese and English); proportional for words, monospaced for numbers. Use multiples of 12 for sizes (24 / 36 / 48 / 96 / 120…) so every stroke lands on whole pixels -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fusion-pixel-12px-proportional-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fusion-pixel-12px-monospaced-sc@5/400.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden;-webkit-font-smoothing:none}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/pixel.js"></script>
+</head><body><div id="stage"></div><script>
+// Pixel style: how to write it in the skill's styles/pixel/STYLE.md
+PROMO.compose({
+  bpm: 132, offset: 0.4, duration: 12, grain: false,
+  theme: { bg: '#14142B', fg: '#F4F1E8', ink: '#F4F1E8', paper: '#1A1A36', accent: '#FF4D6D', muted: '#8A8FB0', fonts: { display: '"Fusion Pixel 12px Proportional SC", monospace', serif: '"Fusion Pixel 12px Proportional SC", monospace', sans: '"Fusion Pixel 12px Proportional SC", monospace', script: '"Fusion Pixel 12px Proportional SC", monospace', mono: '"Fusion Pixel 12px Monospaced SC", monospace' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), X = PROMO.pixel(F, { palette: 'night' }), W = F.W, H = F.H;
+    X.cast({ 小像: { hair: 'spiky', hairColor: 'n', shirt: 'a', pants: 'B' } });
+    const cut = b(14), end = b(14);
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(end, 1);
+    const L = X.scene(0, cut, { kind: 'night', variant: 0 });
+    const hero = X.char(L, { who: '小像', x: W * 0.3, at: b(2) });
+    hero.say(b(4), '一句话');                                     // every piece of text must be traceable in brief.md
+    X.title(L, { text: '标题', y: H * 0.3, at: b(6), until: cut });
+    const coin = X.item(L, { art: 'coin', x: W * 0.62, y: L.floor - 160, at: b(8), spin: true });
+    hero.walk(b(10), W * 0.6); X.pickup(b(10), coin);
+    X.wipe({ at: cut, kind: 'blocks' });
+    const E2 = X.scene(cut, 1e9, { kind: 'night', variant: 2 });
+    X.endcard(E2, { at: end, title: '标题', sub: '一句话' });
+  },
+});
+</script></body></html>

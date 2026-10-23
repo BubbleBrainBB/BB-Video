@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · 皮影</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/shadow.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · shadow puppetry (皮影戏) (explainer following the narration: stories with characters are hand-written, per styles/shadow/STYLE.md)
+// How to write it: first verify facts in brief.md; write the narration in script.json (one id per line) → tts.py generates timeline.js; here, write the picture scene by scene.
+//   T.start('l3') / T.end('l3') / T.word('l3', 'some word') = the moment this line / this word is spoken; every action on screen is timed to them.
+// Lighting tells time and mood: Y.change(scene-change time, 0.9, { to, color }) — 'warm' day / memory, 'cold' night, grief (brightness around 0.65), 'red' war
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 84, offset: 0.5, grain: false, tail: 1.0,
+  theme: { bg: '#140C07', fg: '#22140B', ink: '#22140B', paper: '#F3D9A4', accent: '#B5321F', muted: '#6B4A2A', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", serif', script: '"LXGW WenKai", serif' } },
+  captions: { size: 54 },
+  build: async (F) => {
+    const T = F.T, W = F.W, H = F.H, PT = F.portrait, Y = PROMO.shadow(F, { lamp: 0.05 }), s = T.start, w = T.word;
+    const L = (a, b) => (PT ? b : a), X = (a, b) => W * L(a, b);   // landscape value, portrait value
+    Y.floor = H * L(0.8, 0.64);   // characters' feet: the space below is for captions
+    const PS = L(560, 600);       // character size
+
+    // one scene = one layer + one screen (screen: 'oil' gives this scene a warm oil-lamp yellow, e.g. a flashback); scene changes happen 0.25 s before the line starts (the lamp's darkest moment)
+    const scene = (a, z, o = {}) => { const Lr = F.layer('', 1); F.add((t) => set(Lr, { display: t >= a && t < z ? '' : 'none' })); return Y.stage(Lr, o).screen; };
+    const cut = (id) => s(id) - 0.25;
+    const name = (sc, text, at, until, o = {}) => Y.placard(sc, { text, at, until, size: L(54, 48), ...o });                        // red paper strip: a person's name (over: a character → hangs above their head), a place name, a year
+    const say = (sc, text, at, until, o = {}) => Y.placard(sc, { text, at, until, size: L(58, 50), swing: false, color: 'black', ...o });   // black paper strip: a line quoted from the source
+
+    // ---------- cast: define each person once, then call them up with who in every scene (the same person looks the same in every scene; CHARACTERS.md) ----------
+    //   kind: emperor / official / general / rebel / soldier / elder / lady / crone; look.hat can be 'guan' (Qin–Han long cap) / 'hair' / a function (carve your own)
+    Y.cast({
+      主角: { kind: 'official', look: { hat: 'guan', beard: 'long', brow: 'up' }, colors: { robe: 'red', trim: 'black' } },
+      配角: { kind: 'elder', colors: { robe: 'blue', trim: 'black' } },
+    });
+
+    // ===== 1 · Opening: one line introduces the person and the place =====
+    const z1 = T.end('l1') + 0.6;
+    Y.lamp(1.0, { to: 1, dur: 1.2 });
+    { const sc = scene(0, z1, { variant: 0 });
+      Y.prop(sc, { kind: 'mountain', x: X(0.78, 0.7), size: L(320, 260), at: 0.8, depth: 0.5 });
+      const a = Y.puppet(sc, { who: '主角', x: X(0.36, 0.4), at: s('l1') + 0.3, enter: 'left', size: PS });
+      const b = Y.puppet(sc, { who: '配角', x: X(0.66, 0.66), at: s('l1') + 0.8, enter: 'fade', faceTo: a, size: PS * 0.95 });
+      a.talk(s('l1') + 0.6, 1.4); b.bow(s('l1') + 1.6);
+      name(sc, '主角', s('l1') + 0.6, z1, { over: a });
+      Y.title(sc, { text: '__TITLE__', at: s('l1') + 0.2, until: s('l1') + 2.4, y: H * L(0.3, 0.2), size: L(140, 110) }); }
+
+    // ===== 2 · Next scene: Y.change(z1, 0.9, { to, color }) changes the set, scene(z1, z2) writes this scene … =====
+
+    // ===== Ending =====
+    const endAt = T.end('l1') + 0.6;
+    { const sc = scene(endAt, F.duration + 1, { variant: 0 });
+      Y.endcard(sc, { at: endAt, title: '__TITLE__', sub: '一句话总结' }); }
+
+    // ---------- music sections (the score automatically ducks under the voice while someone speaks) ----------
+    F.section(0, 1, { name: 'drop' });
+    F.section(endAt, 1, { name: 'resolve', hit: true });
+  },
+});
+</script></body></html>

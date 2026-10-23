@@ -1,0 +1,7 @@
+{
+  "defaults": { "viewport": "desktop", "dsf": 2, "wait": 5000 },
+  "shots": [
+    { "name": "home", "url": "https://example.com", "shot": "viewport" },
+    { "name": "home-mobile", "url": "https://example.com", "viewport": "mobile", "dsf": 3, "shot": "viewport" }
+  ]
+}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- comic lettering Bangers + bold headings Archivo Black + dialogue Comic Neue (all OFL); UI text uses the brand's font -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/bangers@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/archivo-black@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/comic-neue@5/700.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/pop.js"></script>
+</head><body><div id="stage"></div><script>
+// Pop style: how to write it is in the skill's styles/pop/STYLE.md (its own moves, colours, common pitfalls, API quick reference)
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 128, offset: 0.5, duration: 24, grain: false,
+  theme: { bg: '#FFE14D', fg: '#141414', ink: '#141414', paper: '#FFF8E7', accent: '#E8312A', muted: '#3A3A3A', fonts: { display: 'Bangers, sans-serif', serif: '"Archivo Black", sans-serif', sans: 'Inter, sans-serif', script: 'Bangers, sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n);
+    const K = PROMO.pop(F);
+    K.bg(F.layer('', 0), { color: K.c.yellow, rays: { color: 'rgba(255,255,255,.35)' } });
+    K.print();   // old-paper texture: the printed feel
+    F.section(0, 2); F.section(b(8), 3, { hit: true }); F.section(F.duration - 4, 1);
+    const L = F.layer('', 2);
+    // Opening: big word pops up letter by letter (every piece of text must be traceable to brief.md)
+    K.word(L, { at: b(0), until: b(4), text: 'WORD!', size: 220, color: K.c.red, misreg: 1, enter: 'letters' });
+    // Panels: a panel slides in with a speech bubble inside
+    const p = K.panel(L, { x: F.px(120), y: F.px(160), w: F.px(900), h: F.px(600), at: b(4), until: b(12), enter: 'left', dots: { color: 'rgba(30,91,214,.15)' } });
+    K.bubble(p.inner, { at: b(5), until: b(12), text: 'A line from the product', x: F.px(40), y: F.px(40), w: F.px(600), tail: [F.px(560), F.px(420)], typing: 0.8 });
+    K.burst(L, { at: b(8), until: b(12), text: 'POW!', x: F.W * 0.72, y: F.H * 0.55 });
+  },
+});
+</script></body></html>

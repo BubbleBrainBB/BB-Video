@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+__FONTS__
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/__STYLE__.js"></script>
+<script src="lib/kit.js"></script>
+<script src="lib/formats.js"></script>
+</head><body><div id="stage"></div><script>
+// Quick version · style: __STYLE__. How to write the script: the skill's references/kit.md; to switch style just change style (and swap the fonts in <head> and lib/<style>.js)
+// Every piece of on-screen text must be findable in brief.md
+PROMO.film({
+  style: '__STYLE__', bpm: 120,
+  scenes: [
+    { cues: [{ say: ['MEET', 'PRODUCT'], line: 'One sentence about what it does.', accent: true }] },
+    { cues: [{ list: ['Feature one', 'Feature two', 'Feature three'], title: 'What it does' }] },
+    { cues: [{ shot: 'shots/hero.png', caption: 'What the screenshot shows.' }] },
+    { cues: [{ stat: '10x', label: 'What the number means' }, { say: 'Try it.' }] },
+  ],
+  end: { title: 'Product', tagline: 'The tagline', url: 'example.com' },
+});
+</script></body></html>

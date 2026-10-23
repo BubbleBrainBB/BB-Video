@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="lib/ink.css">
+<script src="lib/core.js"></script>
+<script src="lib/ink.js"></script>
+<script src="characters.js"></script>
+<script src="lib/media.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+EV.composition({
+  audio: 'audio/narration.m4a',
+  build: async ({ T }) => {
+    // The whole video is one long handscroll; see styles/ink/STYLE.md
+    const b = INK.board({ T, seed: '__SLUG__' });
+
+    // ===== Cover: the opening of the scroll, complete on the first frame =====
+    const cover = b.cover({ title: 'Write the {red:title} here', subtitle: 'A one-line subtitle', seal: '印' });
+
+    // ===== Section 1: the camera pans along the scroll to it. Show what happens in each line: paint the place, let people act =====
+    const s1 = b.section({ at: cover.hold });
+    b.at(Math.max(s1.ready, T.start('l1')));   // draw once the camera has arrived
+    b.calli('Write the opening line here', { x: b.W / 2, y: EV.L(420, 600), size: 120, align: 'center' });   // EV.L(landscape, portrait): positions for --aspect 9:16
+
+    return b;
+  },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- cut-out big titles: ZCOOL QingKe HuangYou (站酷庆科黄油体, OFL: bold, round, as if cut with scissors); captions use the system PingFang SC (苹方) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/400.css">
+<style>html,body{margin:0;background:#F3ECDD}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/cutout.js"></script>
+</head><body><div id="stage"></div><script>
+// Matisse cut-paper style: how to write it is in the skill's styles/cutout/STYLE.md
+const { seg, set, el, E } = PROMO;
+const HEAD = '"ZCOOL QingKe HuangYou", "PingFang SC", sans-serif', SANS = '"PingFang SC", "Noto Sans SC", sans-serif';
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 12, grain: false,
+  theme: { bg: '#F3ECDD', fg: '#1C1B1A', ink: '#1C1B1A', paper: '#F3ECDD', accent: '#E4533B', muted: '#6B645A', fonts: { display: HEAD, serif: HEAD, sans: SANS, script: HEAD } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), P = F.portrait;
+    const C = PROMO.cutout(F);   // palette C.colors: blue red yellow green black rose white (pick 3–4 to suit the product)
+    const win = (e, a, z) => F.add((t) => set(e, { display: t >= a && t < z ? '' : 'none' }));
+    F.section(0, 1); F.section(b(12), 2, { hit: true }); F.section(F.duration - 3, 0);
+    // scene 1: scissors cut a seaweed leaf along its outline, then lift it and move it aside; big letters paste on one by one
+    const mid = C.wipe({ at: b(11), dur: 2 * F.B, color: C.colors.blue });   // switch scenes at the moment of full cover (= b(12))
+    const L1 = F.layer('', 1); C.desk(L1); win(L1, 0, mid);
+    const leaf = C.piece(L1, { shape: 'leaf', color: C.colors.green, x: F.W * 0.5, y: F.H * 0.42, w: F.px(300), h: F.px(560), at: b(0), enter: 'cut', until: mid });
+    leaf.move(leaf.cutEnd + 0.3, 0.6, { x: F.W * (P ? 0.25 : 0.2), rot: -12 });
+    C.title(L1, { at: b(5), until: b(11), text: '标题', size: 200, y: F.H * (P ? 0.66 : 0.72) });   // every piece of text must be traceable to brief.md
+    // scene 2: a few pieces of paper build a pattern; a paper strip carries a one-line caption
+    const L2 = F.layer('', 2); C.desk(L2); win(L2, mid, 99);
+    C.collage(L2, { at: mid + 0.3, every: F.B / 2, items: [
+      { shape: 'circle', color: C.colors.yellow, x: F.W / 2, y: F.H * 0.4, w: F.px(360) },
+      { shape: 'star', color: C.colors.red, x: F.W / 2, y: F.H * 0.4, w: F.px(220), rot: 10 },
+      { shape: 'coral', color: C.colors.blue, x: F.W / 2 - F.px(300), y: F.H * 0.45, w: F.px(240), h: F.px(300), rot: -15 },
+    ] });
+    C.strip(L2, { at: b(15), text: '一行说明', size: 54, y: F.H * 0.75 });
+  },
+});
+</script></body></html>

@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Monospace IBM Plex Mono (OFL, for the ASCII art and all body text) + Inter glyph shapes for big text (big text is built from characters; a heavy sans-serif reads best) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/ascii.js"></script>
+</head><body><div id="stage"></div><script>
+// ASCII style: how to write it in the skill's styles/ascii/STYLE.md. Pick the ground by product (light / dark / brand-colour ground, section 3)
+const { seg, set, el, E } = PROMO;
+PROMO.compose({
+  bpm: 112, offset: 0.5, duration: 20, grain: false,
+  theme: { bg: '#F4F3EE', fg: '#161616', ink: '#161616', paper: '#F4F3EE', accent: '#2F5BEA', muted: '#6B6A64', fonts: { display: 'Inter, sans-serif', serif: 'Inter, sans-serif', sans: '"IBM Plex Mono", monospace', script: 'Inter, sans-serif', mono: '"IBM Plex Mono", ui-monospace, monospace' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n);
+    const A = PROMO.ascii(F);
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(F.duration - 4, 1);
+    const L1 = F.layer('', 1); A.bg(L1, { variant: 0 });
+    A.big(L1, { at: b(2), until: b(7), text: 'WORD.', size: 220 });             // every piece of text must be traceable in brief.md
+    A.type(L1, { at: b(5), until: b(7.6), text: 'One line from the brief.', size: 46, y: F.H * 0.72 });
+    A.plate(L1, { src: 'shots/home.jpg', x: F.W / 2, y: F.H / 2, w: F.px(1300), h: F.px(760), at: b(10), until: b(20), resolve: { at: b(14), dur: 0.6 }, zoom: { at: b(13), dur: 1.5, cell: F.px(9) } });
+    A.endcard(F.layer('', 3), { at: F.duration - 4, title: 'Brand', tagline: 'Tagline from brief', url: 'example.com' });
+  },
+});
+</script></body></html>

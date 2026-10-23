@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Heavy sans (slogans, labels): Noto Sans for Latin, 思源黑体 (Source Han Sans) / Noto Sans SC for Chinese, 900 and 700 (OFL); numbers: Oswald condensed (OFL). List the Latin font before the Chinese one: in Chinese fonts ’ “ ” are full-width -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/bauhaus.js"></script>
+</head><body><div id="stage"></div><script>
+// Constructivist / Bauhaus style: how to write it is in the skill's styles/bauhaus/STYLE.md
+PROMO.compose({
+  bpm: 116, offset: 0.5, duration: 13, grain: false,
+  theme: { bg: '#EFE7D6', fg: '#161413', ink: '#161413', paper: '#EFE7D6', accent: '#D3281C', muted: '#8D8579', fonts: { display: '"Noto Sans", "Noto Sans SC", sans-serif', serif: '"Noto Sans", "Noto Sans SC", sans-serif', sans: '"Noto Sans", "Noto Sans SC", sans-serif', script: '"Noto Sans", "Noto Sans SC", sans-serif', mono: '"Oswald", "Noto Sans SC", sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), B = PROMO.bauhaus(F), W = F.W, H = F.H;
+    const cut = b(14), end = b(14);
+    F.section(0, 1); F.section(b(8), 2, { hit: true }); F.section(end, 1);
+    const L = F.layer('', 1); B.bg(L, {});
+    B.shape(L, { kind: 'circle', r: 300, x: W * 0.7, y: H * 0.45, color: 'red', at: b(1), until: cut, enter: 'pop' });
+    B.shape(L, { kind: 'rect', w: 1600, h: 60, x: W * 0.45, y: H * 0.62, rot: -14, color: 'ink', at: b(2), until: cut, enter: 'grow' });
+    B.slogan(L, { text: '标语', x: W * 0.38, y: H * 0.46, rot: -14, at: b(3), until: cut });          // every piece of text must be findable in brief.md
+    B.label(L, { text: '一句说明', x: W * 0.08, y: H * 0.82, align: 'left', bar: 'red', at: b(5), until: cut });
+    B.wipe({ at: cut });
+    const E2 = F.layer('', 3); B.bg(E2, { variant: 1 });
+    B.endcard(E2, { at: end, title: '标题', sub: '一句话' });
+  },
+});
+</script></body></html>
