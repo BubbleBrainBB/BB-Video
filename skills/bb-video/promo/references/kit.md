@@ -231,6 +231,8 @@ Toy 3D (`toy3d`) is three-dimensional (three.js) and doesn't implement the commo
 
 Old newsreel (`newsreel`) has no adapter yet either: hand-written only (`PROMO.newsreel(F, opt)`, `styles/newsreel/STYLE.md`), with its own `styles/newsreel/index.html` (promo) and `explain.html` (narrated report).
 
+Film room (`filmroom`) likewise: hand-written only (`PROMO.filmroom(F, opt)`, `styles/filmroom/STYLE.md`), starters `styles/filmroom/index.html` and `explain.html`.
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

@@ -243,7 +243,7 @@
       let t = text ?? el.textContent;
       // Strip tags only when it is really shown as html (code shown literally on screen, like "<Section>", stays as is)
       if (/<\/?[a-z][^>]*>/i.test(t) && el.children.length && !el.textContent.includes('<')) { const d = document.createElement('div'); d.innerHTML = t; t = d.textContent; }
-      this.texts.push({ el, kind, text: t, raw: text, win: [a, b], overlap: !!o.overlap, noFact: !!o.noFact });   // noFact: decorative layout text (VS, numbering), no fact check
+      this.texts.push({ el, kind, text: t, raw: text, win: [a, b], overlap: !!o.overlap, noFact: !!o.noFact, chrome: !!o.chrome });   // noFact: decorative layout text (VS, numbering), no fact check; chrome: small UI furniture (a HUD chip, a source tag) — meant to be small, so it alone never counts as "text nobody can read"
     }
     // Register a "line" (ring edge, thin bar, arrow shaft): fn() returns { pts: [[x, y]…] (frame px, the line's centreline), w: line width px } or null;
     //   the check warns when a line crosses visible text (large solid backgrounds are not registered — text on a colour block is intended; the contrast check handles that)
@@ -928,8 +928,8 @@
       F.render(t);
       const live = F.texts.filter((x) => vis(x.el)).map((x) => ({ x, b: shown(x.el) })).filter((v) => v.b && v.b.w > 1 && v.b.h > 1);
       // Text on screen, but for 2+ seconds no line readable on a phone (only small UI text) — one of the reviewers' most common complaints
-      const big = live.reduce((m, v) => Math.max(m, lineH(v.x.el)), 0) * phone;
-      if (live.length && big < READ) tiny ??= { t, big }; else if (tiny) { if (t - tiny.t >= 2) add('warn', tiny.t, M('手机上读不清', 'unreadable on phones'), M(`${tiny.t.toFixed(1)}–${t.toFixed(1)} 秒画面上没有一行字在手机上读得清（最大的一行在手机上约 ${tiny.big.toFixed(0)}px 高）：推近界面，或者配一句大标题`, `${tiny.t.toFixed(1)}–${t.toFixed(1)} s: no line of text on screen is readable on a phone (the largest is about ${tiny.big.toFixed(0)}px tall there): push in on the UI, or add a big headline`)); tiny = null; }
+      const big = live.reduce((m, v) => Math.max(m, lineH(v.x.el)), 0) * phone, content = live.some((v) => !v.x.chrome);
+      if (content && big < READ) tiny ??= { t, big }; else if (tiny) { if (t - tiny.t >= 2) add('warn', tiny.t, M('手机上读不清', 'unreadable on phones'), M(`${tiny.t.toFixed(1)}–${t.toFixed(1)} 秒画面上没有一行字在手机上读得清（最大的一行在手机上约 ${tiny.big.toFixed(0)}px 高）：推近界面，或者配一句大标题`, `${tiny.t.toFixed(1)}–${t.toFixed(1)} s: no line of text on screen is readable on a phone (the largest is about ${tiny.big.toFixed(0)}px tall there): push in on the UI, or add a big headline`)); tiny = null; }
       // Check key information one by one (end-card text, logo, URL): one big line in the frame doesn't mean the URL is readable too
       for (const { x } of live) {
         const key = ['endcard', 'logo'].includes(x.kind) || /^[^\w]*(https?:\/\/)?[\w-]+(\.[\w-]+)*\.[a-z]{2,}(\/\S*)?$/i.test(x.text.trim()), kk = 'key|' + x.text;   // URL: the whole text is one address

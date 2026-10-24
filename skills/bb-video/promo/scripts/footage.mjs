@@ -4,12 +4,14 @@
 //       → prints a numbered list (title, licence, author, date, size, file page) and writes research/candidates.json. Nothing is downloaded.
 //   node footage.mjs <project> fetch <n>[,<n>…] [--name key] [--max-height 720] [--dry-run]
 //       videos: Commons' own transcode no taller than --max-height (default 720: clips are used at ≤ 1280 px), else the original; --dry-run shows which and its estimated size
+//       --from <s> --dur <s>: only that stretch of a long video (ffmpeg reads just those bytes; a whole game is gigabytes) → <name>-<from>s.webm
 //       → downloads those candidates into assets/src/ (photos at most 1600 px wide), each with a sidecar <name>.json
 //         { title, author, licence, url, date, source } that assets.mjs copies into the manifest: the film's source tags and CREDITS come from it.
 // Rules (styles/newsreel/STYLE.md, "Material"): the user's own material comes first; before fetching, tell the user what (title, size), from
 //   where and under which licence, and wait for their OK. Allowed by default: CC0, public domain, CC BY (credit on screen and in CREDITS).
 //   CC BY-SA, NC and ND are listed but marked, never fetched unless --license names them.
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { M, isZh } from '../../core/scripts/lang.mjs';
 import { useEnvProxy } from '../../core/scripts/net.mjs';
@@ -19,7 +21,7 @@ const args = process.argv.slice(2);
 const proj = args[0] && !args[0].startsWith('--') ? path.resolve(args[0]) : null;
 process.env.BV_LANG ??= isZh(proj) ? 'zh' : 'en';
 const cmd = args[1], opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d; };
-const usage = M('用法：node footage.mjs <项目> search "<关键词>" [--license cc0,pd,cc-by] [--video] [--limit 20]\n      node footage.mjs <项目> fetch <编号>[,<编号>…] [--name 名字] [--max-height 720] [--dry-run]', 'Usage: node footage.mjs <project> search "<query>" [--license cc0,pd,cc-by] [--video] [--limit 20]\n       node footage.mjs <project> fetch <n>[,<n>…] [--name key] [--max-height 720] [--dry-run]');
+const usage = M('用法：node footage.mjs <项目> search "<关键词>" [--license cc0,pd,cc-by] [--video] [--limit 20]\n      node footage.mjs <项目> fetch <编号>[,<编号>…] [--name 名字] [--max-height 720] [--from 秒 --dur 秒] [--dry-run]', 'Usage: node footage.mjs <project> search "<query>" [--license cc0,pd,cc-by] [--video] [--limit 20]\n       node footage.mjs <project> fetch <n>[,<n>…] [--name key] [--max-height 720] [--from s --dur s] [--dry-run]');
 if (!proj || !['search', 'fetch'].includes(cmd)) { console.error(usage); process.exit(1); }
 
 const API = 'https://commons.wikimedia.org/w/api.php';
@@ -63,7 +65,7 @@ if (cmd === 'search') {
     const ii = (p.imageinfo || [])[0] || {}, md = ii.extmetadata || {}, v = (k) => strip(md[k] && md[k].value);
     const cls = classOf(v('LicenseShortName'), v('License'));
     return { title: p.title.replace(/^File:/, ''), page: ii.descriptionurl, url: ii.url, thumb: ii.thumburl, mime: ii.mime, w: ii.width, h: ii.height, bytes: ii.size, dur: ii.duration,
-      licence: v('LicenseShortName') || v('License') || '?', class: cls, ok: allow.has(cls), author: v('Artist'), date: v('DateTimeOriginal') || v('DateTime'), description: v('ImageDescription').slice(0, 200) };
+      licence: v('LicenseShortName') || v('License') || '?', class: cls, ok: allow.has(cls), author: v('Artist').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim(), date: v('DateTimeOriginal') || v('DateTime'), description: v('ImageDescription').slice(0, 200) };
   });
   fs.mkdirSync(path.dirname(cands), { recursive: true });
   fs.writeFileSync(cands, JSON.stringify({ query: q, video, at: new Date().toISOString(), results: list }, null, 1));
@@ -84,7 +86,7 @@ if (cmd === 'fetch') {
     const c = results[n - 1];
     if (!allow.has(c.class)) { console.log(M(`跳过 ${n}：许可 ${c.licence} 不在允许范围`, `Skipped ${n}: licence ${c.licence} not allowed`)); continue; }
     const base = (ids.length === 1 && opt('name')) || (opt('name') ? `${opt('name')}-${k + 1}` : c.title.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48));
-    const isVideo = !!(c.mime && c.mime.startsWith('video'));
+    const isVideo = /^video\/|^application\/ogg/.test(c.mime || '') || /\.(webm|ogv|mp4|mov)$/i.test(c.title);   // Commons serves .ogv as application/ogg
     let src = isVideo ? c.url : c.thumb || c.url, note = '';
     if (isVideo) {   // a transcode Commons already made, no taller than --max-height (the 4K original is rarely needed)
       const maxH = Number(opt('max-height', 720));
@@ -95,10 +97,25 @@ if (cmd === 'fetch') {
       if (best) { src = best.src; note = `${best.width}×${best.height}${est(best.bandwidth)}`; }
       else note = M(`原文件 ${c.w}×${c.h} · ${((c.bytes || 0) / 1048576).toFixed(0)} MB`, `original ${c.w}×${c.h} · ${((c.bytes || 0) / 1048576).toFixed(0)} MB`);
     }
-    const ext = (src.match(/\.(jpe?g|png|gif|webp|tiff?|webm|ogv|mp4|mov)(?:$|\?)/i) || [, 'jpg'])[1].toLowerCase();
-    const file = path.join(dir, `${base}.${ext}`), side = path.join(dir, `${base}.json`);
-    const credit = { title: c.title.replace(/\.[^.]+$/, ''), author: c.author, licence: c.licence, url: c.page, date: c.date, source: 'Wikimedia Commons' };
+    const from = Number(opt('from', NaN)), dur = Number(opt('dur', NaN)), part = isVideo && from >= 0 && dur > 0;
+    const ext = part ? (/\.mp4|\.mov/i.test(src) ? 'mp4' : 'webm') : (src.match(/\.(jpe?g|png|gif|webp|tiff?|webm|ogv|mp4|mov)(?:$|\?)/i) || [, 'jpg'])[1].toLowerCase();
+    const name = part ? `${base}-${Math.round(from)}s` : base;
+    const file = path.join(dir, `${name}.${ext}`), side = path.join(dir, `${name}.json`);
+    const credit = { title: c.title.replace(/\.[^.]+$/, ''), author: c.author, licence: c.licence, url: c.page, date: c.date, source: 'Wikimedia Commons', ...(part ? { segment: `${from}–${from + dur} s` } : {}) };
+    if (part) note += M(` · 只取 ${from}–${from + dur} 秒`, ` · only ${from}–${from + dur} s`);
     if (args.includes('--dry-run')) { console.log(M(`会下载：${src}${note ? `（${note}）` : ''} → ${path.relative(proj, file)}`, `Would fetch: ${src}${note ? ` (${note})` : ''} → ${path.relative(proj, file)}`)); continue; }
+    if (part) {   // a stretch of a long video: ffmpeg seeks in the remote file and copies only those packets (it honours http(s)_proxy itself)
+      let ok = false, why = '';
+      for (let k = 0; k < 3 && !ok; k++) {
+        const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-user_agent', UA, '-ss', String(from), '-t', String(dur), '-i', src, '-an', '-c:v', 'copy', file], { encoding: 'utf8' });
+        ok = r.status === 0 && fs.existsSync(file) && fs.statSync(file).size > 10000; why = (r.stderr || '').trim().split('\n').pop();
+        if (!ok && k < 2) await new Promise((res) => setTimeout(res, 5000 * 2 ** k));
+      }
+      if (!ok) { console.error(M(`下载失败 ${n}：${why}`, `Fetch failed ${n}: ${why}`)); continue; }
+      fs.writeFileSync(side, JSON.stringify(credit, null, 1));
+      console.log(M(`✓ ${path.relative(proj, file)}（${(fs.statSync(file).size / 1048576).toFixed(1)} MB · ${c.licence} · ${c.author || '?'}）`, `✓ ${path.relative(proj, file)} (${(fs.statSync(file).size / 1048576).toFixed(1)} MB · ${c.licence} · ${c.author || '?'})`));
+      continue;
+    }
     let buf = null, why = '';
     for (let k = 0; k < 3 && !buf; k++) {   // a dropped connection retries (files can be tens of MB: 5 minutes each try)
       try { const r = await fetch(src, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(300000) }); if (r.ok) buf = Buffer.from(await r.arrayBuffer()); else why = `HTTP ${r.status}`; }

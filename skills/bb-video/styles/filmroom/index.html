@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · filmroom</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<style>html,body{margin:0;background:#07090c}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/filmroom.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · film room (promo, no narration): a product walkthrough or a highlight broken down on the beat. Times are in seconds.
+// Before the picture (styles/filmroom/STYLE.md): licence-clean footage (the user's own, or footage.mjs --video, asked first), a clip cut in
+//   assets/clips.json + assets.mjs, then watch it frame by frame and write only what is visible into brief.md. Measure positions with
+//   C.grid(a, b) on --stills (footage coordinates 0–1), then remove the grid. Without footage the tape shows a "no tape" slate.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0, duration: 15, grain: false, chapters: false,
+  theme: { bg: '#07090c', fg: '#f2f4f7', ink: '#f2f4f7', muted: '#9aa3ae', accent: '#ffc21a', paper: '#07090c', fonts: { display: 'Oswald, "Noto Sans SC", sans-serif', serif: '"Noto Sans SC", sans-serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const R = PROMO.filmroom(F, { brand: { name: M('录像课', 'Film Study'), en: 'FILM STUDY' } });
+    R.ident({ at: 0, until: 1.5 });   // a short open: the tape within ~2 s
+    // the tape (a screen recording works the same way as game footage: freeze on the moment, ring the button, arrow the path)
+    const L = R.shot(1.5, 12, { bg: '#000' }), C = R.film(L, 'clip', { a: 1.5, from: 0, hud: { clip: 'CLIP 1' } });
+    R.lower({ a: 1.8, b: 4.5, title: M('标题', 'Title'), sub: M('一句话', 'One line') });
+    C.play(3.0); const f1 = C.t;   // let the play run, then stop on the moment
+    C.freeze(3.0);
+    C.cam(f1, { x: 0.5, y: 0.5, s: 1 }).cam(f1 + 0.8, { x: 0.45, y: 0.6, s: 1.6 });
+    C.ring(0.45, 0.62, { a: f1 + 0.3, b: f1 + 2.5 });
+    C.label(0.45, 0.62, M('这里', 'Here'), { a: f1 + 0.5, b: f1 + 2.5, dy: -0.08 });
+    C.arrow([[0.45, 0.63], [0.52, 0.62], [0.58, 0.66]], { a: f1 + 1.2, b: f1 + 2.5 });
+    C.rewind(1.0, 0.8);
+    const s0 = C.t;
+    C.slow(3.7, 0.4);
+    // slow motion: a ring follows the player (track: [[clipTime, x, y]…], measured on stills), a label lands on the moment
+    C.ring(0, 0, { a: s0 + 0.2, b: s0 + 3.6, track: [[1.0, 0.45, 0.62], [2.0, 0.5, 0.63], [2.5, 0.55, 0.64]] });
+    C.label(0.55, 0.64, M('这里', 'Here'), { a: s0 + 2.2, b: s0 + 3.6, dy: -0.08 });
+    C.end();
+    R.end({ a: 12, b: 15, sub: M('一句话', 'One line') });
+    F.section(0, 3, { hit: true, name: 'hook' }); F.section(1.5, 1, { name: 'tape' }); F.section(8.5, 3, { hit: true, name: 'replay' }); F.section(12, 2, { hit: true, name: 'end' });
+  },
+});
+</script></body></html>

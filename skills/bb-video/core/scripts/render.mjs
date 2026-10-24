@@ -984,7 +984,7 @@ async function main() {
     const logs = pages.flatMap((p) => p.logs);
     if (logs.length) console.log([...new Set(logs)].join('\n'));
     console.log(M(`完成：${out}（${(to - from).toFixed(1)} 秒，${fps}fps，用时 ${((Date.now() - t0) / 1000).toFixed(0)} 秒）`, `Done: ${out} (${(to - from).toFixed(1)} s, ${fps}fps, took ${((Date.now() - t0) / 1000).toFixed(0)} s)`));
-    const acts = (await first.eval('({ sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
+    const acts = (await first.eval('({ sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], live: window.__lives ? window.__lives() : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
     const appears = (await first.eval('window.__appears ? window.__appears() : []')).result.value || [];
     const trans = (await first.eval('window.__transitions ? window.__transitions() : []')).result.value || [];
     const dScan = await popScan(out, fps, from, cuts, acts, appears, voice, trans, (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);

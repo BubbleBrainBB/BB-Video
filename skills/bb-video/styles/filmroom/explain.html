@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · filmroom</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<style>html,body{margin:0;background:#07090c}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/filmroom.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · film room (narrated breakdown). Hand-written PROMO.compose: every time comes from the narration (T.start / T.end / T.word).
+// Before the picture (styles/filmroom/STYLE.md): licence-clean footage (the user's own, or footage.mjs --video, asked first), a clip cut in
+//   assets/clips.json + assets.mjs, then watch it frame by frame and write only what is visible into brief.md. Measure positions with
+//   C.grid(a, b) on --stills (footage coordinates 0–1), then remove the grid. Without footage the tape shows a "no tape" slate.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#07090c', fg: '#f2f4f7', ink: '#f2f4f7', muted: '#9aa3ae', accent: '#ffc21a', paper: '#07090c', fonts: { display: 'Oswald, "Noto Sans SC", sans-serif', serif: '"Noto Sans SC", sans-serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end;
+    // a fictional show of your own: never a real broadcaster's, league's or show's name, open or graphics
+    const R = PROMO.filmroom(F, { brand: { name: M('录像课', 'Film Study'), en: 'FILM STUDY' } });
+
+    // 0 · a short open (brand only), then the tape within ~2 s: the narration starts over the footage
+    const t1 = Math.min(1.6, s('l1') - 0.12);
+    R.ident({ at: 0, until: t1 });
+
+    // l1 · the tape: play, stop, draw, rewind, slow, play on. One film per clip; C.end() after the last step.
+    const L = R.shot(t1, e('l1') + 0.4, { bg: '#000' });
+    const C = R.film(L, 'clip', { a: t1, from: 0, hud: { clip: 'CLIP 1', situation: M('一句话', 'One line') } });
+    R.lower({ a: t1 + 0.3, b: e('l1') + 0.1, title: M('标题', 'Title'), sub: M('一句话', 'One line') });   // which game, which moment — on the tape, not on a card
+    C.play(2.0);
+    const f1 = C.t;
+    C.freeze(1.6);
+    C.cam(f1, { x: 0.5, y: 0.5, s: 1 }).cam(f1 + 0.8, { x: 0.45, y: 0.6, s: 1.6 });
+    C.ring(0.45, 0.62, { a: f1 + 0.3, b: f1 + 1.6 });
+    C.arrow([[0.45, 0.63], [0.52, 0.62], [0.58, 0.66]], { a: f1 + 0.7, b: f1 + 1.6 });
+    C.rewind(1.0, 0.8);
+    C.slow(1.6, 0.4);
+    C.end();
+
+    // the end: the show's card, then the sources and the footage credit (from the clip's credit)
+    const z = e('l1') + 0.4;
+    R.end({ a: z, b: F.duration, sub: M('下次见', 'See you next time'), sources: [M('资料来源写在这里', 'Sources here')] });
+
+    F.section(0, 2, { hit: true, name: 'open' });
+    F.section(t1, 1, { name: 'tape' });
+    F.section(z, 2, { hit: true, name: 'end' });
+  },
+});
+</script></body></html>
