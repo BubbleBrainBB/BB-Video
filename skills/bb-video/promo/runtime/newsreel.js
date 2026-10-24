@@ -15,6 +15,9 @@
 //   R.photo(L, key, { a, b, from, to, pos, box, tag })   a photograph from assets/manifest.js filling the gate (or box) with a slow push;
 //       from / to = { s: scale, x, y: focus 0–1 }. Its credit (from the manifest, footage.mjs) becomes a source tag and a CREDITS line;
 //       tag: a string replaces the tag text, false hides it (the credit is still registered)
+//   R.clip(L, key, { a, b, from, to, rate, push: { from, to }, pos, box, tag })   an archive film clip from the manifest (assets.mjs: video →
+//       frames at the source's own rate, graded once); from / to = seconds of the clip, rate = speed. It holds its last frame if the shot outlasts it
+//       (a warning says so). Its credit and tag work like R.photo; push = an optional slow push, same { s, x, y } as R.photo's from / to
 //   R.tag(text, a, b, { right })     a sharp source tag in a top corner;  R.rebuilt(a, b) the "reconstruction" tag for shots drawn in code
 //   R.diagram(L, { grid })           the period "animated diagram": white lines on a faint drafting grid → { svg, path, line, circle, text, draw(el, a, dur) }
 //   R.calendar(L, { a, b, title, pages: [{ label, at }], stamp, note })   a tear-off calendar: each page stamped, then torn off at the next page's time
@@ -180,24 +183,55 @@
 
     // ---------- photographs ----------
     const creditLine = (c) => [c.title, c.date, c.author, c.licence].filter(Boolean).join(' · ');
-    R.photo = (L, key, o = {}) => {
-      const { a, b, from = { s: 1.02, x: 0.5, y: 0.5 }, to = { s: 1.1, x: 0.5, y: 0.5 }, pos = '50% 50%', box } = o;
-      const m = (window.MEDIA_ASSETS && window.MEDIA_ASSETS.images[key]) || null;
-      if (!m) throw new Error(M(`newsreel：assets/manifest.js 里没有图片 "${key}"（放进 assets/src/，跑 assets.mjs）`, `newsreel: no image "${key}" in assets/manifest.js (put it in assets/src/ and run assets.mjs)`));
+    // a picture (photo or clip) filling the gate or a box, pushing slowly from `from` to `to` ({ s: scale, x, y: focus 0–1 }) over [a, b]
+    const framed = (L, file, { a, b, from = { s: 1.02, x: 0.5, y: 0.5 }, to = { s: 1.1, x: 0.5, y: 0.5 }, pos = '50% 50%', box }) => {
       const bx = box || { x: 0, y: 0, w: GU, h: 1000 };
       const wrap = el('div', `left:${gx(bx.x)}px;top:${gx(bx.y)}px;width:${gx(bx.w)}px;height:${gx(bx.h)}px;overflow:hidden`, L);
       const img = el('img', `left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:${pos};transform-origin:50% 50%`, wrap);
-      img.src = 'assets/' + m.file;
+      if (file) img.src = 'assets/' + file;
       F.add((t) => {
         if (t < a - 0.05 || t > b + 0.05) return;
         const q = seg(t, a, b, E.sine), s = from.s + (to.s - from.s) * q, fx = from.x + (to.x - from.x) * q, fy = from.y + (to.y - from.y) * q;
         set(img, { transform: `translate(${((0.5 - fx) * (s - 1) * gx(bx.w)).toFixed(1)}px,${((0.5 - fy) * (s - 1) * gx(bx.h)).toFixed(1)}px) scale(${s.toFixed(4)})` });
       });
-      // the source tag and the CREDITS line come from the manifest's credit (footage.mjs writes it); without one the film still says it is archive
-      if (m.credit) F.credit({ ...m.credit, file: m.file });
-      else console.warn(M(`newsreel：图片 "${key}" 没有来源 / 许可信息（用 footage.mjs 下载，或者在 assets/src/${key}.json 里写 { title, author, licence, url }）`, `newsreel: image "${key}" has no source / licence (fetch it with footage.mjs, or write { title, author, licence, url } in assets/src/${key}.json)`));
-      if (o.tag !== false) R.tag(typeof o.tag === 'string' ? o.tag : `${M('资料照片', 'Archive photo')}${m.credit ? ' · ' + creditLine(m.credit) : ''}`, a, b);
-      F.info('photo', a, b);
+      return { wrap, img };
+    };
+    // the source tag and the CREDITS line come from the manifest's credit (footage.mjs writes it); without one the film still says it is archive
+    const sourced = (m, key, kind, o) => {
+      if (m.credit) F.credit({ ...m.credit, file: m.file || `clips/${key}` });
+      else console.warn(M(`newsreel：${kind === 'clip' ? '片段' : '图片'} "${key}" 没有来源 / 许可信息（用 footage.mjs 下载，或者在 assets/src/${key}.json 里写 { title, author, licence, url }）`, `newsreel: ${kind} "${key}" has no source / licence (fetch it with footage.mjs, or write { title, author, licence, url } in assets/src/${key}.json)`));
+      const label = kind === 'clip' ? M('资料影片', 'Archive film') : M('资料照片', 'Archive photo');
+      if (o.tag !== false) R.tag(typeof o.tag === 'string' ? o.tag : `${label}${m.credit ? ' · ' + creditLine(m.credit) : ''}`, o.a, o.b);
+    };
+    R.photo = (L, key, o = {}) => {
+      const m = (window.MEDIA_ASSETS && window.MEDIA_ASSETS.images[key]) || null;
+      if (!m) throw new Error(M(`newsreel：assets/manifest.js 里没有图片 "${key}"（放进 assets/src/，跑 assets.mjs）`, `newsreel: no image "${key}" in assets/manifest.js (put it in assets/src/ and run assets.mjs)`));
+      const { wrap } = framed(L, m.file, o);
+      sourced(m, key, 'photo', o);
+      F.info('photo', o.a, o.b);
+      return wrap;
+    };
+    // a film clip: which frame shows is computed from t (frames extracted at the source's own rate keep its cadence); the frame waits for its decode
+    R.clip = (L, key, o = {}) => {
+      const c = (window.MEDIA_ASSETS && window.MEDIA_ASSETS.clips[key]) || null;
+      if (!c) throw new Error(M(`newsreel：assets/manifest.js 里没有视频片段 "${key}"（放进 assets/src/，跑 assets.mjs）`, `newsreel: no clip "${key}" in assets/manifest.js (put it in assets/src/ and run assets.mjs)`));
+      const { a, b, rate = 1 } = o, from = o.from ?? 0, last = (c.frames - 1) / c.fps, to = Math.min(o.to ?? last, last);
+      const push = o.push || { from: { s: 1.0, x: 0.5, y: 0.5 }, to: { s: 1.0, x: 0.5, y: 0.5 } };
+      const { wrap, img } = framed(L, null, { a, b, from: push.from, to: push.to, pos: o.pos, box: o.box });
+      const runs = (to - from) / rate;
+      if (b - a > runs + 0.1) console.warn(M(`newsreel：片段 "${key}" 在 ${(a + runs).toFixed(1)}s 放完，镜头到 ${b.toFixed(1)}s 才切：最后一格会定住（缩短镜头、调慢 rate，或换一段）`, `newsreel: clip "${key}" runs out at ${(a + runs).toFixed(1)}s but the shot lasts until ${b.toFixed(1)}s: its last frame will hold (shorten the shot, lower rate, or use a longer stretch)`));
+      let cur = '';
+      F.add((t) => {
+        if (t < a - 0.05 || t > b + 0.05) return;
+        const ct = Math.min(to, from + Math.max(0, t - a) * rate), i = Math.min(c.frames, Math.floor(ct * c.fps + 1e-6) + 1);
+        const url = `assets/clips/${key}/${String(i).padStart(4, '0')}.jpg`;
+        if (url === cur) return;
+        cur = url; img.src = url;
+        return img.decode().catch(() => {});   // the screenshot waits for this frame's picture
+      });
+      sourced(c, key, 'clip', o);
+      F.info('clip', a, b);
+      F.live(a, Math.min(b, a + runs));   // the film playing is the action (until it runs out)
       return wrap;
     };
 

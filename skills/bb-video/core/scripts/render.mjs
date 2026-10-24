@@ -44,6 +44,8 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { useEnvProxy } from './net.mjs';
+useEnvProxy();   // web fonts are fetched by Node: behind a proxy it needs switching on
 
 const args = process.argv.slice(2);
 const proj = path.resolve(args[0] && !args[0].startsWith('--') ? args[0] : '.');
@@ -359,6 +361,7 @@ async function peakSources(wav, ss, dur, plan, lines) {
 //   d: per-frame difference; acts = { sfx: [seconds], texts: [{ a, text }] }. New text gets time to be read (English 0.3 s per word, Chinese/Japanese 4.5 characters per second, plus 0.6 s) and does not count as dead air.
 //   The first 0.3 s and the last 2 s (closing hold) are ignored. Returns [[start, end], …] (seconds).
 //   With narration: spans where someone is speaking (acts.speech = [[start, end]…], each line in the timeline) count as "something" — only check where no one speaks: the start, long pauses between lines, after the last line
+//   acts.live = [[start, end]…] from F.live (a film clip playing) counts as something too
 const readTime = (text) => { const cjk = (String(text).match(/[぀-ヿ㐀-鿿]/g) || []).length, words = String(text).replace(/[぀-ヿ㐀-鿿]/g, ' ').trim().split(/\s+/).filter(Boolean).length; return Math.min(2.5, 0.6 + words * 0.3 + cjk / 4.5); }; // Long body text caps at 2.5 s: no one stops to read a whole paragraph in a promo
 function deadAir(d, fps, from, acts, minLen = 1.2) {
   const busy = new Uint8Array(d.length), out = [];
@@ -369,6 +372,7 @@ function deadAir(d, fps, from, acts, minLen = 1.2) {
   for (const t of acts.sfx || []) mark(t - 0.1, t + 0.35);
   for (const x of acts.texts || []) mark(x.a, x.a + readTime(x.text));
   for (const [a, b] of acts.speech || []) mark(a, b);
+  for (const [a, b] of acts.live || []) mark(a, b);   // F.live: footage playing — the picture itself is the action
   const start = Math.round(0.3 * fps), end = d.length - Math.round(2.0 * fps);
   for (let i = start, run = 0; i <= end; i++) {
     if (i < end && !busy[i]) { run++; continue; }
@@ -386,6 +390,7 @@ function quietGaps(nFrames, fps, from, acts, cuts = [], minLen = 1.5, d = null) 
   for (const t of cuts) mark(t - 0.1, t + 0.35);
   for (const x of acts.texts || []) mark(x.a - 0.1, x.a + 0.35);   // Text counts only at the moment it appears (reading time is not a "new action": with nothing new on screen for 1.5 s, viewers feel it has stopped)
   for (const [a, b] of acts.speech || []) mark(a, b);
+  for (const [a, b] of acts.live || []) mark(a, b);   // F.live: footage playing — the picture itself is the action
   if (d) { const w = Math.max(1, Math.round(0.15 * fps)); for (let i = 0; i < Math.min(nFrames, d.length); i++) { let s = 0, k = 0; for (let j = Math.max(0, i - w); j <= Math.min(d.length - 1, i + w); j++) { s += d[j]; k++; } if (s / k >= 2) busy[i] = 1; } }
   const start = Math.round(0.3 * fps), end = nFrames - Math.round(2.0 * fps);
   for (let i = start, run = 0; i <= end; i++) {
@@ -606,7 +611,7 @@ async function reviewSheets(proj, comp, page) {
   fs.writeFileSync(out.replace(/\.png$/, '.txt'), Array.from({ length: n }, (_, i) => M(`#${i + 1}（第 ${Math.floor(i / cols) + 1} 行第 ${(i % cols) + 1} 列）t≈${(i * step).toFixed(1)}s`, `#${i + 1} (row ${Math.floor(i / cols) + 1}, column ${(i % cols) + 1}) t≈${(i * step).toFixed(1)}s`)).join('\n'));
   console.log(M(`评审总览图：${out}（每 ${step} 秒一格，${w}px 宽 = 手机上看到的大小；时间见同名 .txt）`, `Contact sheet: ${out} (one cell every ${step} s, ${w}px wide = phone size; times in the .txt)`));
   // Transitions: at the start of each section and 1.2 s around each hard cut, 8 frames per row
-  const ev = (await page.eval('({ plan: window.__audioPlan ? window.__audioPlan() : null, cuts: window.__cuts ? window.__cuts() : [], texts: window.__textWins ? window.__textWins() : [] })')).result.value;
+  const ev = (await page.eval('({ plan: window.__audioPlan ? window.__audioPlan() : null, cuts: window.__cuts ? window.__cuts() : [], lives: window.__lives ? window.__lives() : [], texts: window.__textWins ? window.__textWins() : [] })')).result.value;
   const plan = ev.plan || { sections: [], sfx: [] };
   const marks = [...new Set([...plan.sections.map((x) => x.at), ...ev.cuts].map((t) => Math.round(t * 10) / 10))].filter((t) => t > 0.3 && t < comp.duration - 0.5).sort((a, b) => a - b);
   const tdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ev-tr-')), rowsF = [];
@@ -643,7 +648,7 @@ async function reviewSheets(proj, comp, page) {
     lines.push(`${t.toFixed(1).padStart(5)} | ${mv.toFixed(2).padStart(5)} | ${en('phone').padStart(6)} | ${en('full').padStart(6)} | ${evs.join(M('，', ', '))}`);
   }
   {   // With narration only look where no one speaks (speaking spans and the opening cover count as something)
-    const vz = hasVoice(), acts = { sfx: plan ? plan.sfx.map((x) => x.t) : [], texts: ev.texts.map((x) => ({ a: x.a, text: x.text })), speech: vz ? speechSpans() : [] };
+    const vz = hasVoice(), acts = { sfx: plan ? plan.sfx.map((x) => x.t) : [], texts: ev.texts.map((x) => ({ a: x.a, text: x.text })), speech: vz ? speechSpans() : [], live: ev.lives || [] };
     const dead = deadAir(diff, 30, 0, acts);
     lines.push('', dead.length ? M(`空放（画面只有慢动、没有新的字、没有音效，≥ 1.2 秒）：${dead.map(([a, b]) => `${a.toFixed(1)}–${b.toFixed(1)}s`).join('，')}`, `Dead air (only slow motion, no new text, no sound effect, ≥ 1.2 s): ${dead.map(([a, b]) => `${a.toFixed(1)}–${b.toFixed(1)}s`).join(', ')}`) : M('空放：没有', 'Dead air: none'));
     const quiet = quietGaps(diff.length, 30, 0, acts, ev.cuts || [], 1.5, vz ? diff : null).filter(([a, b]) => !dead.some(([x, y]) => x < b && y > a));
@@ -718,21 +723,21 @@ async function main() {
       // Board-style renders with --aspect get a suffixed file name: look for both names
       const video = [nameFor('video', plan0), `video-${(opt('aspect') || '16:9').replace(':', 'x')}.mp4`, 'video.mp4'].map((f) => path.join(proj, 'out', f)).find((f) => fs.existsSync(f));
       if (!video) { console.error(M(`没有成片（out/${nameFor('video', plan0)}）：先渲染`, `No video (out/${nameFor('video', plan0)}): render it first`)); return; }
-      const ev = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], appears: window.__appears ? window.__appears() : [], trans: window.__transitions ? window.__transitions() : [], sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
+      const ev = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], appears: window.__appears ? window.__appears() : [], trans: window.__transitions ? window.__transitions() : [], lives: window.__lives ? window.__lives() : [], sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
       console.log(M(`成片：${video}`, `Video: ${video}`));
-      await popScan(video, fps, 0, ev.cuts || [], { sfx: ev.sfx, texts: ev.texts }, ev.appears || [], voice, ev.trans || [], (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);
+      await popScan(video, fps, 0, ev.cuts || [], { sfx: ev.sfx, texts: ev.texts, live: ev.lives }, ev.appears || [], voice, ev.trans || [], (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);
       return;
     }
     const lint = await first.eval('window.__lint ? window.__lint() : []');
     const issues = lint.result.value || [];
     // No new action (films without narration): 1.5 s or more between event times (text, sound effects, hard cuts, sections) — listed before rendering (the final-video check uses frame diffs, and a slow camera push can hide the gap)
     {
-      const ev0 = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], plan: window.__audioPlan ? window.__audioPlan() : null, texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
+      const ev0 = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], lives: window.__lives ? window.__lives() : [], plan: window.__audioPlan ? window.__audioPlan() : null, texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
       if (ev0.plan || voice) {   // Board-style explainers have no audio plan (the music is in script.json): check them even with narration
         const dur0 = first.comp.duration, nf0 = Math.ceil(dur0 * 30);
         // With narration: speaking spans count as something; only look where no one speaks (start, long pauses, after the last line); before rendering we can't tell whether the picture moves (board drawing, figure walking), so only report gaps of 2 s or more
         const sp0 = voice ? speechSpans() : [];
-        const acts0 = { sfx: ev0.plan ? [...ev0.plan.sfx.map((x) => x.t), ...(ev0.plan.sections || []).map((x) => x.at)] : [], texts: ev0.texts || [], speech: sp0 };
+        const acts0 = { sfx: ev0.plan ? [...ev0.plan.sfx.map((x) => x.t), ...(ev0.plan.sections || []).map((x) => x.at)] : [], texts: ev0.texts || [], speech: sp0, live: ev0.lives || [] };
         for (const [a, b] of quietGaps(nf0, 30, 0, acts0, ev0.cuts || [], voice ? 2.0 : 1.5)) issues.push({ level: 'warn', t: Math.round(a * 100) / 100, src: '', what: M('没有新动作', 'no new action'), msg: M(`${voice ? '旁白停下来，' : ''}${a.toFixed(2)}–${b.toFixed(2)}s 有 ${(b - a).toFixed(1)} 秒没有新的字、音效、硬切（画面只是在推、在飘）：给这一段一个真的动作（亮起一处、划掉一条、加一行），或者把下一个东西提前`, `${voice ? 'narration paused: ' : ''}${a.toFixed(2)}–${b.toFixed(2)}s: ${(b - a).toFixed(1)} s without new text, sound or cut (the picture only drifts): give it a real action or bring the next one forward`) });
       }
     }

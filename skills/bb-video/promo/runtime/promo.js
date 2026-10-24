@@ -269,6 +269,9 @@
     //   components register it themselves
     credit(c) { if (!c) return; const L = (this.credits ??= []); const k = c.url || c.file || c.title; if (!L.some((x) => (x.url || x.file || x.title) === k)) L.push(c); }
     // Fast motion in this span: motion blur uses n sub-frames (the default 6 would stack into separate ghost copies)
+    // Footage plays in [a, b] (a film clip, a screen recording): the picture itself is the action, so the no-new-action / dead-air checks leave it alone.
+    //   Only for footage that really moves — a held shot of a still subject is still a gap
+    live(a, b) { (this.lives ??= []).push([a, b]); }
     blur(a, b, n = 16) { (this.blurs ??= []).push([a, b, n]); }
     // At the start of each frame swap Math.random for a time-seeded version: random effects in animation libraries (scrambled text etc.) render the same every time
     // If a per-frame function returns a Promise (canvas styles drawing after image decode, e.g. the ink handscroll): this frame waits for them all before the screenshot
@@ -1178,6 +1181,7 @@
         window.__textWins = () => [...F.texts.map((x) => ({ text: x.text, kind: x.kind, a: x.win[0], b: x.win[1] })), ...(F.factWins || [])]; // for the review report and the dead-air check
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
+        window.__lives = () => [...(F.lives || [])];
         window.__stillMax = () => F._stillMax ?? 0.6;
         window.__blurBase = () => F._blurBase ?? null;
         window.__credits = () => F.credits || [];

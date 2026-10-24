@@ -3,7 +3,7 @@
 > Relative paths in this file (`scripts/…`, `references/…`, `runtime/…`) are relative to bb-video's `promo/` folder.
 
 One frame: a 1.37:1 film gate on black, and inside it a 1930s–50s cinema newsreel in black and white (or sepia):
-- archive photographs with a slow push, supers printed on the film, rubber stamps slammed onto them;
+- archive photographs with a slow push and archive film clips at their own frame rate, supers printed on the film, rubber stamps slammed onto them;
 - intertitles between double rules, a question card where the music stops;
 - period information pieces: a tear-off calendar, a stopwatch, a printed price list, a seen / not-seen verdict;
 - for what no licensed footage shows, the period "animated diagram": white lines on a faint drafting grid, tagged as a reconstruction;
@@ -21,7 +21,7 @@ Starter pages: `styles/newsreel/explain.html` (narrated, hand-written, timed fro
 ## 0. Safety
 - **Material.** The look needs real pictures, and pictures carry rights:
   - the user's own photos and footage first;
-  - otherwise only licence-clean archive material: CC0, public domain, CC BY (credited). Search with `node scripts/footage.mjs <project> search "<query>"` (Wikimedia Commons; its licence filter drops NC / ND / BY-SA / GFDL by default). **Tell the user what you want to fetch (file, source, licence, size) and wait for their OK** before `fetch`;
+  - otherwise only licence-clean archive material: CC0, public domain, CC BY (credited). Search with `node scripts/footage.mjs <project> search "<query>"` (add `--video` for film; Wikimedia Commons; its licence filter drops NC / ND / BY-SA / GFDL by default). US federal footage (NASA, NOAA, the armed forces) is usually public domain. **Tell the user what you want to fetch (file, source, licence, size) and wait for their OK** before `fetch`;
   - every file keeps its credit (`assets/src/<name>.json`, written by footage.mjs: `{ title, author, licence, date, url }`). `explainer/scripts/assets.mjs` puts it in the manifest; `R.photo` turns it into a source tag on the shot, a line in the end roll and a line in `out/CREDITS.txt`. A photo without a credit gets a warning — write the sidecar by hand if the user supplied it;
   - never AI-generated images presented as archive footage; never stills grabbed from news broadcasts, press photos or video platforms.
 - **Honest dating.** A photo from 2012 shown in a story about 2026 says 2012 on its tag. Don't pass an old picture off as the event.
@@ -89,11 +89,13 @@ Starter pages: `styles/newsreel/explain.html` (narrated, hand-written, timed fro
 - **The quote on a portrait**: the photo in the left half (`box`), a rule and the quote in both languages on the right, the outlet underneath.
 
 ## 9. Images and video
-- Photos go in `assets/src/` (with their `.json` credit), then `node explainer/scripts/assets.mjs <project>` builds `assets/manifest.js`. `R.photo(L, 'key', …)` reads it.
+- Photos and clips go in `assets/src/` (with their `.json` credit), then `node explainer/scripts/assets.mjs <project>` builds `assets/manifest.js`. `R.photo(L, 'key', …)` reads it.
 - The source tag defaults to "资料照片 · title · date · author · licence" from the credit. For a Chinese film, pass a short Chinese `tag` (the credit's title is usually English and long): `tag: '资料照片 · 2012 · 「蚱蜢」跳跃试验火箭 · SpaceX · CC0'`. `tag: false` hides it (the credit still counts).
 - The end roll groups pictures by author + licence; `out/CREDITS.txt` lists every file with its title and URL (CC BY needs that).
 - `out/captions-<aspect>.srt` is written with every render, for platforms that take subtitle files.
-- Video archive clips are not supported yet (see §13): use stills.
+- **Film clips** (`R.clip`): fetch with `footage.mjs … search "<query>" --video` then `fetch <n>` (it takes Commons' own transcode ≤ 720 px tall; `--dry-run` shows which and its size first). Long files: cut the stretch you need in `assets/clips.json` and grade it:
+  `{ "launch": { "src": "falcon-heavy-2018-film.webm", "from": 52, "dur": 6, "grade": "auto" } }`. `assets.mjs` extracts the frames at the source's own rate (an 18 fps film keeps its 18-step cadence inside the 30 fps video) and `grade: "auto"` maps each clip once to the same black / white points, so clips from different sources cut together without the tone jumping. Silent film scanned at 24 fps that runs too fast: `rate: 0.75`.
+- A clip shorter than its shot holds its last frame (the runtime warns). A playing clip counts as action for the gap checks (`F.live`); a clip of a still subject does not help — cut sooner.
 
 ## 10. Pitfalls and self-check
 - **No credit**: a photo without a sidecar JSON prints a warning; the film must not ship with one.
@@ -122,6 +124,7 @@ R.card(L, { a, b, main, sub, top, size });                   // intertitle
 R.super(L, text, { x, y, size, anchor: 'l' | 'c' | 'r', a, b, bg, color, weight, font, kind, noFact, overlap, ls });
 R.stamp(L, text, { x, y, size, rot, a, b, color, border });
 R.photo(L, key, { a, b, from: { s, x, y }, to: { s, x, y }, pos, box: { x, y, w, h }, tag });
+R.clip(L, key, { a, b, from, to, rate, push: { from: { s, x, y }, to: { s, x, y } }, pos, box, tag });   // from / to: seconds of the clip
 R.tag(text, a, b, { right });  R.rebuilt(a, b);
 const D = R.diagram(L, { a, b, grid });                      // D.svg, D.path(d, attrs), D.line, D.circle, D.g, D.el(tag, attrs, parent), D.draw(el, at, dur)
 R.calendar(L, { a, b, title, pages: [{ label, at }], stamp, note: { text, at } });
@@ -135,6 +138,5 @@ Times: `a` = in, `b` = out; in a narrated film take them from the narration (`T.
 
 ## 13. Not supported yet
 - No quick version (`--quick` / `kit.js` adapter): pages are hand-written.
-- Archive video clips (conforming frame rate, grading them into the gate): stills only.
 - Maps (an animated route on a period map) — draw it with `R.diagram` for now.
 - Colour newsreel (1950s Technicolor look).
