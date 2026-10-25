@@ -3,7 +3,8 @@
 //
 //   PROMO.film({ style: 'op' | 'pop' | 'cutout' | 'origami' | 'launch' | …, bpm, offset, kit: { style options }, theme: { theme overrides },
 //                brand: '#brand colour', accent: '#second colour' (each style applies them in its own materials, P.kit.brand), ground: 'light' | 'dark' | 'brand' (launch, ASCII),
-//                scenes: [{ variant, energy, cues: [...] }, …], end: { title, tagline, url, beats } })
+//                scenes: [{ variant, energy, cues: [...] }, …], end: { title, tagline, url, beats },
+//                disclaimer: 'Unofficial demo · not affiliated with X' (a small corner line for the whole film; see compose) })
 //
 // ---- Big-word telling (kinetic, the default) ----
 // One background per scene (variant changes pattern / colour); between scenes comes this style's transition; inside a scene the cues come one after another, all on the beat:
@@ -199,6 +200,9 @@
       const lastEnd = lastLine ? lastLine.end : F.duration - 3, wipeLead = P.kit.pace(o.style).wipe;
       const endT = o.end?.at !== undefined ? at(o.end.at) : lastEnd + wipeLead + 0.35;
       scenes[scenes.length - 1].coverT = Math.min(endT - 0.3, Math.max(scenes[scenes.length - 1].cues.at(-1).atT + 1, lastEnd + wipeLead + 0.05));
+      // steps not tied to a spoken word were spread up to the next line; the scene is gone earlier than that (its wipe starts wipeLead before cover):
+      //   spread the last cue's steps so the last one is fully on screen for ~1.2 s before the wipe
+      scenes.forEach((sc) => { const c = sc.cues.at(-1); if (c && infoKind(c) && sc.coverT) c.stepsT = stepTimes(c, c.montage && c.anchor ? c.atT + 0.6 : c.atT, sc.coverT - wipeLead - 0.2); if (c?.montage && c.grid) c.gridT = c.stepsT.at(-1) + 1.2; });
       await draw(F, S, o, scenes, endT);
     },
   };
@@ -610,7 +614,7 @@
     const base = bb.theme; window.__brand = { brand: o.brand ?? null, accent: o.accent ?? null, used: bb.color };
     window.__format = o.format ?? 'kinetic';   // information density check: explain = explainer (checked line by line against the narration, no fact counting), anything else = promo
     P.compose({
-      bpm: o.bpm ?? 120, offset: o.offset ?? 0.5, duration: o.duration ?? plan.duration, cover: o.cover ?? plan.cover, grain: o.grain ?? false, music: o.music,
+      bpm: o.bpm ?? 120, offset: o.offset ?? 0.5, duration: o.duration ?? plan.duration, cover: o.cover ?? plan.cover, grain: o.grain ?? false, music: o.music, disclaimer: o.disclaimer,
       theme: { ...base, ...(o.theme || {}), fonts: { ...base.fonts, ...((o.theme || {}).fonts || {}) } },
       build: async (F) => { const S = P.kit(F, o.style, { ...bb.kit, ...(o.kit || {}) }); await fmt.build(F, S, plan, o); },
     });

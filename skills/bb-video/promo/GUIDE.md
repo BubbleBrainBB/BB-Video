@@ -93,7 +93,8 @@ Then, following `references/structure.md`, settle the length, BPM, each section'
 **Prefer redrawing UI in code** (cards, ranking bars, buttons, forms): it can move, stays sharp, and lays out well in both landscape and portrait; use screenshots where "realness" matters (full-page scrolls, charts, photos).
 
 ### 5. Write the frames
-Edit `index.html`: `PROMO.compose({ bpm, offset, duration, theme, cover, build })`; music goes in `score.js`, sound design in `sound.js`. `bpm` is the music's tempo and also the picture's beat grid — set the music tempo before writing the frames.
+Edit `index.html`: `PROMO.compose({ bpm, offset, duration, theme, cover, build })`; music goes in `score.js`, sound design in `sound.js`.
+**A film made from someone else's website** (a demo, a pitch, a sample — not their own release) carries `disclaimer: '非官方演示 · 与 X 无关联 · 画面取自其公开官网'` (or `{ text, bottom, size }`) in `PROMO.compose` / `PROMO.film`: a small line in the bottom-left corner for the whole film, so nobody takes it for the company's own video. It is UI chrome: not fact-checked, never flagged as unreadable. `bpm` is the music's tempo and also the picture's beat grid — set the music tempo before writing the frames.
 - All times sit on the beat: `F.beat(n)`.
 - `F.section(at, energy, { hit })` marks the music's sections; the music is arranged from these.
 - Landscape and portrait are **the same code**: sizes use `F.px()`, layouts branch on `F.portrait`.

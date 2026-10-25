@@ -40,6 +40,116 @@
 - **自己检查**：渲染前查重叠、字没读完就消失、出画、画面上的事实在 brief 里查不到、信息太少、动效问题；渲染后查跳帧、闪一帧、空放（几秒只有音乐、画面上没有新东西）。
 - **跟着你的语言走**：用什么语言提要求，视频就用什么语言。中文和英文调得最好，其他语言用任意 [edge-tts 声音](https://github.com/rany2/edge-tts)。
 
+<!-- gallery:start -->
+## 样例
+
+每种风格一支样片，都是用这个技能做的（GIF 是 7 秒的片段；带声音的完整 mp4 在 [samples 发布页](https://github.com/DylanDDeng/BB-Video/releases/tag/samples)）。旁白是中文；三支网站宣传片只有音乐。
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/whiteboard.mp4"><img src="examples/whiteboard/preview.gif" width="100%" alt="whiteboard"></a><br>
+<b><code>whiteboard</code></b> · 刘邦斩白蛇（典故）<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/whiteboard.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/riso.mp4"><img src="examples/riso/preview.gif" width="100%" alt="riso"></a><br>
+<b><code>riso</code></b> · Grok Bot 动态文字宣传片<br>
+<sub>非官方演示 · 与 xAI / Grok 无关联 · 画面取自其公开官网</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/riso.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/ink.mp4"><img src="examples/ink/preview.gif" width="100%" alt="ink"></a><br>
+<b><code>ink</code></b> · 唐诗《登鹳雀楼》<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/ink.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/launch.mp4"><img src="examples/launch/preview.gif" width="100%" alt="launch"></a><br>
+<b><code>launch</code></b> · Grok Bot 发布片<br>
+<sub>非官方演示 · 与 xAI / Grok 无关联 · 画面取自其公开官网和 App</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/launch.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/origami.mp4"><img src="examples/origami/preview.gif" width="100%" alt="origami"></a><br>
+<b><code>origami</code></b> · 为什么天空是蓝色的<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/origami.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/pop.mp4"><img src="examples/pop/preview.gif" width="100%" alt="pop"></a><br>
+<b><code>pop</code></b> · 为什么天空是蓝色的<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/pop.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/op.mp4"><img src="examples/op/preview.gif" width="100%" alt="op"></a><br>
+<b><code>op</code></b> · Stripe 官网宣传片<br>
+<sub>非官方演示 · 与 Stripe 无关联 · 画面取自其公开官网</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/op.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/cutout.mp4"><img src="examples/cutout/preview.gif" width="100%" alt="cutout"></a><br>
+<b><code>cutout</code></b> · 为什么天空是蓝色的<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/cutout.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/ascii.mp4"><img src="examples/ascii/preview.gif" width="100%" alt="ascii"></a><br>
+<b><code>ascii</code></b> · 什么是 ASCII 码<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/ascii.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/shadow.mp4"><img src="examples/shadow/preview.gif" width="100%" alt="shadow"></a><br>
+<b><code>shadow</code></b> · 刘邦斩白蛇（带角色配音）<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/shadow.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/bauhaus.mp4"><img src="examples/bauhaus/preview.gif" width="100%" alt="bauhaus"></a><br>
+<b><code>bauhaus</code></b> · 包豪斯：一所只办了十四年的学校<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/bauhaus.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/pixel.mp4"><img src="examples/pixel/preview.gif" width="100%" alt="pixel"></a><br>
+<b><code>pixel</code></b> · 红白机的颜色：为什么老游戏只有这几种颜色<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/pixel.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/chat.mp4"><img src="examples/chat/preview.gif" width="100%" alt="chat"></a><br>
+<b><code>chat</code></b> · 一骑红尘妃子笑：荔枝的典故<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/chat.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4"><img src="examples/toy3d/preview.gif" width="100%" alt="toy3d"></a><br>
+<b><code>toy3d</code></b> · 鸡兔同笼<br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/newsreel.mp4"><img src="examples/newsreel/preview.gif" width="100%" alt="newsreel"></a><br>
+<b><code>newsreel</code></b> · 特斯拉 2026 Roadster 发布会，做成三十年代新闻片<br>
+<sub>与特斯拉无关联 · 照片来自 Wikimedia Commons（CC0 / 公有领域 / CC BY 2.0 Steve Jurvetson）</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/newsreel.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/filmroom.mp4"><img src="examples/filmroom/preview.gif" width="100%" alt="filmroom"></a><br>
+<b><code>filmroom</code></b> · 一次两分是怎么来的：费内巴切对萨姆松卡尼克，2018<br>
+<sub>比赛录像：土耳其篮协（TBF），CC BY 3.0，来自 Wikimedia Commons</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/filmroom.mp4">完整视频</a>
+</td>
+</tr>
+</table>
+<!-- gallery:end -->
+
 ## 安装
 
 用 [`skills`](https://github.com/vercel-labs/skills) 命令（Claude Code、Codex、Cursor、OpenCode 等都能用）：

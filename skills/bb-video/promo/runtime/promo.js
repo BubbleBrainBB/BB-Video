@@ -1148,6 +1148,13 @@
         F.T = T; F.voiced = voiced;
         await o.build(F, { aspect, T });
         if (voiced && o.captions !== false && !F.caps) captions(F, o.captions || {});
+        // disclaimer: a small line in a corner for the whole film — e.g. "Unofficial demo · not affiliated with X · footage from its public site"
+        //   for a film made from someone else's website. UI chrome: never a fact claim, never the "unreadable text" warning
+        if (o.disclaimer) {
+          const d = typeof o.disclaimer === 'string' ? { text: o.disclaimer } : o.disclaimer;
+          const e = el('div', `left:${F.px(28)}px;bottom:${F.px(d.bottom ?? 22)}px;z-index:90;white-space:nowrap;font:500 ${F.px(d.size ?? 22)}px/1.3 ${d.font || 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif'};color:rgba(255,255,255,.88);background:rgba(0,0,0,.5);padding:${F.px(5)}px ${F.px(10)}px;border-radius:${F.px(4)}px;pointer-events:none`, F.stage, d.text);
+          F.text(e, 'label', d.text, 0, F.duration, { noFact: true, chrome: true, overlap: true });
+        }
         if (voiced && o.chapters !== false) chapterBar(F, typeof o.chapters === 'object' ? o.chapters : {});
         // Hand-written films have no rhythm sheet (quick mode lays one out): build one from F.section (name as role), so --check still prints it and it is still compared with measurements after rendering
         if (!window.__rhythm && !voiced && (F.sections || []).length >= 2) {   // a narrated film is paced by its lines, not by a rhythm sheet: no comparison

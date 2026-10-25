@@ -229,7 +229,7 @@
         const bb = b.bboxOf(d, sw && fill === 'none' ? sw : 0, q.transform);
         boxes.push(bb);
         const clean = q.clean ?? o.clean ?? false;
-        if (fill === 'solid') svgEl('path', { d, transform: q.transform, 'fill-rule': q.rule, opacity: q.opacity }, this.part(ink, clean));
+        if (fill === 'solid') svgEl('path', { d, transform: q.transform, 'fill-rule': q.rule, opacity: q.opacity, mask: o.knock?.knockMask ? `url(#${o.knock.knockMask.id})` : undefined }, this.part(ink, clean));   // knock: a text made with knock: true is cut out of this shape (the paper shows through)
         else if (fill === 'halftone') this.dots.push(...halftone(b, this.part(ink, false, 'dots'), d, bb, { ...o.halftone, ...q }, ink).map((x) => ({ ...x, ink })));
         if (sw) {
           const sInk = b.ink(q.strokeInk ?? o.strokeInk ?? ink);
@@ -347,7 +347,7 @@
       // Background block (name tags, labels)
       if (o.bg) {
         const pad = o.pad ?? size * 0.38, bb = this.textBox;
-        svgEl('rect', { x: f1(bb.x - pad), y: f1(bb.y - pad * 0.62), width: f1(bb.w + pad * 2), height: f1(bb.h + pad * 1.24) }, this.part(o.bg));
+        svgEl('rect', { x: f1(bb.x - pad), y: f1(bb.y - pad * 0.62), width: f1(bb.w + pad * 2), height: f1(bb.h + pad * 1.24), mask: this.knockMask ? `url(#${this.knockMask.id})` : undefined }, this.part(o.bg));
         this.box = { x: bb.x - pad, y: bb.y - pad * 0.62, w: bb.w + pad * 2, h: bb.h + pad * 1.24 };
       }
       this.enter = o.enter ?? st.enter;
@@ -355,8 +355,17 @@
       this.dur = o.dur ?? (this.enter === 'type' ? Math.min(2.4, 0.3 + 0.35 * this.nLines) : this.enter === 'stamp' ? 0.4 : 0.6);
       this.finish();
     }
+    // knock: true = no ink of its own: the letters are cut out of its bg block, or out of a shape drawn after it with { knock: thisText } (the paper shows through: readable on any ink)
+    knockG() {
+      if (!this.knockMask) {
+        const { W, H } = this.b, m = svgEl('mask', { id: `knock${this.b.nextSeed()}`, maskUnits: 'userSpaceOnUse', x: -W, y: -H, width: W * 3, height: H * 3 }, this.b.defs);
+        svgEl('rect', { x: -W, y: -H, width: W * 3, height: H * 3, fill: '#fff' }, m);
+        this.knockMask = { id: m.id, g: svgEl('g', { fill: '#000' }, m) };
+      }
+      return this.knockMask.g;
+    }
     emit(run, clean, li) {
-      const el = svgEl('text', { x: f1(run.x), y: f1(run.y), style: this.fontCss }, this.part(run.ink, clean));
+      const el = svgEl('text', { x: f1(run.x), y: f1(run.y), style: this.fontCss }, this.o.knock ? this.knockG() : this.part(run.ink, clean));
       el.textContent = run.text;
       this.els.push({ el, line: li });
     }

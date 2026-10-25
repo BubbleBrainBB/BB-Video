@@ -203,6 +203,7 @@ return b;
 | Method | Description |
 |---|---|
 | `b.tag(str, x, y, { bg, ink, size })` | Name tag / label: backing block (default `base`) + text, stamp entrance |
+| `knock: true` (any text) | Knockout: the letters have no ink and are cut out of the text's `bg` block, or out of a shape drawn after it with `{ knock: thatText }`, so bare paper shows through. Use it for words on a solid block of ink: a light ink overprinted on a colour (yellow on blue) all but vanishes. The montage cards pick knockout or overprint by contrast on their own |
 | `b.number(x, y, { to, from, decimals, prefix, suffix, size, ink, align })` | Big rolling number, e.g. `{ to: 30, prefix: '+', suffix: '%' }`; default `accent`, size 150 |
 | `b.quote(str, { x, y, w, size })` | Quote: large quotation marks + bold Song (serif) |
 | `b.highlight(target, { ink, pad, fromY, toY })` | Prints a backing band under text (default `base`), brushed in left to right; `fromY` / `toY` are the fractions of the text height the band runs from and to (default the full line; `fromY: 0.55` paints only the lower part) |

@@ -1219,17 +1219,22 @@
         if (o.sfx !== false) F.sfx(a, 'print', 0.4);
         return { el: gone(it, until) };
       };
-      // one fast-cut cell = a full page of colour + big word printed (the three inks in turn); this page is removed when the next one is printed
+      // one fast-cut cell = a full page of colour + big word (the three inks in turn); this page is removed when the next one is printed
+      //   the word is whichever reads best on this ink: knocked out to bare paper, or another ink overprinted (inks multiply, so a light ink on a colour all but vanishes)
       S.flash = (layer, o) => {
-        const R = o.rect ?? { x: 0, y: 0, w: W, h: H }, i = o.index ?? 0, ink = ['accent', 'main', 'base'][i % 3], small = !!o.rect;
+        const R = o.rect ?? { x: 0, y: 0, w: W, h: H }, i = o.index ?? 0, ink = ['accent', 'main', 'base'][i % 3], small = !!o.rect, bd = b();
         const size = Math.min(F.px(small ? 44 : 140), (R.w * 0.84) / Math.max(1, estUnits(o.text)));
-        const blk = b().rect(R.x, R.y, R.w, R.h, { ink, at: o.at - 0.1, dur: 0.1, enter: 'stamp', overlap: true, annot: true, flash: true });
-        const tx = b().title(o.text ?? '', { x: R.x + R.w / 2, y: R.y + R.h * (o.low && !small ? 0.72 : 0.5), w: R.w * 0.9, align: 'center', valign: 'middle', size, ink: ink === 'base' ? 'main' : 'base', at: o.at - 0.1, dur: 0.1, enter: 'stamp', overlap: true, flash: true });
+        const under = bd.col(ink), mul = (c) => { const a = rgbOf(under), q = rgbOf(c); return '#' + a.map((v, k) => Math.round((v * q[k]) / 255).toString(16).padStart(2, '0')).join(''); };
+        const best = [{ knock: true, c: bd.P.paper ?? S.paper }, ...['main', 'accent', 'base'].filter((k) => bd.ink(k) !== bd.ink(ink)).map((k) => ({ ink: k, c: mul(bd.col(k)) }))]
+          .map((x) => ({ ...x, cr: wcag(x.c, under) })).sort((x, y) => y.cr - x.cr)[0];
+        const tx = bd.title(o.text ?? '', { x: R.x + R.w / 2, y: R.y + R.h * (o.low && !small ? 0.72 : 0.5), w: R.w * 0.9, align: 'center', valign: 'middle', size, ink: best.ink ?? 'main', knock: !!best.knock, at: o.at - 0.1, dur: 0.1, enter: 'stamp', overlap: true, flash: true });
+        const blk = bd.rect(R.x, R.y, R.w, R.h, { ink, knock: best.knock ? tx : undefined, at: o.at - 0.1, dur: 0.1, enter: 'stamp', overlap: true, annot: true, flash: true });
         F.fact(o.text ?? '', o.at - 0.1, small ? o.end : o.until);
         F.cut(o.at);
         if (o.sfx !== false) F.sfx(o.at - 0.05, 'stamp', 0.5, { cut: true });
         const u = small ? o.end ?? 1e9 : o.until ?? 1e9;
-        gone(blk, u, 0.06); gone(tx, u, 0.06);
+        // the next cell is stamped 0.1 s before its cut and is opaque 0.02 s later: this one goes at that moment, without a fade (inks multiply, so two cards overlapping mix into a third colour with both words)
+        if (u < 1e8) [blk, tx].forEach((it) => it.erase(small ? u - 0.06 : u - 0.085, small ? 0.06 : 0.001));
         return { el: tx };
       };
       return S;
