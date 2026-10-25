@@ -129,7 +129,8 @@
 </td>
 <td width="50%" valign="top">
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4"><img src="examples/toy3d/preview.gif" width="100%" alt="toy3d"></a><br>
-<b><code>toy3d</code></b> · 鸡兔同笼<br>
+<b><code>toy3d</code></b> · Linear 官网宣传片<br>
+<sub>非官方演示 · 与 Linear 无关联 · 画面取自其公开官网</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4">完整视频</a>
 </td>
 </tr>

@@ -129,7 +129,8 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 </td>
 <td width="50%" valign="top">
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4"><img src="examples/toy3d/preview.gif" width="100%" alt="toy3d"></a><br>
-<b><code>toy3d</code></b> · Chickens and rabbits in one cage (a 1,500-year-old puzzle)<br>
+<b><code>toy3d</code></b> · Linear website promo<br>
+<sub>Unofficial demo · not affiliated with Linear · footage from its public website</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/toy3d.mp4">Full video</a>
 </td>
 </tr>
