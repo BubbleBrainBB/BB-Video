@@ -36,6 +36,11 @@ Starter pages: `styles/mystery/explain.html` (narrated, TV look, one block per l
 - **Essence**: the gap between the tone and the subject. The voice and the type are official and grave; the subject is lunch, a phone, a red packet. Nobody winks.
 - **TV look is not** a meme compilation (no reaction GIFs, no stock clips) nor a real diagnosis. **Case look is not** horror (no gore, no jump scares).
 - Each symptom / doubt gets one concrete, trivial example acted out (a sticker scene, a chat, a word storm) — that example is the punchline.
+- **The copy is the film** (TV look). Harmless but unhinged (神经 / 无厘头), never winking:
+  - escalate: the first point is relatable, each next one more absurd, the last turns on the viewer ("四、如果你觉得以上三条都很正常 / 那么，你可能也是") or makes no sense at all;
+  - rigorous-sounding logic going somewhere ridiculous: a pun taken literally (放鸽子 → an actual pigeon), fake taxonomy ("根据分类学，鸽子分为两种"), a fake law (《零食辈分法》第三条), a fake consensus ("学术界公认"), a logic loop (each is the other's dad → both are their own grandpa), fake precise numbers said straight ("全长三米二", "平均每秒一点七次"), "经核实" for something trivial, an oddly specific example;
+  - short lines, one beat each; the chat repeats itself ("在路上了" … "3小时后" … "在路上了"); it stops dead on the test card.
+  - Invented numbers are jokes: list them under brief.md's copy section, never as facts.
 
 ## 3. Color
 - **TV look**: TV blue `#1a23d8` (lighter at the centre, darker at the tube's edge), title white with a black outline, key words red `#ff2b2b`, word storm pale lavender `rgba(214,220,255,.86)`, chat screen `#ededed` with white and green `#95ec69` bubbles, test card grey with colour bars.
@@ -64,7 +69,7 @@ Starter pages: `styles/mystery/explain.html` (narrated, TV look, one block per l
 ## 7. Sound
 - Music (`styles/mystery/score.js`): a deadpan old-TV science-programme bed in F major / D minor — low string drone, a sneaky spiccato figure, a music box, a heartbeat kick when it tightens (sections `cold`, `probe`, `tension`); the case look's truth turns to F major (`truth`, `end`: bright piano, bouncing bass, glockenspiel). The test card cuts it off.
 - Voice: TV look — a flat, matter-of-fact female narrator, `zh-CN-XiaoxiaoNeural` (`en-US-AriaNeural`), +4 %, through `"voice_fx": "doc"` (even, close; it also lets the film reach its loudness target). `explain.json` sets these. Case look: a grave male narrator suits better (`zh-CN-YunyangNeural`, -6 %, pitch -4 Hz) — set it in script.json.
-- Sound effects (`sound.js`): `brush` (a point written on), `type` (the title), `pop` / `whoosh` (stickers), `msg` (chat), `buzz` (a vibrating phone), `tone` (the test card); case look: `sting`, `heart`, `shutter`, `paper`, `pin`, `string`, `pen`, `stamp`, `zoom`, `click`, `rewind`, `tick`, `static`, `open`, `resolve`, `boom`.
+- Sound effects (`sound.js`): `brush` (a point written on), `type` (the title), `pop` / `whoosh` (stickers), `msg` (chat), `buzz` (a vibrating phone), `coo` / `flap` (the pigeon), `crunch` (crisps), `tone` (the test card); case look: `sting`, `heart`, `shutter`, `paper`, `pin`, `string`, `pen`, `stamp`, `zoom`, `click`, `rewind`, `tick`, `static`, `open`, `resolve`, `boom`.
 
 ## 8. Signature moves
 - **TV look**: the outlined title with its red words; the brush-script point; the sticker scene (a character + two or three objects flying in around it); the chat that plays the symptom out ("5分钟后 / 哦"); the word storm of what the friend keeps saying; the crawl "虚构内容 仅供娱乐"; the test card.
@@ -72,13 +77,14 @@ Starter pages: `styles/mystery/explain.html` (narrated, TV look, one block per l
 
 ## 9. Props and people
 - `const S = R.svg(L)` gives an SVG layer in design units; `R.prop(S, name, { x, y, s, rot, a, b, enter, from, move, bob, tape, sfx })` draws a prop there. `enter`: `pop` (default), `fly` (from `from: [dx, dy]`), `zoom`, `dim`, `fade`, `none`. `move: [[t, { x, y, s, rot }, ease]…]` moves it; `tape: T` runs it on a replay tape. `R.el(tag, attrs, parent)` draws your own SVG.
-- **friend** (a person): `body` — `bean`, `bulb` (an upside-down light bulb with a brass cap) or `brain` (a brain head on a shirt); `color`, `shirt`; `face` (`calm smile grin sweat shock sly suspicious sad think blank`, or `[[t, face]…]`), `look` (`[dx, dy]` or `[[t, dx, dy]…]`), `arms` (`down wave up hold hug shrug point think scratch ok phone hips`, or `[[t, pose]…]`), `gloves` (white rubber-hose gloves; on for bulb and brain), `eyes: 'toon'`, `wear` (`tie glasses detective party hood`), `faceY`, `seed`. `h.hand` is the right hand: `R.prop(h.hand, 'phone', { s: .2 })`.
+- **friend** (a person): `body` — `bean`, `bulb` (an upside-down light bulb with a brass cap) or `brain` (a brain head on a shirt); `color`, `shirt`; `face` (`calm smile grin sweat shock sly suspicious sad think blank`, or `[[t, face]…]`), `look` (`[dx, dy]` or `[[t, dx, dy]…]`), `arms` (`down wave up hold hug shrug point think scratch ok phone hips`, or `[[t, pose]…]`), `gloves` (white rubber-hose gloves; on for bulb and brain), `eyes: 'toon'`, `wear` (`tie glasses detective party hood cap` — cap: a graduation mortarboard), `faceY`, `seed`, `nod` (a pigeon's head-bob: bobs a second, or `[[t, rate]…]`, 0 = still; `nodAmp`), `shadow: false` (lying down: `rot: -90` puts the head on the left). `h.hand` is the right hand: `R.prop(h.hand, 'phone', { s: .2 })`.
 - **phone**: `lock: { time, date, notes }`, a chat (`title`, `messages`, `typing`), or `screen: (g, k) => {}` to draw your own screen (x −144…144, y −290…290); `wake` lights it, `buzz: [[t0, t1]]` vibrates it; `h.box(i)` + `h.to(x, y)` place marks on a message.
-- **clock** (`time: 'hh:mm'`, `spin` turns per second), **battery** (`level`, `label`, blinks below 20 %), **powerbank** (`face`), **socket**, **bike**, **envelope** (红包: `amount`, `open`), **calendar** (`mode: 'day' | 'month'`), **scale** (`load`, `labels`), **bubble** (`text`, `think`), **lantern**, **cake**, **gift**, **heart**, **box**, **qmark**, **coin**, **sparkle**, **magnifier**. Add your own: `R.props.name = (g, o, k) => ({ info: 'shape' })` — draw into `g` with `R.el`, animate with `k.F.add((t) => …)` on `k.clock(t)`, register text with `k.F.text(el, 'label', text, ...k.win())`.
+- **clock** (`time: 'hh:mm'`, `spin` turns per second), **battery** (`level`, `label`, blinks below 20 %), **powerbank** (`face`), **socket**, **bike**, **envelope** (红包: `amount`, `open`), **calendar** (`mode: 'day' | 'month'`), **bird** (a pigeon, side view facing right: `flip`, `color`, `nod` bobs a second — same `seed` as a friend's `nod` keeps them in step —, `peck` pecks a second, `flap: [[t0, t1]]`, `coo: [t…]`), **bread** (`mode: 'slice' | 'crumbs'`, `n`, `w`), **bed** (side view, `color` blanket, `flip`), **door** (`mat`), **measure** (a dimension line `w` long drawn on at `a`, `label` above: a fake precise measurement, `dash`, `size`), **snack** (a bag of crisps: `label`, `open`, `crunch: [t…]`), **book** (closed with `title`, `stack: n | [[t, n]…]` piling up; or `mode: 'open'` with `title` (string or lines) and `lines: [{ text, at, size, color }]` — a fake law, homework), **ticket** (`title`, `sub`), **scale** (`load`, `labels`), **bubble** (`text`, `think`), **lantern**, **cake**, **gift**, **heart**, **box**, **qmark**, **coin**, **sparkle**, **magnifier**. Add your own: `R.props.name = (g, o, k) => ({ info: 'shape' })` — draw into `g` with `R.el`, animate with `k.F.add((t) => …)` on `k.clock(t)`, register text with `k.F.text(el, 'label', text, ...k.win())`.
 
 ## 10. Pitfalls and self-check
 - **Too much text on screen**: one title, one point, one example per beat; let the captions carry the narration.
-- **Small chat text**: keep 3–5 messages per screen; the chat fills the picture (72 units).
+- **Small chat text**: keep 3–5 messages per screen; the chat fills the picture (72 units). The newest bubble stops above the captions; more messages scroll.
+- **Stickers under the captions**: the TV captions start at `R.capTop` (design y, about 864); stand small things (birds, crumbs, furniture) on `R.capTop - 16`, let only big characters run behind the captions.
 - **Storm words over the face**: place them around the subject (`x`, `y`, `v` for vertical); they may overlap each other, not the character's eyes.
 - **A mean joke**: the symptoms must be harmless and universal; check the title doesn't target a real group.
 - **Silence at the end**: the test card is short (1.5–2.5 s) and has its tone.
@@ -94,11 +100,12 @@ Starter pages: `styles/mystery/explain.html` (narrated, TV look, one block per l
 ## 12. API quick reference
 ```js
 const R = PROMO.mystery(F, { look: 'tv' | 'case', gate: 4 / 3 | 'full', brand: { name, en, episode }, title, disclaimer, mark, damage, colors, fonts, captions });
-// design units R.RW × R.RH (TV: 1440 × 1080 inside the picture); R.g(v) → px; R.gate is the picture element
+// design units R.RW × R.RH (TV: 1440 × 1080 inside the picture); R.g(v) → px; R.gate is the picture element; R.capTop = where the TV captions start
 const L = R.shot(a, b, { grade: 'blue' | 'paper' | 'plain' | 'studio' | 'rebuild' | 'cctv' | 'night' | 'truth', bg, cut, push: { from, to }, cam, tag, clock, camName, place });
 R.title(L, { a, b, lines: ['…', '…<em>red</em>…'], size, per });  R.point(L, { a, b, n: '一', text });
 R.chat(L, { a, b, messages: [{ who: 'them' | 'me', text, at } | { kind: 'time', text, at }], avatars: { them: { color, hair, ears, bg }, me: {…} }, size, green });
 R.storm(L, { a, b, words: ['…' | { text, x, y, size, v, at }], size, per, color });  R.testcard(L, { a, b, text });
+R.arrow(S, { from, to, bend | loop: r, a, color, width, label: text | { text, size, color, dx, dy } });   // a drawn-on arrow for diagrams (who is what to whom)
 R.cam(L, keys); R.jolt(L, at); R.flash(at); R.dip(a, b); R.text(parent, html, o); R.tag(L, text, o); R.stamp(parent, text, o); R.lower(L, o);
 // case look
 R.card(L, o); R.question(L, o); R.theory(L, { a, b, n, text, out: { text, at }, note }); const B = R.board(L, o); R.file(L, o); R.mark(L, o);
