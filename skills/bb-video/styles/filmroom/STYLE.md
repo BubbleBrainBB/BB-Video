@@ -106,6 +106,8 @@ Starter pages: `styles/filmroom/explain.html` (narrated) and `styles/filmroom/in
 - **Away from the ball**: ring the ball, dim it, light the players without it.
 - **The pass that never came**: a dashed line from the ball to where it could have gone, crossed out.
 - **Count them**: number the players (1, 2, 3) who matter, in reading order.
+- **The board replay**: the board leads, the tape runs slowly in a window, and the dots move with it — the run leaves a trail, the ball travels with the pass.
+- **The lesson on the board**: stop at the result and draw the steps (1, 2, 3) on the board, where the space and the paths are true.
 
 ## 9. Footage
 - Cut the stretch in `assets/clips.json`: `{ "possession": { "src": "game-1505s.webm", "from": 5, "dur": 14 } }`. `assets.mjs` extracts frames at the source's own rate. The credit comes from the source file's sidecar.
@@ -113,23 +115,45 @@ Starter pages: `styles/filmroom/explain.html` (narrated) and `styles/filmroom/in
 - Positions belong to a clip time: the camera pans, so the same player has different coordinates at 4.0 s and 5.0 s. For a tracked ring, give `track: [[clipTime, x, y]…]` with a key every 0.25 s.
 - The HUD's game situation comes from the footage (a scoreboard in view) or a source; don't show a score you can't read.
 
-## 10. Pitfalls and self-check
+## 10. The tactics board and the shot chart
+- **The board is the centre of a breakdown.** The tape shows what happened; the board shows *why*: where everyone really was, the run, the pass, the space. A good film moves between the two: tape at speed → stop → the board beside it → the board leads while the tape replays in a small window → back to the tape for the result → the lesson drawn on the board.
+- **Board (`R.board`)**: the same moment top-down, on a court drawn to real dimensions (FIBA or NBA). It answers what the broadcast angle hides: the camera films from the side, so "left / right" on screen is not "the two wings" on the court, and distances are squashed.
+  - **Calibrate, don't guess.** On the frozen frame, read 4 or more court landmarks on the grid: the key's four corners (`keyBaseNear`, `keyBaseFar`, `keyFtNear`, `keyFtFar`), plus `threeTop` (the top of the arc) when players stand far out. Then `C.calib(clipTime, { name: [u, v], … }, { court, side })`.
+    - Other names: `ftCentre`, `cornerNear`, `cornerFar`, `baseNear`, `baseFar`, `midNear`, `midFar`, `centre`, `basket`.
+    - "near" = the camera's side; `side: -1` = the left basket.
+    - Then `B.at(C, clipTime, u, v)` turns a player's feet into court metres.
+  - **Trust it only inside the points.** A map is good inside the landmarks you used; far outside them it drifts (a player 11 m out can land off the court). Leave such a player off, or add a landmark near them. Reading lines by eye gives about ±0.5 m: don't print exact distances unless the fit is better than that.
+  - **Layout**:
+    - `split`: the tape slides left and the board comes in on the right (portrait: below the tape). For a frozen moment: "this is where they stand".
+    - `main`: the board leads (large, left) and the tape shrinks to a window at the top right. For the replay of a move.
+    - `full`: stay on the board. `inset`: a small reminder.
+    - Two boards back to back (`split` then `main`): start the second before the first ends, and the tape eases straight from one layout to the other.
+  - **Replay in sync with the tape.** Give the players who matter `keys: [C, [[clipTime, x, y]…]]` (metres, from `C.toCourt` on footage points read every ~0.4 s) and the ball `B.ball({ keys })`. They move as the tape plays, slows and rewinds. `trail: true` draws the run. Players you didn't track get `still: C`: they dim while the tape moves, because a dot standing still while the footage moves would lie.
+  - **Panning camera**: calibrate on several frames (`C.calib` at each), and the runtime blends between the calibrations either side of a clip time.
+  - Players appear on the same words as their rings on the tape; labels name the place on the court ("侧翼", "弧顶", "底线"), not the screen side.
+- **Shot chart (`R.shotchart`)** — a side dish, not a film: on its own it is a scatter of dots that says *where*, never *why*. Use it for a few seconds at the start or end of a breakdown to show a player's whole night, then go to the tape and the board. It shows every attempt of a game on a half court (made ● / missed ✕), landing one by one. Beside it, made / attempts for all shots and by zone (paint = inside the key; mid-range = other twos; three), each row coming in on its word. `highlights` lights one subset (a quarter, a zone) and dims the rest.
+  - **Data, not footage.** A game's shot locations are facts from public stats (league sites, Basketball-Reference). Keep the source page in `research/`, convert to metres from the basket, and **check the conversion against the distances the source gives** (the sample's fit: 0.3 ft RMS). Check the totals against the box score too. The source goes on screen and in brief.md.
+  - This is how to cover a famous game whose footage you can't use: the numbers are free to show, the broadcast isn't.
+
+## 11. Pitfalls and self-check
 - **Claiming what the tape doesn't show**: intent, the play's name, fault. Rewrite as what is visible.
 - **Fooled by the pan**: check a player's motion against the court lines, not the frame edge.
 - **Drawings off target**: render stills at every annotation moment and look. The ring must sit under the feet, and the arrow must start at the player.
 - **A long open**: anything before the tape longer than about 2 s (a title card, a chapter card, a long ident) — the viewer came for the footage.
 - **Too much on one freeze**: at most three or four marks at once; take the old ones off when the subject changes.
 - **Covering the source's logo**: keep HUD and labels out of the top-right corner.
+- **Narrating before checking on the board**: in the sample, three claims read off the sideline picture (when the catch happened, "turned to the middle", "the defender half a step behind") were wrong on the court. Map the play onto the board first (ball carrier at each moment, who is between whom and the basket), then write the narration.
+- **Screen sides for court positions**: "left wing / right wing" read off a sideline camera is often wrong — check on the board before saying it.
 - **Counting what isn't in frame**: if only three of four players are visible, don't say "the four".
 - Self-check per `references/review.md`; `--check`, then `--stills` at the freezes, then the render (the frame check covers the slow motion and the spotlights).
 
-## 11. Variation
+## 12. Variation
 - Pen colour (`accent`) per series; the show's name and episode line.
 - Pace: one long freeze with five marks (teaching) ↔ several short freezes (a breakdown of a whole possession).
 - Depth: a single clip and one lesson ↔ two or three clips compared (the same action done well and badly), each with its card.
 - Portrait for phones: the band layout keeps the tape large; labels stay 46.
 
-## 12. API quick reference
+## 13. API quick reference
 ```js
 const R = PROMO.filmroom(F, { brand: { name, en, episode }, accent, colors: { blue, red, … }, fonts, captions });
 R.ident({ at, until, title, sub });                 // the open (keep it ~1.6 s: brand only; a title can't be read that fast)
@@ -147,11 +171,19 @@ C.arrow([[x, y]…], { a, b, dur, color, dash });  C.line([x, y], [x, y], { a, b
 C.zone([[x, y]…], { a, b, color });  C.spot(x, y, { a, b, rx, ry });
 C.num(x, y, n, { a, b });  C.label(x, y, text, { a, b, dx, dy, color });  C.x(x, y, { a, b });
 C.grid(a, b);                                        // authoring only: a 5 % grid with labels
+C.calib(clipTime, { keyBaseNear: [u, v], keyBaseFar: [u, v], keyFtNear: [u, v], keyFtFar: [u, v], threeTop: [u, v] }, { court: 'fiba', side: -1 });
+const B = R.board({ a, b, court: 'fiba' | 'nba', view: 'left' | 'right' | 'full', layout: 'split' | 'full' | 'inset', title, teams: { home: { color }, away: { color } } });
+B.at(C, clipTime, u, v) → [x, y] metres;  B.player(num, { at: [x, y] | move: [[t, x, y]…] | track: [C, [[clipTime, u, v]…]] | keys: [C, [[clipTime, x, y]…]], trail, still: C, team, a, b });
+B.ball({ keys: [C, [[clipTime, x, y]…]], a, b });   // layouts: 'split' | 'main' | 'full' | 'inset'
+B.path([[x, y]…], { a, b, color, dash });  B.zone([[x, y]…], { a, b, color });  B.dist(p, q, { a, b, label });  B.label(x, y, text, { a, b, color, size });
+R.shotchart({ a, b, court: 'nba' | 'fiba', shots: [{ x, y, made, pts, q }], title, sub, source, start, dur, rowsAt: [t, t, t], highlights: [{ a, b, where: (shot) => bool, label }] });
+//   shots in metres from the basket: x across, y out from the baseline
 ```
 Times: `a` = in, `b` = out, in film time; positions in footage coordinates at the clip time of the freeze. Each piece registers its own information kind (clip, annotate, figures); the tape running counts as action for the gap checks (`F.live`).
 
-## 13. Not supported yet
+## 14. Not supported yet
 - No quick version (`--quick` / `kit.js` adapter): pages are hand-written.
 - No automatic player tracking: tracked rings are keyed by hand.
-- No court diagram (a top-down board next to the footage) and no shot chart yet.
+- Courts: basketball only (FIBA, NBA). Football, volleyball and others need their own court specs.
+- No automatic calibration: the landmarks are read by hand on the grid.
 - Two clips side by side (split screen) for comparison.

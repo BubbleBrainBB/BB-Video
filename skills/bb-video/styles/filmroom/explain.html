@@ -38,6 +38,8 @@ PROMO.compose({
     C.cam(f1, { x: 0.5, y: 0.5, s: 1 }).cam(f1 + 0.8, { x: 0.45, y: 0.6, s: 1.6 });
     C.ring(0.45, 0.62, { a: f1 + 0.3, b: f1 + 1.6 });
     C.arrow([[0.45, 0.63], [0.52, 0.62], [0.58, 0.66]], { a: f1 + 0.7, b: f1 + 1.6 });
+    // the same moment top-down: read the key's corners on the frozen frame (C.grid), C.calib(ct, { keyBaseNear: [u, v], … }), then
+    //   const B = R.board({ a, b, court: 'fiba', view: 'left', layout: 'split' }); B.player(7, { at: B.at(C, ct, u, v) }) — STYLE.md §10
     C.rewind(1.0, 0.8);
     C.slow(1.6, 0.4);
     C.end();

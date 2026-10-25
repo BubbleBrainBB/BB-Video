@@ -32,6 +32,64 @@
   const NS = 'http://www.w3.org/2000/svg';
   const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const lerp = (a, b, q) => a + (b - a) * q;
+
+  // ---------- courts, in metres. Origin at the centre; x along the length (the baskets at ±), y across (+ = the side the camera is on) ----------
+  const FT = 0.3048;
+  const COURTS = {
+    fiba: { L: 28, W: 15, basket: 1.575, board: 1.2, boardW: 1.8, key: 4.9, ft: 5.8, ftR: 1.8, three: 6.75, corner: 0.9, ra: 1.25, centreR: 1.8, rim: 0.225 },
+    nba: { L: 94 * FT, W: 50 * FT, basket: 5.25 * FT, board: 4 * FT, boardW: 6 * FT, key: 16 * FT, ft: 19 * FT, ftR: 6 * FT, three: 23.75 * FT, corner: 3 * FT, ra: 4 * FT, centreR: 6 * FT, rim: 0.75 * FT },
+  };
+  // landmarks of one half (side -1 = the left basket, +1 = the right), named for calibration: "near" = the camera's side
+  const landmarks = (c, s) => {
+    const bx = (s * c.L) / 2, fx = s * (c.L / 2 - c.ft), k = c.key / 2, cy = c.W / 2 - c.corner;
+    return { keyBaseNear: [bx, k], keyBaseFar: [bx, -k], keyFtNear: [fx, k], keyFtFar: [fx, -k], ftCentre: [fx, 0], cornerNear: [bx, cy], cornerFar: [bx, -cy],
+      baseNear: [bx, c.W / 2], baseFar: [bx, -c.W / 2], midNear: [0, c.W / 2], midFar: [0, -c.W / 2], centre: [0, 0], basket: [s * (c.L / 2 - c.basket), 0],
+      threeTop: [s * (c.L / 2 - c.basket - c.three), 0] };   // add a point beyond the key (threeTop) when players stand far out: a map is only good inside its points
+  };
+  // a plane-to-plane map (homography) from 4 or more point pairs: footage (u, v) → court (x, y). Least squares on the 8 unknowns.
+  function homography(src, dst) {
+    const n = 8, A = Array.from({ length: n }, () => new Array(n + 1).fill(0));
+    src.forEach(([u, v], i) => {
+      const [x, y] = dst[i];
+      for (const [row, rhs] of [[[u, v, 1, 0, 0, 0, -u * x, -v * x], x], [[0, 0, 0, u, v, 1, -u * y, -v * y], y]]) {
+        for (let r = 0; r < n; r++) { for (let q = 0; q < n; q++) A[r][q] += row[r] * row[q]; A[r][n] += row[r] * rhs; }
+      }
+    });
+    for (let i = 0; i < n; i++) {
+      let pv = i; for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[pv][i])) pv = r;
+      [A[i], A[pv]] = [A[pv], A[i]];
+      const d = A[i][i]; if (Math.abs(d) < 1e-12) throw new Error(M('filmroom：标定点共线或重复，换 4 个分散的球场点', 'filmroom: calibration points are collinear or repeated — use 4 spread-out court points'));
+      for (let q = i; q <= n; q++) A[i][q] /= d;
+      for (let r = 0; r < n; r++) if (r !== i && A[r][i]) { const f = A[r][i]; for (let q = i; q <= n; q++) A[r][q] -= f * A[i][q]; }
+    }
+    return [...A.map((r) => r[n]), 1];
+  }
+  const applyH = (h, u, v) => { const w = h[6] * u + h[7] * v + h[8]; return [(h[0] * u + h[1] * v + h[2]) / w, (h[3] * u + h[4] * v + h[5]) / w]; };
+  // the lines of a basketball court, drawn in court metres into an svg group
+  function drawCourt(g, c, o = {}) {
+    const line = o.line || 'rgba(214,222,232,.55)', w = o.width ?? 0.06, A = { fill: 'none', stroke: line, 'stroke-width': w };
+    svgEl('rect', { x: -c.L / 2, y: -c.W / 2, width: c.L, height: c.W, fill: o.floor || '#121820' }, g);
+    svgEl('rect', { x: -c.L / 2, y: -c.W / 2, width: c.L, height: c.W, ...A }, g);
+    svgEl('line', { x1: 0, y1: -c.W / 2, x2: 0, y2: c.W / 2, ...A }, g);
+    svgEl('circle', { cx: 0, cy: 0, r: c.centreR, ...A }, g);
+    for (const s of [-1, 1]) {
+      const bx = (s * c.L) / 2, hx = s * (c.L / 2 - c.basket), fx = s * (c.L / 2 - c.ft), sw = s < 0 ? 1 : 0;
+      svgEl('rect', { x: Math.min(bx, fx), y: -c.key / 2, width: c.ft, height: c.key, ...A, fill: o.paint || 'rgba(214,222,232,.04)' }, g);
+      svgEl('circle', { cx: fx, cy: 0, r: c.ftR, ...A }, g);
+      const dy = c.W / 2 - c.corner, xa = hx - s * Math.sqrt(c.three * c.three - dy * dy);
+      svgEl('path', { d: `M${bx},${-dy} L${xa},${-dy} A${c.three},${c.three} 0 0 ${sw} ${xa},${dy} L${bx},${dy}`, ...A }, g);
+      svgEl('path', { d: `M${hx},${-c.ra} A${c.ra},${c.ra} 0 0 ${sw} ${hx},${c.ra}`, ...A }, g);
+      svgEl('line', { x1: s * (c.L / 2 - c.board), y1: -c.boardW / 2, x2: s * (c.L / 2 - c.board), y2: c.boardW / 2, ...A, 'stroke-width': w * 1.6 }, g);
+      svgEl('circle', { cx: hx, cy: 0, r: c.rim, ...A, stroke: o.rim || 'rgba(255,140,60,.8)' }, g);
+    }
+  }
+  // which part of the court a view shows, and how court metres map into it: 'left' / 'right' = one half, camera side at the bottom;
+  //   'full' = the whole court; 'top' = the left half turned so the basket is at the top (the way shot charts are drawn)
+  const viewOf = (c, view, m = 0.8) => {
+    if (view === 'top') return { box: [-c.W / 2 - m, -c.L / 2 - m, c.W + 2 * m, c.L / 2 + 2 * m], tf: 'matrix(0,1,1,0,0,0)', map: (x, y) => [y, x] };
+    const x0 = view === 'right' ? 0 : -c.L / 2, x1 = view === 'left' ? 0 : c.L / 2;
+    return { box: [x0 - m, -c.W / 2 - m, x1 - x0 + 2 * m, c.W + 2 * m], tf: '', map: (x, y) => [x, y] };
+  };
   // a smooth path through points (Catmull-Rom → cubic Bézier)
   const smooth = (pts) => {
     if (pts.length < 3) return `M${pts.map((p) => p.join(',')).join(' L')}`;
@@ -116,7 +174,7 @@
       line.forEach(([k, v], i) => {
         const cx = x + i * px(PT ? 300 : 360), cy = y + px(PT ? 330 : 360), at = a + 0.5 + i * 0.18;
         txt(L, String(v), `left:${cx}px;top:${cy}px;font:700 ${px(96)}px/1 ${FONT.caps};color:${C0.ink}`, 'label', at, b);
-        txt(L, k, `left:${cx}px;top:${cy + px(110)}px;font:500 ${px(32)}px/1.2 ${FONT.sans};letter-spacing:.08em;color:${C0.dim}`, 'label', at + 0.05, b);
+        txt(L, k, `left:${cx}px;top:${cy + px(132)}px;font:500 ${px(32)}px/1.2 ${FONT.sans};letter-spacing:.08em;color:${C0.dim}`, 'label', at + 0.05, b);
       });
       if (line.length) F.info('figures', a + 0.5, b);
       if (note) txt(L, note, `left:${x}px;top:${y + px(PT ? 560 : 560)}px;font:500 ${px(30)}px/1.3 ${FONT.sans};color:${C0.dim}`, 'label', a + 0.6, b);
@@ -212,6 +270,28 @@
       };
       const segAt = (t) => segs.find((s) => t >= s.a && t < s.b) || null;
       Cf.clipAt = clipAt;
+      Cf.kindAt = (t) => { const sg = segAt(t); return sg ? sg.kind : null; };   // 'play' | 'slow' | 'freeze' | 'rewind' | null
+      // calibration: at clip time ct, where 4+ court landmarks are on the footage → footage points map onto the court (metres).
+      //   C.calib(ct, { keyBaseNear: [u, v], keyFtNear: [u, v], … }, { court: 'fiba', side: -1 })   (names: see the landmarks list in STYLE.md)
+      const calibs = [];
+      Cf.calib = (ct, pts, co = {}) => {
+        const court = COURTS[co.court || 'fiba'], lm = landmarks(court, co.side ?? -1), names = Object.keys(pts);
+        if (names.length < 4) throw new Error(M('filmroom：C.calib 至少要 4 个球场点', 'filmroom: C.calib needs at least 4 court points'));
+        for (const n of names) if (!lm[n]) throw new Error(M(`filmroom：没有这个球场点 "${n}"（有：${Object.keys(lm).join(' ')}）`, `filmroom: no court point "${n}" (available: ${Object.keys(lm).join(' ')})`));
+        calibs.push({ ct, h: homography(names.map((n) => pts[n]), names.map((n) => lm[n])) });
+        calibs.sort((p, q) => p.ct - q.ct);
+        return Cf;
+      };
+      // footage point (u, v) at clip time ct → court metres [x, y], with the calibration nearest in clip time
+      // footage point → court, blending the two calibrations either side of ct (a panning camera: calibrate every second or so)
+      Cf.toCourt = (ct, u, v) => {
+        if (!calibs.length) throw new Error(M('filmroom：先用 C.calib 标定，才能把录像上的位置换到战术板上', 'filmroom: calibrate with C.calib before mapping footage positions onto the board'));
+        if (ct <= calibs[0].ct) return applyH(calibs[0].h, u, v);
+        const last = calibs[calibs.length - 1]; if (ct >= last.ct) return applyH(last.h, u, v);
+        const i = calibs.findIndex((q) => q.ct > ct), p0 = calibs[i - 1], p1 = calibs[i], q = (ct - p0.ct) / (p1.ct - p0.ct);
+        const [x0, y0] = applyH(p0.h, u, v), [x1, y1] = applyH(p1.h, u, v);
+        return [lerp(x0, x1, q), lerp(y0, y1, q)];
+      };
       // camera keys: { x, y } = the point of the footage at the centre of the deck, s = scale (≥ 1)
       Cf.cam = (t, k) => { keys.push([t, { x: 0.5, y: 0.5, s: 1, ...k }]); keys.sort((p, q) => p[0] - q[0]); return Cf; };
       const camAt = (t) => {
@@ -334,12 +414,209 @@
       // authoring aid: a labelled 5 % grid over the footage (look at it with --stills, then delete the call)
       Cf.grid = (a0, b0) => {
         const g = svgEl('g', { stroke: 'rgba(0,255,180,.55)', 'stroke-width': 1 }, svg);
-        for (let k = 0; k <= 20; k++) { const v = k / 20; svgEl('line', { x1: v * VW, y1: 0, x2: v * VW, y2: VH }, g); svgEl('line', { x1: 0, y1: v * VH, x2: VW, y2: v * VH }, g); if (k % 2 === 0) { svgEl('text', { x: v * VW + 2, y: 14, fill: '#0fb', 'font-size': 13, stroke: 'none' }, g).textContent = v.toFixed(1); svgEl('text', { x: 2, y: v * VH - 2, fill: '#0fb', 'font-size': 13, stroke: 'none' }, g).textContent = v.toFixed(1); } }
+        for (let k = 0; k <= 20; k++) { const v = k / 20; svgEl('line', { x1: v * VW, y1: 0, x2: v * VW, y2: VH }, g); svgEl('line', { x1: 0, y1: v * VH, x2: VW, y2: v * VH }, g); }
+        // a label at every 10 % crossing, so an enlarged crop of a still can be read on its own
+        for (let i = 0; i <= 10; i++) for (let j = 0; j <= 10; j++) svgEl('text', { x: (i / 10) * VW + 1.5, y: (j / 10) * VH - 1.5, fill: '#0fb', 'font-size': 7, stroke: 'none', 'font-family': 'monospace' }, g).textContent = `${(i / 10).toFixed(1)},${(j / 10).toFixed(1)}`;
         showIn(g, a0, b0);
         console.warn(M('filmroom：C.grid() 是量坐标用的，成片前删掉', 'filmroom: C.grid() is an authoring aid — remove it before the final render'));
         return g;
       };
       return Cf;
+    };
+
+    // ---------- the tactics board: the same moment, top-down, in court metres ----------
+    //   const B = R.board({ a, b, court: 'fiba' | 'nba', view: 'left' | 'right' | 'full', layout: 'split' | 'full' | 'inset', title, teams: { home: { color }, away: { color } } })
+    //   split: the tape slides left and shrinks, the board comes in on the right (portrait: below the tape); full: the board covers the tape; inset: a small board
+    // the tape moves aside for a board (split: to the left; main: into a small window top-right). One mover for all boards, so two boards in a row don't fight over the tape
+    const tapeMoves = [];
+    // a board that starts while another is up replaces it: the tape eases straight from one layout to the next instead of
+    //   going back to full size in between (two easings of different lengths read as a lurch)
+    const lerpM = (p, q, w) => ({ k: lerp(p.k, q.k, w), tx: lerp(p.tx, q.tx, w), ty: lerp(p.ty, q.ty, w) });
+    F.add((t) => {
+      const ms = [...tapeMoves].sort((p, q) => p.a - q.a);
+      let st = { k: 1, tx: 0, ty: 0 }, on = 0;
+      ms.forEach((m, i) => {
+        if (t < m.a || t >= m.b) return;
+        const next = ms[i + 1], replaced = next && next.a < m.b;
+        const qin = seg(t, m.a, m.a + m.tin, E.cubicInOut), qout = replaced ? 1 : 1 - seg(t, m.b - m.tin, m.b, E.cubicInOut);
+        st = lerpM(st, m, Math.min(qin, qout)); on = Math.max(on, Math.min(qin, qout));
+      });
+      const tf = on > 0 ? `translate(${st.tx.toFixed(1)}px,${st.ty.toFixed(1)}px) scale(${st.k.toFixed(4)})` : 'none';
+      set(deck, { transformOrigin: '0 0', transform: tf, borderRadius: `${(px(10) * Math.min(1, on)).toFixed(1)}px` }); set(hud, { transformOrigin: '0 0', transform: tf });
+    });
+    R.board = (o = {}) => {
+      const { a, b } = o, court = COURTS[o.court || 'fiba'], vw = viewOf(court, o.view || 'left'), lay = o.layout || 'split';
+      const teams = { home: { color: C0.accent }, away: { color: C0.blue }, ...(o.teams || {}) };
+      const ink = { home: '#111', away: '#06121a' };
+      // where the panel sits
+      let pr;
+      if (lay === 'full') pr = { x: FX, y: FY, w: FW, h: FH };
+      else if (lay === 'main' && !PT) pr = { x: px(40), y: H * 0.1, w: W * 0.6, h: H * 0.78 };   // the board leads, the tape is a small window
+      else if (lay === 'inset') pr = PT ? { x: W - px(40) - W * 0.42, y: FY + FH + px(30), w: W * 0.42, h: W * 0.42 * 0.62 } : { x: W - px(48) - W * 0.27, y: px(110), w: W * 0.27, h: W * 0.27 * 0.62 };
+      else pr = PT ? { x: px(40), y: FY + FH + px(40), w: W - px(80), h: H * 0.82 - (FY + FH + px(40)) - px(140) } : { x: W * 0.6, y: H * 0.12, w: W * 0.37, h: H * 0.7 };
+      const panel = el('div', `left:${pr.x}px;top:${pr.y}px;width:${pr.w}px;height:${pr.h}px;z-index:35;display:none;background:${lay === 'full' ? C0.bg : C0.panel};border-radius:${px(lay === 'full' ? 0 : 14)}px;overflow:hidden`, F.stage);
+      const head = o.title ? el('div', `position:absolute;left:${px(24)}px;top:${px(16)}px;font:700 ${px(44)}px/1.2 ${FONT.sans};color:${C0.ink};white-space:nowrap`, panel, o.title) : null;
+      const top = head ? px(82) : px(14);
+      const svg = svgEl('svg', { viewBox: vw.box.join(' '), preserveAspectRatio: 'xMidYMid meet', width: pr.w - px(28), height: pr.h - top - px(14), style: `position:absolute;left:${px(14)}px;top:${top}px;overflow:hidden` }, panel);
+      const g = svgEl('g', vw.tf ? { transform: vw.tf } : {}, svg);
+      drawCourt(g, court);
+      const marksG = svgEl('g', {}, g), dotsG = svgEl('g', {}, g);
+      if (head) F.text(head, 'label', o.title, a, b);
+      F.info('diagram', a, b);
+      // in and out: split moves the tape aside; the others fade
+      const tin = o.layout === 'main' ? 1.0 : 0.5;   // the bigger move takes longer (the tape crosses the frame into its window)
+      F.add((t) => {
+        const on = t >= a - 0.01 && t < b, q = on ? Math.min(seg(t, a, a + tin, E.cubicInOut), 1 - seg(t, b - tin, b, E.cubicInOut)) : 0;
+        const slide = lay === 'split' ? (PT ? `translateY(${((1 - q) * px(60)).toFixed(1)}px)` : `translateX(${((1 - q) * (W - pr.x + px(20))).toFixed(1)}px)`) : lay === 'main' && !PT ? `translateX(${((1 - q) * -(pr.x + pr.w + px(20))).toFixed(1)}px)` : 'none';
+        set(panel, { display: q > 0 ? '' : 'none', opacity: lay === 'split' || (lay === 'main' && !PT) ? 1 : q.toFixed(3), transform: slide });
+      });
+      if ((lay === 'split' || lay === 'main') && !PT) {
+        const k = lay === 'main' ? 0.34 : 0.57;
+        tapeMoves.push({ a, b, k, tin, tx: lay === 'main' ? W - px(40) - W * k : px(40), ty: lay === 'main' ? H * 0.12 : (H - H * k) / 2 });
+        F.transition(a, a + tin); F.transition(b - tin, b);
+      }
+      F.sfx(a, 'whoosh', 0.3);
+      const B = { court, svg, g, panel, a, b };
+      const P2 = (x, y) => [x, y];   // drawing happens in court metres inside g (the view's transform turns it)
+      // a player: a disc with the number. Where: at: [x, y] metres; move: [[t, x, y]…] (film time); track: [C, [[clipTime, u, v]…]] (footage points,
+      //   through the calibration); keys: [C, [[clipTime, x, y]…]] (metres, synced to the tape). trail: true draws the way she has come.
+      //   still: C — a player you haven't tracked: she dims while the tape runs (a dot standing still while the footage moves would lie)
+      B.player = (num, po = {}) => {
+        const tm = teams[po.team || 'home'], r = court.W * 0.045;
+        const pg = svgEl('g', {}, dotsG);
+        svgEl('circle', { cx: 0, cy: 0, r, fill: tm.color, stroke: '#07090c', 'stroke-width': r * 0.14 }, pg);
+        const tx = svgEl('text', { x: 0, y: r * 0.36, 'text-anchor': 'middle', 'font-family': 'Oswald, sans-serif', 'font-weight': 700, 'font-size': r * 1.05, fill: ink[po.team || 'home'] || '#111', transform: vw.tf ? 'matrix(0,1,1,0,0,0)' : '' }, pg);
+        tx.textContent = String(num);
+        const a0 = po.a ?? a, b0 = po.b ?? b;
+        let keys = null, film = null;
+        if (po.track) { const [C, tr] = po.track; film = C; keys = tr.map(([ct, u, v]) => [ct, ...C.toCourt(ct, u, v)]); }
+        if (po.keys) { const [C, tr] = po.keys; film = C; keys = tr.map((k) => [...k]); }
+        const trail = po.trail && keys ? svgEl('polyline', { points: '', fill: 'none', stroke: tm.color, 'stroke-width': court.W * 0.008, 'stroke-dasharray': `${court.W * 0.02} ${court.W * 0.014}`, opacity: 0.8 }, marksG) : null;
+        F.add((t) => {
+          const on = t >= a0 && t < b0; pg.style.display = on ? '' : 'none'; if (!on) return;
+          let x = po.at ? po.at[0] : 0, y = po.at ? po.at[1] : 0;
+          if (po.move) { const mv = po.move; if (t <= mv[0][0]) [x, y] = [mv[0][1], mv[0][2]]; else if (t >= mv[mv.length - 1][0]) [x, y] = [mv[mv.length - 1][1], mv[mv.length - 1][2]]; else for (let i = 0; i < mv.length - 1; i++) if (t < mv[i + 1][0]) { const q = E.sine(seg(t, mv[i][0], mv[i + 1][0])); x = lerp(mv[i][1], mv[i + 1][1], q); y = lerp(mv[i][2], mv[i + 1][2], q); break; } }
+          if (keys) { const ct = film.clipAt(t); if (ct <= keys[0][0]) [x, y] = [keys[0][1], keys[0][2]]; else if (ct >= keys[keys.length - 1][0]) [x, y] = [keys[keys.length - 1][1], keys[keys.length - 1][2]]; else for (let i = 0; i < keys.length - 1; i++) if (ct < keys[i + 1][0]) { const q = (ct - keys[i][0]) / (keys[i + 1][0] - keys[i][0]); x = lerp(keys[i][1], keys[i + 1][1], q); y = lerp(keys[i][2], keys[i + 1][2], q); break; } }
+          const pop = 1 + 0.25 * (1 - seg(t, a0, a0 + 0.25, E.backOut));
+          pg.setAttribute('transform', `translate(${x.toFixed(3)},${y.toFixed(3)}) scale(${pop.toFixed(3)})`);
+          if (trail) { const ct = film.clipAt(t), pts = keys.filter((k) => k[0] <= ct).map((k) => `${k[1]},${k[2]}`); pts.push(`${x},${y}`); trail.setAttribute('points', pts.join(' ')); trail.style.display = ''; }
+          if (po.still) { const kd = po.still.kindAt(t), moving = kd && kd !== 'freeze'; pg.style.opacity = moving ? '0.3' : '1'; }
+        });
+        if (trail) F.add((t) => { if (!(t >= a0 && t < b0)) trail.style.display = 'none'; });
+        F.text(tx, 'label', String(num), a0, b0, { noFact: true, chrome: true, overlap: true });
+        return pg;
+      };
+      // the ball: keys: [C, [[clipTime, x, y]…]] metres, synced to the tape (put it at the carrier's feet; in flight, interpolate between passer and catcher)
+      B.ball = (bo = {}) => {
+        const [C, kk] = bo.keys, a0 = bo.a ?? a, b0 = bo.b ?? b, r = court.W * 0.022;
+        const e = svgEl('circle', { r, fill: '#f28c28', stroke: '#fff', 'stroke-width': r * 0.3 }, dotsG);
+        F.add((t) => {
+          const on = t >= a0 && t < b0; e.style.display = on ? '' : 'none'; if (!on) return;
+          const ct = C.clipAt(t); let x = kk[0][1], y = kk[0][2];
+          if (ct >= kk[kk.length - 1][0]) [x, y] = [kk[kk.length - 1][1], kk[kk.length - 1][2]];
+          else for (let i = 0; i < kk.length - 1; i++) if (ct >= kk[i][0] && ct < kk[i + 1][0]) { const q = (ct - kk[i][0]) / (kk[i + 1][0] - kk[i][0]); x = lerp(kk[i][1], kk[i + 1][1], q); y = lerp(kk[i][2], kk[i + 1][2], q); break; }
+          // offset a little toward the camera side so it sits beside the carrier's disc, not under it
+          e.setAttribute('cx', x.toFixed(3)); e.setAttribute('cy', (y + court.W * 0.035).toFixed(3));
+        });
+        return e;
+      };
+      // a footage point (feet on the floor) at clip time ct → court metres, through the film's calibration
+      B.at = (C, ct, u, v) => C.toCourt(ct, u, v);
+      const strokeW = court.W * 0.012;
+      const headId = (color) => { const id = 'bh' + Math.random().toString(36).slice(2, 8); const m = svgEl('marker', { id, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 3.5, markerHeight: 3.5, orient: 'auto-start-reverse' }, svgEl('defs', {}, svg)); svgEl('path', { d: 'M0,0 L10,5 L0,10 Z', fill: color }, m); return `url(#${id})`; };
+      const fadeB = (t, b0) => Math.min(1, Math.max(0, (b0 - t) / 0.2));
+      // a run / a pass on the board (points in metres)
+      B.path = (pts, { a: a0, b: b0 = b, color = C0.accent, dash = false, dur = 0.5 } = {}) => {
+        const e = svgEl('path', { d: smooth(pts.map(([x, y]) => P2(x, y))), fill: 'none', stroke: color, 'stroke-width': strokeW, 'stroke-linecap': 'round', 'marker-end': headId(color), pathLength: 1, 'stroke-dasharray': '1 1' }, marksG);
+        F.add((t) => { const on = t >= a0 && t < b0; e.style.display = on ? '' : 'none'; if (!on) return; const q = seg(t, a0, a0 + dur, E.cubicInOut); if (dash && q >= 1) { e.setAttribute('pathLength', '100'); e.setAttribute('stroke-dasharray', '2.5 2'); e.setAttribute('stroke-dashoffset', '0'); } else { e.setAttribute('pathLength', '1'); e.setAttribute('stroke-dasharray', '1 1'); e.setAttribute('stroke-dashoffset', (1 - q).toFixed(4)); } e.style.opacity = fadeB(t, b0).toFixed(3); });
+        F.sfx(a0, 'pen', 0.3); F.info('annotate', a0, b0); return e;
+      };
+      B.zone = (pts, { a: a0, b: b0 = b, color = C0.blue } = {}) => {
+        const e = svgEl('path', { d: `M${pts.map(([x, y]) => P2(x, y).join(',')).join(' L')} Z`, fill: color, 'fill-opacity': 0, stroke: color, 'stroke-width': strokeW * 0.6, 'stroke-dasharray': `${strokeW * 2} ${strokeW * 1.6}` }, marksG);
+        F.add((t) => { const on = t >= a0 && t < b0; e.style.display = on ? '' : 'none'; if (on) { e.setAttribute('fill-opacity', (0.25 * seg(t, a0, a0 + 0.3) * fadeB(t, b0)).toFixed(3)); e.style.opacity = fadeB(t, b0).toFixed(3); } });
+        F.sfx(a0, 'pen', 0.3); F.info('annotate', a0, b0); return e;
+      };
+      // a distance between two points, labelled in metres (feet on an NBA court)
+      B.dist = (p, q, { a: a0, b: b0 = b, color = C0.ink, label } = {}) => {
+        const d = Math.hypot(q[0] - p[0], q[1] - p[1]), txt = label ?? (o.court === 'nba' ? `${(d / FT).toFixed(0)} ${M('英尺', 'ft')}` : `${d.toFixed(1)} ${M('米', 'm')}`);
+        const e = svgEl('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: color, 'stroke-width': strokeW * 0.7, 'stroke-dasharray': `${strokeW * 2} ${strokeW * 1.5}` }, marksG);
+        const [mx, my] = vw.map((p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+        const lb = svgEl('text', { x: mx, y: my - court.W * 0.035, 'text-anchor': 'middle', 'font-family': FONT.sans, 'font-weight': 700, 'font-size': court.W * 0.05, fill: color, stroke: '#07090c', 'stroke-width': court.W * 0.008, 'paint-order': 'stroke' }, svg);
+        lb.textContent = txt;
+        F.add((t) => { const on = t >= a0 && t < b0; e.style.display = lb.style.display = on ? '' : 'none'; if (on) e.style.opacity = lb.style.opacity = Math.min(seg(t, a0, a0 + 0.25), fadeB(t, b0)).toFixed(3); });
+        F.text(lb, 'label', txt, a0, b0, { overlap: true }); F.sfx(a0, 'tick', 0.35); return { line: e, label: lb, d };
+      };
+      // a word on the board (in metres; drawn upright whatever the view)
+      B.label = (x, y, text, { a: a0, b: b0 = b, color = C0.accent, size = 0.09 } = {}) => {   // size: a share of the court width (0.09 ≈ readable on a phone in a split board)
+        const [mx, my] = vw.map(x, y);
+        const lb = svgEl('text', { x: mx, y: my, 'text-anchor': 'middle', 'font-family': FONT.sans, 'font-weight': 700, 'font-size': court.W * size, fill: color, stroke: '#07090c', 'stroke-width': court.W * 0.008, 'paint-order': 'stroke' }, svg);
+        lb.textContent = text;
+        F.add((t) => { const on = t >= a0 && t < b0; lb.style.display = on ? '' : 'none'; if (on) lb.style.opacity = Math.min(seg(t, a0, a0 + 0.25), fadeB(t, b0)).toFixed(3); });
+        F.text(lb, 'label', text, a0, b0, { overlap: true }); return lb;
+      };
+      return B;
+    };
+
+    // ---------- the shot chart: every attempt of a game (or a season) on a half court, then the numbers by zone ----------
+    //   R.shotchart({ a, b, court: 'nba' | 'fiba', shots: [{ x, y, made, pts }], title, sub, source, start, dur, rowsAt: [t, t, t] })
+    //   shots in metres from the basket: x across (+ = right as you face the basket from half court), y out from the baseline; pts 2 or 3.
+    //   They land one by one in the order given over `dur` s; the numbers count up: all, then paint / mid-range / three.
+    //   highlights: [{ a, b, where: (shot) => bool, label }] — those shots stay lit, the rest dim (a quarter, a zone, the misses)
+    R.shotchart = (o) => {
+      const { a, b } = o, court = COURTS[o.court || 'nba'], vw = viewOf(court, 'top', 0.5), shots = o.shots || [];
+      const L = page(a, b);
+      F.scene(a, b, {});
+      const cw = PT ? W - px(80) : W * 0.5, ch = PT ? H * 0.46 : H - px(390);   // clear of the caption band
+      const svg = svgEl('svg', { viewBox: vw.box.join(' '), preserveAspectRatio: 'xMidYMid meet', width: cw, height: ch, style: `position:absolute;left:${PT ? px(40) : W * 0.06}px;top:${PT ? H * 0.2 : px(230)}px;overflow:hidden` }, L);
+      const g = svgEl('g', { transform: vw.tf }, svg);
+      drawCourt(g, court);
+      const dotsG = svgEl('g', {}, svg);
+      // basket-relative → court: the left basket, so the chart's top is the baseline
+      const toView = (sx, sy) => vw.map(-court.L / 2 + sy, sx);
+      const dur = o.dur ?? Math.min(6, 0.6 + shots.length * 0.11), t0 = o.start ?? a + 0.7;   // start: when the first shot lands
+      const zoneOf = (sh) => (sh.pts === 3 ? 'three' : Math.abs(sh.x) <= court.key / 2 && sh.y <= court.ft ? 'paint' : 'mid');
+      const tally = { all: [0, 0], paint: [0, 0], mid: [0, 0], three: [0, 0] };
+      const r = court.W * 0.016;
+      shots.forEach((sh, i) => {
+        const at = t0 + (dur * i) / Math.max(1, shots.length), [vx, vy] = toView(sh.x, sh.y), z = zoneOf(sh);
+        const e = sh.made ? svgEl('circle', { cx: vx, cy: vy, r, fill: C0.accent, stroke: '#07090c', 'stroke-width': r * 0.25 }, dotsG)
+          : svgEl('path', { d: `M${vx - r * 0.8},${vy - r * 0.8} L${vx + r * 0.8},${vy + r * 0.8} M${vx + r * 0.8},${vy - r * 0.8} L${vx - r * 0.8},${vy + r * 0.8}`, stroke: C0.dim, 'stroke-width': r * 0.45, 'stroke-linecap': 'round', fill: 'none' }, dotsG);
+        const hl = (o.highlights || []).map((h) => ({ ...h, hit: !!h.where(sh) }));
+        F.add((t) => {
+          const on = t >= at && t < b; e.style.display = on ? '' : 'none'; if (!on) return;
+          let dim = 1; for (const h of hl) if (!h.hit && t >= h.a && t < h.b) dim = Math.min(dim, 1 - 0.8 * Math.min(seg(t, h.a, h.a + 0.3), 1 - seg(t, h.b - 0.3, h.b)));
+          e.style.opacity = (seg(t, at, at + 0.12) * dim).toFixed(3);
+        });
+        tally.all[1]++; tally[z][1]++; if (sh.made) { tally.all[0]++; tally[z][0]++; }
+        if (i % Math.max(1, Math.round(shots.length / 10)) === 0) F.sfx(at, 'tick', 0.25);
+      });
+      F.info('chart', t0, b);
+      for (const h of o.highlights || []) if (h.label) txt(L, h.label, `left:${PT ? px(80) : W * 0.62}px;top:${PT ? H * 0.68 + px(640) : H * 0.24 + px(600)}px;font:700 ${px(34)}px/1.2 ${FONT.sans};color:${C0.accent}`, 'label', h.a, h.b);
+      // the numbers, counting up while the shots land
+      const sx = PT ? px(80) : W * 0.62, sy = PT ? H * 0.68 : H * 0.24;
+      if (o.title) txt(L, o.title, `left:${PT ? px(40) : W * 0.06}px;top:${PT ? H * 0.1 : px(108)}px;font:900 ${px(48)}px/1.2 ${FONT.sans};color:${C0.ink}`, 'headline', a + 0.1, b);
+      if (o.sub) txt(L, o.sub, `left:${PT ? px(40) : W * 0.06 + px(4)}px;top:${PT ? H * 0.1 + px(70) : px(172)}px;font:500 ${px(28)}px/1.3 ${FONT.sans};color:${C0.dim}`, 'label', a + 0.25, b);
+      const big = (L2, label, [m, n], x, y, at, size) => {
+        const v = el('div', `left:${x}px;top:${y}px;font:700 ${px(size)}px/1 ${FONT.caps};color:${C0.ink};white-space:nowrap;opacity:0`, L2);
+        const lb = el('div', `left:${x}px;top:${y + px(size * 1.3)}px;font:500 ${px(30)}px/1.2 ${FONT.sans};color:${C0.dim};white-space:nowrap;opacity:0`, L2, label);
+        F.add((t) => { const q = seg(t, at, at + dur * 0.8); set(v, { opacity: t >= at && t < b ? 1 : 0 }); set(lb, { opacity: t >= at && t < b ? 1 : 0 }); v.textContent = `${Math.round(m * q)} / ${Math.round(n * q)}`; });
+        F.text(v, 'label', `${m} / ${n}`, at, b); F.text(lb, 'label', label, at, b);
+      };
+      big(L, `${M('投篮', 'Field goals')} · ${tally.all[1] ? Math.round((100 * tally.all[0]) / tally.all[1]) : 0}%`, tally.all, sx, sy, t0, 120);
+      const rows = [['paint', M('禁区', 'Paint')], ['mid', M('中距离', 'Mid-range')], ['three', M('三分', 'Three')]];
+      rows.forEach(([k, name], i) => {
+        const y = sy + px(230) + i * px(96), at = (o.rowsAt && o.rowsAt[i]) ?? t0 + dur * 0.5 + i * 0.25, [m, n] = tally[k];   // rowsAt: each zone row on its word
+        const nm = el('div', `left:${sx}px;top:${y}px;font:700 ${px(36)}px/1.2 ${FONT.sans};color:${C0.ink};opacity:0`, L, name);
+        const val = el('div', `left:${sx + px(200)}px;top:${y}px;font:700 ${px(40)}px/1.1 ${FONT.caps};color:${C0.ink};opacity:0`, L, `${m} / ${n}`);
+        const bar = el('div', `left:${sx}px;top:${y + px(56)}px;width:${px(420)}px;height:${px(10)}px;background:rgba(214,222,232,.12)`, L);
+        const fill = el('div', `left:0;top:0;height:100%;width:0;background:${C0.accent}`, bar);
+        F.add((t) => { const on = t >= at && t < b; set(nm, { opacity: on ? 1 : 0 }); set(val, { opacity: on ? 1 : 0 }); set(bar, { opacity: on ? 1 : 0 }); set(fill, { width: `${((n ? m / n : 0) * 100 * seg(t, at, at + 0.6, E.expoOut)).toFixed(1)}%` }); });
+        F.text(nm, 'label', name, at, b); F.text(val, 'label', `${m} / ${n}`, at, b);
+      });
+      const key = el('div', `left:${sx}px;top:${sy + px(540)}px;font:500 ${px(26)}px/1.3 ${FONT.sans};color:${C0.dim};white-space:nowrap;opacity:0`, L, M('● 命中　✕ 未中', '● made   ✕ missed'));
+      F.add((t) => set(key, { opacity: t >= t0 && t < b ? 1 : 0 })); F.text(key, 'label', key.textContent, t0, b, { noFact: true });
+      if (o.source) txt(L, o.source, `left:${PT ? px(40) : W * 0.06}px;bottom:${px(PT ? 60 : 40)}px;font:500 ${px(24)}px/1.3 ${FONT.sans};color:${C0.dim}`, 'label', a + 0.3, b, { noFact: true, chrome: true });
+      return { tally, zoneOf };
     };
 
     // the HUD follows whichever film is on screen
