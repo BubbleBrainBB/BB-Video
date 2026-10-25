@@ -72,11 +72,13 @@ const NARRATION = path.join(proj, 'audio', 'narration.m4a');
 const tlLines = () => { try { return JSON.parse(fs.readFileSync(path.join(proj, 'timeline.json'), 'utf8')).lines || []; } catch { return []; } };
 const hasVoice = () => fs.existsSync(NARRATION) && tlLines().length > 0;
 // The voice's colour: script.json "voice_fx": a preset or an ffmpeg audio filter chain. optical = a 1930s optical soundtrack (narrow band,
-//   pressed hard, a little saturated); radio = an old radio set; phone = a telephone line
+//   pressed hard, a little saturated); radio = an old radio set; phone = a telephone line; doc = a documentary narrator (full range, evened out
+//   and a little closer: steady peaks let the film reach its loudness target)
 const VOICE_FX = {
   optical: 'highpass=f=280,lowpass=f=3600,acompressor=threshold=-20dB:ratio=4:attack=4:release=90:makeup=4,asoftclip=type=tanh,volume=-1dB',
   radio: 'highpass=f=400,lowpass=f=3000,acompressor=threshold=-18dB:ratio=6:attack=3:release=60:makeup=5,asoftclip=type=atan',
   phone: 'highpass=f=500,lowpass=f=2800,acompressor=threshold=-16dB:ratio=5:attack=3:release=50:makeup=4',
+  doc: 'highpass=f=70,acompressor=threshold=-24dB:ratio=3.5:attack=6:release=140:makeup=4,equalizer=f=3200:t=q:w=1.2:g=2,alimiter=limit=0.8:attack=3:release=60',
 };
 const voiceFx = () => { try { const v = JSON.parse(fs.readFileSync(path.join(proj, 'script.json'), 'utf8')).voice_fx; return v ? VOICE_FX[v] ?? String(v) : ''; } catch { return ''; } };
 // Spans where someone is speaking (count as "something happening" in the dead-air check); the cover before the first line (up to 2.5 s) is the title being read, so it counts too — a longer silence is still reported

@@ -432,7 +432,9 @@ export function renderPlan(plan, o = {}) {
   // Ending: impact + tonic chord (mid/high layers keep it audible on phone speakers) + tail
   const tonic = voice(parseChord(Object.keys(NOTE).find((k) => NOTE[k] === key.root) + (['minor', 'dorian', 'phrygian'].includes(key.mode) ? 'm' : ''), key), 4);
   const endBus = new Bus(duration);
-  if (hasMusic) endBus.put((sc.endSynth ? SYNTHS[sc.endSynth] : SYNTHS.pad)(tonic, (o.tail ?? 1.6) + 0.5, r, { cut: 2200, attack: 0.05 }), end, 0.25, 0);
+  // off: the picture cuts the signal (a test card, a power cut): the music stops dead there, with no ending chord and no sound logo
+  const offT = (plan.moments || []).filter((m) => m.kind === 'off').map((m) => m.t).sort((x, y) => x - y)[0];
+  if (hasMusic && offT === undefined) endBus.put((sc.endSynth ? SYNTHS[sc.endSynth] : SYNTHS.pad)(tonic, (o.tail ?? 1.6) + 0.5, r, { cut: 2200, attack: 0.05 }), end, 0.25, 0);
   buses.push({ p: {}, bus: endBus, name: '结尾和弦', isDrum: false, duck: false, quiet: true });
   // Effects: synthesised from this product's sound design (impacts, risers and the end-card sound logo are in there too)
   // Narrated films: speaking spans; light effects are not played while speaking (falling paper slips and small taps fight the voice)
@@ -440,7 +442,7 @@ export function renderPlan(plan, o = {}) {
   const speaking = (t) => spoken.some((l) => t >= l.start - 0.12 && t <= l.end + 0.2);
   let sfxDropped = 0;
   const planS = V ? { ...plan, sfx: (plan.sfx || []).filter((e) => { const drop = !e.cut && !e.keep && (e.gain ?? 1) < (V.sfxKeep ?? 0.45) && speaking(e.t); if (drop) sfxDropped++; return !drop; }) } : plan;
-  const sx = renderSfx({ ...planS, logoAt: end }, o.palette, duration, seed), sfx = sx;
+  const sx = renderSfx({ ...planS, logoAt: offT === undefined ? end : undefined }, o.palette, duration, seed), sfx = sx;
   // Pitched sounds in the effects must be in the same key as the music, or they clash
   if (hasMusic && o.palette) {
     const off = new Set(), walk = (x) => { if (!x || typeof x !== 'object') return; if (Array.isArray(x)) return x.forEach(walk); for (const [k, v] of Object.entries(x)) { if ((k === 'note' || k === 'notes') && v) [].concat(v).forEach((nt) => { if (typeof nt === 'string' && /^[A-G][#b]?-?\d$/.test(nt) && !inScale(parseNote(nt), key)) off.add(nt); }); else walk(v); } };
@@ -457,6 +459,7 @@ export function renderPlan(plan, o = {}) {
   let gv = EG[clamp(energyAt(0), 0, 3)];
   for (let i = 0; i < n; i++) { gv += (EG[clamp(energyAt(i / SR), 0, 3)] - gv) * kk; gEnv[i] = gv; }
   for (const m of mom) if (m.kind === 'stop') { const a = Math.round((m.t - B) * SR), b2 = Math.round(m.t * SR), f = Math.round(0.03 * SR); for (let i = Math.max(0, a); i < Math.min(b2, n); i++) gEnv[i] *= 1 - 0.85 * Math.min(1, (i - a) / f, (b2 - i) / f); }   // stop: the music almost fully stops for the beat before
+  if (offT !== undefined) { const a = Math.round(offT * SR), f = Math.round(0.01 * SR); for (let i = Math.max(0, a); i < n; i++) gEnv[i] *= Math.max(0, 1 - (i - a) / f); }
   for (const s of secs) if (s.gap) { const a = Math.round((s.at - s.gap) * SR), b = Math.round(s.at * SR), f = Math.round(0.04 * SR); for (let i = Math.max(0, a); i < Math.min(b, n); i++) gEnv[i] *= i - a < f ? 1 - (0.92 * (i - a)) / f : 0.08; }
   // Mix
   let mL = new Float32Array(n), mR = new Float32Array(n);

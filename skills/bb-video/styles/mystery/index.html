@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · mystery</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ma-shan-zheng@5/400.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/mystery.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · mock-serious TV checklist (promo, no narration; the mystery style's TV look). One of each piece on the beat — e.g. "如何判断你的团队
+// 需要 X": the symptoms are the product's problem, the last card the product. A promo has no voice, so every piece carries its own words. Read styles/mystery/STYLE.md.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0, duration: 26, grain: false, chapters: false,
+  theme: { bg: '#000', fg: '#fff', ink: '#fff', muted: '#b9c0ff', accent: '#ff2b2b', paper: '#ededed', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const R = PROMO.mystery(F, { brand: { name: M('日常谜案', 'Ordinary Mysteries') }, title: M('标题', 'Title') });
+    const { RW, RH } = R, B4 = 4 * F.B;   // one bar
+
+    { const a = 0, b = 1.25 * B4, L = R.shot(a, b); R.title(L, { a, b, lines: [M('如何判断你的团队', 'How to tell if your team'), M('是不是<em>需要一个新工具</em>', '<em>needs a new tool</em>')] }); }
+    { const a = 1.25 * B4, b = 2 * B4, L = R.shot(a, b); R.point(L, { a, b, n: M('一', '1'), text: M('总在找文件', 'Always looking for files') }); }
+    { const a = 2 * B4, b = 3.5 * B4, L = R.shot(a, b, { push: { from: { s: 1, x: 0.5, y: 0.5 }, to: { s: 1.08, x: 0.5, y: 0.45 } } }), S = R.svg(L);
+      R.prop(S, 'friend', { body: 'bulb', x: 720, y: 1080, s: 2.25, color: '#f7b52c', face: [[a, 'think'], [a + 2 * F.B, 'shock']], arms: [[a, 'scratch'], [a + 2 * F.B, 'up']], a: a + 0.05, enter: 'dim', sfx: false });
+      R.prop(S, 'box', { x: 240, y: 360, s: 0.8, rot: -10, text: M('最终版', 'final'), a: a + F.B, enter: 'fly', from: [-500, 0] });
+      R.prop(S, 'box', { x: 1200, y: 330, s: 0.8, rot: 8, text: M('最终版2', 'final 2'), a: a + 2 * F.B, enter: 'fly', from: [500, 0] });
+      R.prop(S, 'qmark', { x: 1100, y: 700, s: 0.7, a: a + 3 * F.B, color: '#ffffff' }); }
+    { const a = 3.5 * B4, b = 4.25 * B4, L = R.shot(a, b); R.point(L, { a, b, n: M('二', '2'), text: M('消息回不完', 'Endless messages') }); }
+    { const a = 4.25 * B4, b = 5.75 * B4, L = R.shot(a, b, { grade: 'paper' });
+      R.chat(L, { a, b, messages: [{ who: 'them', text: M('文件发我一下', 'Send me the file'), at: a + 0.2 }, { who: 'me', text: M('哪个版本', 'Which version?'), at: a + F.B }, { kind: 'time', text: M('5分钟后', '5 minutes later'), at: a + 2 * F.B }, { who: 'them', text: M('最新的', 'The latest'), at: a + 2.5 * F.B }, { who: 'me', text: M('……', '…'), at: a + 3.5 * F.B }] }); }
+    { const a = 5.75 * B4, b = 6.5 * B4, L = R.shot(a, b); R.point(L, { a, b, n: M('三', '3'), text: M('一开会就沉默', 'Silent in meetings') }); }
+    { const a = 6.5 * B4, b = 7.75 * B4, L = R.shot(a, b), S = R.svg(L);
+      R.prop(S, 'friend', { body: 'brain', x: 720, y: 1080, s: 2.2, color: '#ef7a72', face: 'sweat', arms: 'shrug', enter: 'none', sfx: false });
+      R.storm(L, { a, b, z: 3, per: F.B, words: [M('我再想想', 'Let me think'), M('都行', 'Either'), M('会后再说', 'Later'), M('你定', 'Your call')] }); }
+    { const a = 7.75 * B4, b = 9 * B4, L = R.shot(a, b); R.title(L, { a, b, lines: [M('产品名', 'Product'), M('<em>一句话说清楚</em>', '<em>one line that says it</em>')] }); }
+    { const a = 9 * B4, b = F.duration, L = R.shot(a, b, { grade: 'plain' }); R.testcard(L, { a, b }); }
+
+    F.section(0, 1, { name: 'cold' }); F.section(1.25 * B4, 1, { name: 'probe' }); F.section(5.75 * B4, 2, { name: 'tension' });
+  },
+});
+</script></body></html>

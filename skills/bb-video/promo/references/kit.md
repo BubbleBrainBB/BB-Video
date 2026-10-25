@@ -233,6 +233,8 @@ Old newsreel (`newsreel`) has no adapter yet either: hand-written only (`PROMO.n
 
 Film room (`filmroom`) likewise: hand-written only (`PROMO.filmroom(F, opt)`, `styles/filmroom/STYLE.md`), starters `styles/filmroom/index.html` and `explain.html`.
 
+Suspense mystery (`mystery`) likewise: hand-written only (`PROMO.mystery(F, opt)`, `styles/mystery/STYLE.md`), starters `styles/mystery/index.html` and `explain.html`.
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

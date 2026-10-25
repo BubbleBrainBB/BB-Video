@@ -119,7 +119,7 @@ Finally, tell the user the paths of the video, cover and board overview, and tha
   ]
 }
 ```
-`voice_fx` (optional): colour the voice — `"optical"` (an old film's optical sound track: narrow band, pressed hard; the newsreel style sets it), `"radio"`, `"phone"`.
+`voice_fx` (optional): colour the voice — `"optical"` (an old film's optical sound track: narrow band, pressed hard; the newsreel style sets it), `"radio"`, `"phone"`, `"doc"` (a documentary narrator: full range, evened out, which also lets a dynamic voice reach the loudness target; the mystery style sets it).
 
 `chapter`: a new chapter starts at this line; a chapter progress bar appears automatically at the top of the screen (only when there are at least 2 chapters). Usually 3–6 chapters, each title 2–6 Chinese characters or 1–3 English words, matching the major sections of the structures in `references/modes.md`.
 

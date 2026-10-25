@@ -1,0 +1,10 @@
+{
+  "lead_in": 0.4,
+  "voice": {
+    "zh": "zh-CN-XiaoxiaoNeural",
+    "en": "en-US-AriaNeural"
+  },
+  "rate": "+4%",
+  "pitch": "-2Hz",
+  "voice_fx": "doc"
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · mystery</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ma-shan-zheng@5/400.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/mystery.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · mock-serious TV checklist (narrated, the mystery style's TV look). Every shot is timed from the narration (T.start / T.end / T.word).
+// The copy: a title ("如何判断你的朋友是不是……"), then numbered "symptoms" in clinical words, each with one trivial example acted out
+// (a sticker scene, a chat, a word storm); it stops on a test card. Read styles/mystery/STYLE.md. The case look (look: 'case') has its own pieces.
+// Each block below follows one line of script.json (l1, l2, …); a block whose line doesn't exist yet is skipped.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0, grain: false, chapters: false, tail: 0.2,
+  theme: { bg: '#000', fg: '#fff', ink: '#fff', muted: '#b9c0ff', accent: '#ff2b2b', paper: '#ededed', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, has = (id) => T.lines.some((l) => l.id === id && !l.silence), s = T.start, e = T.end;
+    const next = (id) => { const i = T.lines.findIndex((l) => l.id === id), n = T.lines[i + 1]; return n ? n.start - 0.12 : e(id) + 0.35; };
+    // a fictional show of your own in the corner: never a real programme's name (or a pun on it), titles or music
+    const R = PROMO.mystery(F, { brand: { name: M('日常谜案', 'Ordinary Mysteries') }, title: M('标题', 'Title') });
+    const { RW, RH } = R;
+
+    // l1 · the title: key words in <em> turn red
+    { const a = 0, b = next('l1'), L = R.shot(a, b); R.title(L, { a, b, lines: [M('如何判断你的朋友', 'How to tell if your friend'), M('是不是<em>标题</em>', 'is <em>secretly a title</em>')] }); }
+
+    // l2 · a numbered point, written on in brush script
+    if (has('l2')) { const a = s('l2') - 0.12, b = next('l2'), L = R.shot(a, b); R.point(L, { a, b, n: M('一', '1'), text: M('第一个症状', 'The first symptom') }); }
+
+    // l3 · the example, acted out by stickers: a character, objects flying in around it
+    if (has('l3')) { const a = s('l3') - 0.12, b = next('l3'), L = R.shot(a, b, { push: { from: { s: 1, x: 0.5, y: 0.5 }, to: { s: 1.08, x: 0.5, y: 0.45 } } }), S = R.svg(L);
+      R.prop(S, 'phone', { x: 240, y: 330, s: 0.95, rot: -14, a: a + 0.4, enter: 'fly', from: [-500, -100], lock: { time: '10:10' } });
+      R.prop(S, 'clock', { x: 1200, y: 300, s: 1.1, rot: 10, a: a + 0.8, enter: 'fly', from: [500, -100] });
+      R.prop(S, 'friend', { body: 'bulb', x: 720, y: 1080, s: 2.25, color: '#f7b52c', face: 'think', arms: 'scratch', a: a + 0.05, enter: 'dim', sfx: false }); }
+
+    // l4 · a chat that plays the symptom out
+    if (has('l4')) { const a = s('l4') - 0.12, b = next('l4'), L = R.shot(a, b, { grade: 'paper' });
+      R.chat(L, { a, b, messages: [{ who: 'them', text: M('中午吃什么', 'Lunch?'), at: a + 0.2 }, { who: 'me', text: M('都行', 'Anything'), at: a + 0.9 }, { kind: 'time', text: M('5分钟后', '5 minutes later'), at: a + 1.5 }, { who: 'them', text: M('那你定', 'You choose'), at: a + 2 }] }); }
+
+    // l5 · a storm of what the friend keeps saying, around the character
+    if (has('l5')) { const a = s('l5') - 0.12, b = next('l5'), L = R.shot(a, b), S = R.svg(L);
+      R.prop(S, 'friend', { body: 'bulb', x: 720, y: 1080, s: 2.25, color: '#f7b52c', face: 'sweat', arms: 'shrug', enter: 'none', sfx: false });
+      R.storm(L, { a, b, z: 3, words: [M('我都行', 'Whatever'), M('都可以', 'Fine'), M('随便', 'Up to you'), M('你帮我', 'You pick')] }); }
+
+    // the end: the signal is cut to a test card (the music stops dead)
+    const last = T.lines.filter((l) => !l.silence).slice(-1)[0], z = last ? last.end + 0.35 : 3;
+    { const L = R.shot(z, F.duration, { grade: 'plain' }); R.testcard(L, { a: z, b: F.duration }); }
+
+    F.section(0, 1, { name: 'cold' });
+    if (has('l2')) F.section(F.snap(s('l2') - 0.12), 1, { name: 'probe' });
+  },
+});
+</script></body></html>

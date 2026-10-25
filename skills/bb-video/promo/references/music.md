@@ -92,7 +92,7 @@ The score knows the picture's key moments (`promo.js` registers them automatical
 - **Hard cuts** (`F.cut`): in the strongest sections, each cut gets a chord accent + bass (at most one per beat).
 - **Impacts** (sound effects impact / boom / slam, the moment an impact word slams down): chord accent + bass.
 - **Product name appears** (the logo, or else the first line of the end card): the drums stop on the beat before, and on the beat the name appears the motif sings one phrase (on the instrument that sings the motif in the score) + a crash; the motif that was there on those beats steps aside.
-- In a hand-written film add your own: `F.musicCue(t, 'hit' | 'name' | 'stop')` — `stop` = the music almost entirely stops on the beat before and crashes back in at this moment (for reveals and twists).
+- In a hand-written film add your own: `F.musicCue(t, 'hit' | 'name' | 'stop' | 'off')` — `stop` = the music almost entirely stops on the beat before and crashes back in at this moment (for reveals and twists); `off` = the signal is cut: the music stops dead at this moment, with no ending chord and no sound logo (a test card, a power cut, a hard stop on the last word).
 - In the score, `react: false` turns all of these off, `react: { cut: false }` turns one off; `hitSynth` changes the accent timbre (default `stab`). Places where a section already opens with a hit aren't doubled.
 
 ## Films with narration

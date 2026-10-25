@@ -9,7 +9,7 @@
 
 | 技能 | 做什么 |
 |---|---|
-| [`bb-video`](skills/bb-video) | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，16 种画面风格 |
+| [`bb-video`](skills/bb-video) | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，17 种画面风格 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -31,6 +31,7 @@
 | `toy3d` 玩具三维 | 产品真实的界面变成桌上的立体平台，一个哑光软胶玩具在上面跳（three.js） |
 | `newsreel` 老新闻片 | 上世纪三十年代的影院新闻片：带出处的资料照片、印在胶片上的字幕和橡皮图章、划痕黑白胶片、字幕卡、铜管进行曲 |
 | `filmroom` 录像分析 | 教练看录像：真实录像定格，画笔圈出球员、画出跑位，倒带后慢放、圆圈跟着人走；俯视战术板，以及用比赛数据画的投篮分布图 |
+| `mystery` 悬疑探秘 | 假正经的电视科普：4:3 老电视里的纯蓝画面，黑边白字标题、关键词标红，毛笔字写出"一、二、三"条"症状"，每条由复古卡通贴纸演出来，再配一段聊天截图、满屏大字，最后切到电视测试卡；也可以换成"破案"样子（迷雾、划掉的猜想、证据墙、有出处的答案） |
 
 能做什么：
 
@@ -147,6 +148,15 @@
 <sub>比赛录像：土耳其篮协（TBF），CC BY 3.0，来自 Wikimedia Commons</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/filmroom.mp4">完整视频</a>
 </td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4"><img src="examples/mystery/preview.gif" width="100%" alt="mystery"></a><br>
+<b><code>mystery</code></b> · 如何判断你的朋友是不是已经被手机控制了（假正经科普清单）<br>
+<sub>虚构内容，仅供娱乐 · 卡通画面由代码绘制</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">完整视频</a>
+</td>
+<td width="50%" valign="top"></td>
 </tr>
 </table>
 <!-- gallery:end -->

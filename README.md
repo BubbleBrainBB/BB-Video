@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 16 visual styles |
+| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 17 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -31,6 +31,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `toy3d` | toy 3D: the product's real UI as physical slabs on a desk, a matte vinyl toy hopping across it (three.js) |
 | `newsreel` | a 1930s cinema newsreel: archive photos with source tags, supers and rubber stamps on scratchy black-and-white film, intertitles, a brass march |
 | `filmroom` | a coach's film session: real footage stops, a pen rings the player and draws her path, rewind and slow-motion replay with a tracked ring; a top-down tactics board and shot charts from game data |
+| `mystery` | a deadpan mock-science TV show: a blue 4:3 old-TV picture, an outlined title with red key words, numbered "symptoms" in brush script acted out by rubber-hose cartoon stickers, a chat screen, a storm of words, then a test card; or a case-file look (fog, struck-out guesses, an evidence board, a sourced answer) |
 
 What it covers:
 
@@ -147,6 +148,15 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>Game footage: TBF, CC BY 3.0, via Wikimedia Commons</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/filmroom.mp4">Full video</a>
 </td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4"><img src="examples/mystery/preview.gif" width="100%" alt="mystery"></a><br>
+<b><code>mystery</code></b> · How to tell if your friend is controlled by their phone (a deadpan mock-science checklist)<br>
+<sub>Fiction, for fun · cartoons drawn in code</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">Full video</a>
+</td>
+<td width="50%" valign="top"></td>
 </tr>
 </table>
 <!-- gallery:end -->

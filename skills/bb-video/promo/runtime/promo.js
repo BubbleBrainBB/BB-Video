@@ -251,8 +251,8 @@
     // Register a transition [a, b] (full-screen wedge, big circle, colour band sweep): the film check won't report big changes in it as "sudden jumps", and --sheet avoids it when picking frames
     transition(a, b) { (this.transitions ??= []).push([a, b]); }
     // Register a hard cut (one picture instantly replaced by another): motion blur won't blend the two pictures across it
-    // Music follows the picture: musicCue(t, 'hit' | 'name' | 'stop') — hit = a musical accent at this moment; name = product name appears (melody enters here, drums drop out the beat before);
-    //   stop = music almost stops the beat before and slams back here. Hard cuts, impact sfx, logo / end-card names are registered automatically; add the key moments of a hand-written film yourself
+    // Music follows the picture: musicCue(t, 'hit' | 'name' | 'stop' | 'off') — hit = a musical accent at this moment; name = product name appears (melody enters here, drums drop out the beat before);
+    //   stop = music almost stops the beat before and slams back here; off = the signal is cut: the music stops dead here (no ending chord, no sound logo). Hard cuts, impact sfx, logo / end-card names are registered automatically; add the key moments of a hand-written film yourself
     musicCue(t, kind = 'hit') { (this.cues ??= []).push({ t: Math.round(t * 1000) / 1000, kind }); }
     cut(t) { (this.cuts ??= []); if (!this.cuts.some((c) => Math.abs(c - t) < 1e-3)) this.cuts.push(t); }
     // Register an "intended appearance": something appears whole at this moment (e.g. the first frame of paper dropping into view from above). The film check won't report it as a "sudden jump";
@@ -1095,14 +1095,14 @@
   // PROMO.compose({ bpm, offset, duration, theme, grain, build: async (F, { aspect }) => {} })
   // Landscape / portrait: with ?aspect=9:16 in the URL (render.mjs --aspect 9:16) the frame is 1080×1920
   // Captions: with narration (timeline.js), each sentence is split into caption strips by the narration's word times, shown at the bottom (portrait avoids the bottom 20% platform overlay).
-  //   o: { max (strip width limit, in characters), size, font, weight, color, bg, z }. compose adds it automatically with narration (compose's captions: false turns it off)
+  //   o: { max (strip width limit, in characters), size, font, weight, color, bg, shadow (a text-shadow, e.g. with bg: 'none'), top (px from the top), z }. compose adds it automatically with narration (compose's captions: false turns it off)
   //   Captions are not registered as on-screen text (no fact check: they are the narration verbatim)
   function captions(F, o = {}) {
     const T = F.T;
     if (!T || !T.lines.length) return [];
     const segs = EV.captionSegments(T, o.max ?? (F.portrait ? 16 : 22)), size = F.px(o.size ?? (F.portrait ? 50 : 48));
-    const box = el('div', `left:0;right:0;top:${F.H * (F.portrait ? 0.7 : 0.86)}px;text-align:center;z-index:${o.z ?? 880};pointer-events:none;display:none`, F.stage);
-    const pill = el('span', `position:relative;display:inline-block;max-width:${F.W * 0.86}px;padding:${size * 0.22}px ${size * 0.55}px;border-radius:${size * 0.3}px;background:${o.bg ?? 'rgba(12,12,12,.62)'};color:${o.color ?? '#fff'};font:${o.weight ?? 700} ${size}px/1.3 ${o.font ?? F.theme.fonts.sans}`, box);
+    const box = el('div', `left:0;right:0;top:${o.top ?? F.H * (F.portrait ? 0.7 : 0.86)}px;text-align:center;z-index:${o.z ?? 880};pointer-events:none;display:none`, F.stage);
+    const pill = el('span', `position:relative;display:inline-block;max-width:${F.W * 0.86}px;padding:${size * 0.22}px ${size * 0.55}px;border-radius:${size * 0.3}px;background:${o.bg ?? 'rgba(12,12,12,.62)'};color:${o.color ?? '#fff'};font:${o.weight ?? 700} ${size}px/1.3 ${o.font ?? F.theme.fonts.sans};${o.shadow ? `text-shadow:${o.shadow}` : ''}`, box);
     F.add((t) => { const c = segs.find((x) => t >= x.start && t < x.end); set(box, { display: c ? '' : 'none' }); if (c && pill.textContent !== c.text) pill.textContent = c.text; });
     // Captions switch to the next strip in one frame (that's how captions work): register as intended appearances so the film check doesn't report a jump
     for (const c of segs) { F.appear(c.start); F.appear(c.end); }
