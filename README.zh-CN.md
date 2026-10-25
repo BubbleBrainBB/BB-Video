@@ -152,7 +152,7 @@
 <tr>
 <td width="50%" valign="top">
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4"><img src="examples/mystery/preview.gif" width="100%" alt="mystery"></a><br>
-<b><code>mystery</code></b> · 如何判断你的朋友是不是已经被手机控制了（假正经科普清单）<br>
+<b><code>mystery</code></b> · 为什么你的朋友应该叫你爸爸（假正经科普论证）<br>
 <sub>虚构内容，仅供娱乐 · 卡通画面由代码绘制</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">完整视频</a>
 </td>

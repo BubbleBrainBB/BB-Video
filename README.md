@@ -152,7 +152,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <tr>
 <td width="50%" valign="top">
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4"><img src="examples/mystery/preview.gif" width="100%" alt="mystery"></a><br>
-<b><code>mystery</code></b> · How to tell if your friend is controlled by their phone (a deadpan mock-science checklist)<br>
+<b><code>mystery</code></b> · Why your friend should call you dad (a deadpan mock-science proof)<br>
 <sub>Fiction, for fun · cartoons drawn in code</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">Full video</a>
 </td>
