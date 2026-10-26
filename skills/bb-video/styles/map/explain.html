@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Barlow Semi Condensed (map labels), Crimson Pro (water names, numerals), Noto Sans / Serif SC for Chinese. d3 + topojson-client (pinned, jsDelivr) for the globe and other projections; time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/crimson-pro@5/500-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/crimson-pro@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#E9E2D0}#stage{position:relative;overflow:hidden}</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<!-- your geodata (promo/scripts/geodata.mjs build → assets/geo/<name>.js): <script src="assets/geo/city.js"></script> -->
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/map.js"></script>
+</head><body><div id="stage"></div><script>
+// Animated map · explainer (follows the narration): how to write it is in the skill's styles/map/STYLE.md. Every piece of on-screen text must be findable in brief.md
+// All times come from the narration: s('l1') = this line starts, w('l1', 'some word') = when that word is said. Captions and the chapter bar are added automatically.
+// This skeleton needs no geodata of its own (the coarse world layer): the globe turns to a region → a route is drawn between two places while a marker
+//   travels it → the places pop in with labels → a callout and a year counter → the route stays lit while the rest dims → pull back.
+//   Replace the places with your own, and for a city add real geodata (assets/geo/…, GEO.<name>) as PROMO.map's data.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0.2, grain: false,
+  captions: { size: 46, bg: 'rgba(46,41,36,.78)' },
+  theme: { bg: '#E9E2D0', fg: '#2E2924', muted: '#857864', ink: '#2E2924', paper: '#FBF7EE', accent: '#C23B22', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif', script: '"Crimson Pro", serif' } },
+  build: async (F) => {
+    const TL = F.T, s0 = TL.start, w = TL.word;
+    const L1 = s0('l1'), L1e = TL.end('l1'), b = (k) => L1 + (L1e - L1) * k / 16;   // the skeleton has one narration line: timing follows its length; once the narration is written use s0('l3') / w('l3', '…')
+    const G = await PROMO.map(F, { ground: 'atlas' });
+    await G.world();                                     // coarse land, borders, US states (Natural Earth / us-atlas, credited automatically)
+    F.section(0, 1, { name: 'hook' }); F.section(b(8), 2, { name: 'build' });
+    // two places and the way between them (lon, lat) — a placeholder route; use your own
+    const A = [-0.1276, 51.5072], B = [2.3522, 48.8566];
+    const way = [A, [0.6, 51.1], [1.85, 50.95], [2.1, 49.9], B];
+    G.country('United Kingdom', { at: b(1), until: b(6) });
+    const R = G.line(way, { color: 'accent', width: 6, at: b(4), dur: 2.4, name: 'route' });
+    const V = G.travel(R, { at: b(4), dur: 2.4, marker: 'dot' });
+    const P1 = G.pins([A, B], { style: 'dot', color: 'accent', at: b(3.5), stagger: 2.4 });
+    G.label(A, M('伦敦', 'London'), { kind: 'city', dir: 'w', at: b(3.6), until: b(7.8) });   // labels that would leave the frame when the camera pushes in end before the push
+    G.label(B, M('巴黎', 'Paris'), { kind: 'city', dir: 'e', at: b(6), until: F.duration });
+    G.label([1.4, 50.6], M('英吉利海峡', 'English Channel'), { kind: 'water', at: b(5), until: b(7.8), minZoom: 5.5 });
+    G.label(A, M('伦敦', 'London'), { kind: 'city', dir: 'w', at: b(12) + 1.7, until: F.duration });
+    G.callout(B, { title: M('标题？', 'Title?'), sub: M('一句说明', 'One line'), at: b(8), until: b(12) });
+    G.year({ keys: [[b(8), 1900], [b(10), 2000]], at: b(8), until: b(13), label: M('年份', 'Year') });
+    G.inset({ at: b(6), until: F.duration, mark: 'view' });
+    G.focus([R, V, P1], b(11), b(14));
+    G.camera([
+      { at: 0, center: [-30, 40], zoom: 1.9 },                // the globe
+      { at: b(1), fit: [A, B], dur: 3.2 },                    // fly in to the region
+      { at: b(8), fit: [B], max: 7, dur: 1.6 },               // push in on one place
+      { at: b(12), fit: [A, B], dur: 1.6 },                   // back to the whole route
+    ]);
+    TL.lines.filter((l) => !l.silence).forEach((l) => F.info('map', l.start, l.end, { group: l.id }));   // the map itself carries information on every line
+  },
+});
+</script></body></html>

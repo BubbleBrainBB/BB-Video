@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Barlow Semi Condensed (map labels), Crimson Pro (water names, numerals), Noto Sans / Serif SC for Chinese. d3 + topojson-client (pinned, jsDelivr) for the globe and other projections; time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-semi-condensed@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/crimson-pro@5/500-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/crimson-pro@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#E9E2D0}#stage{position:relative;overflow:hidden}</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<!-- your geodata (promo/scripts/geodata.mjs build → assets/geo/<name>.js): <script src="assets/geo/city.js"></script> -->
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/map.js"></script>
+</head><body><div id="stage"></div><script>
+// Animated map (地图动画) · promo: how to write it is in the skill's styles/map/STYLE.md. Every piece of on-screen text must be traceable to brief.md
+// A product told on a map, on the beat: where it is (or where its users are) — the globe turns, the camera dives in, the places light up one per beat,
+//   routes or reach spread between them, a callout pins the claim to a place, and the camera pulls back to the whole map with the name and URL.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 108, offset: 0.3, duration: 16, grain: false,
+  theme: { bg: '#E9E2D0', fg: '#2E2924', muted: '#857864', ink: '#2E2924', paper: '#FBF7EE', accent: '#C23B22', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif', script: '"Crimson Pro", serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), G = await PROMO.map(F, { ground: 'atlas' });
+    await G.world();
+    F.section(0, 1, { name: 'build' }); F.section(b(8), 2, { name: 'work' }); F.section(b(22), 3, { name: 'resolve', hit: true });
+    // places on the beat (replace with the product's own: offices, users, deliveries, stores…)
+    const places = [[-74.006, 40.7128, M('纽约', 'New York')], [-0.1276, 51.5072, M('伦敦', 'London')], [139.6917, 35.6895, M('东京', 'Tokyo')], [103.8198, 1.3521, M('新加坡', 'Singapore')]];
+    G.title({ text: M('一句开场', 'An opening line'), at: 0.2, until: b(2.6) });
+    G.country('United States of America', { at: b(1), until: b(6) });
+    const pins = G.pins(places.map(([x, y, n], i) => ({ ll: [x, y], name: n, time: b(2.6 + i * 1.6) })), { style: 'dot', color: 'accent', r: 9 });
+    places.forEach(([x, y, n], i) => G.label([x, y], n, { kind: 'city', size: 40, dir: 'e', at: b(2.7 + i * 1.6), until: b(15.3) }));   // gone before the camera pushes in
+    const hub = places[1];
+    places.forEach(([x, y], i) => { if (i !== 1) G.line([[hub[0], hub[1]], [x, y]], { color: 'accent', width: 3.5, dash: [10, 7], at: b(10 + i * 0.8), dur: 1.0, head: false, name: 'link' + i }); });
+    G.reach(places.map((p) => [p[0], p[1]]), { r: 450000, at: b(17), stagger: 0.25, alpha: 0.22 });   // reach around each place (radius in metres)
+    G.callout([hub[0], hub[1]], { title: M('一句卖点', 'One claim'), sub: M('一行说明', 'One line'), at: b(16), until: b(21.5) });
+    G.title({ text: M('产品名', 'Product'), sub: 'example.com', subSize: 48, at: b(22), until: F.duration, subNoFact: true });
+    G.legend({ stats: [{ value: '4', label: M('座城市', 'cities') }], at: b(19), until: b(21.5), pos: 'bl' });   // a figure in the map's own key
+    G.focus([pins], b(16), b(21.5));
+    G.camera([
+      { at: 0, center: [-20, 30], zoom: 1.8 },
+      { at: b(2), fit: places.map((p) => [p[0], p[1]]), dur: 2.2 },
+      { at: b(15.5), fit: [[hub[0], hub[1]]], max: 5, dur: 1.2 },
+      { at: b(21.5), fit: places.map((p) => [p[0], p[1]]), room: { top: 0.3, bottom: 0.08 }, dur: 1.2 },
+    ]);
+  },
+});
+</script></body></html>

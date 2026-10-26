@@ -243,6 +243,8 @@ Clipping-file commentary (`dossier`) likewise: hand-written only (`PROMO.dossier
 
 Manga / motion comic (`manga`) likewise: hand-written only (`PROMO.manga(F, opt)`, `styles/manga/STYLE.md`), starters `styles/manga/index.html` (on the beat) and `explain.html` (narrated); the chapter tags and anime-style outlined captions come from the runtime (`compose({ chapters: false })`).
 
+Animated map (`map`) likewise: hand-written only (`await PROMO.map(F, opt)`, `styles/map/STYLE.md`), starters `styles/map/index.html` (places on the beat) and `explain.html` (narrated; the coarse world only — a film about a place builds its own geodata with `scripts/geodata.mjs`).
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.
