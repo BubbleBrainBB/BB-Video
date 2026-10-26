@@ -175,6 +175,12 @@
 <sub>一般健康信息，不构成医疗建议 · 角色原创、由代码绘制 · 资料来源：IOM、EFSA、FDA、Reichert 等 2022</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4">完整视频</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
+<b><code>map</code></b> · 《波士顿地铁》：从 1897 年波士顿公园底下的一段隧道，讲到今天的四色线网<br>
+<sub>非官方介绍 · 与 MBTA 无关联 · 地图数据来自 MassDOT / MBTA、美国人口普查局 TIGER/Line、Natural Earth</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/map.mp4">完整视频</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->

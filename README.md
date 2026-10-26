@@ -175,6 +175,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>General health information, not medical advice · original characters drawn in code · sources: IOM, EFSA, FDA, Reichert et al. 2022</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4">Full video</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
+<b><code>map</code></b> · The Boston subway (波士顿地铁): from the 1897 tunnel under Boston Common to today's four-colour network<br>
+<sub>Unofficial introduction, not affiliated with the MBTA · map drawn from MassDOT / MBTA data, U.S. Census TIGER/Line and Natural Earth</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/map.mp4">Full video</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->
