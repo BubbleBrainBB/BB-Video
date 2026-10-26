@@ -1,0 +1,7 @@
+{
+  "lead_in": 4.2,
+  "voice": { "zh": "zh-CN-YunjianNeural", "en": "en-US-GuyNeural" },
+  "rate": "-8%",
+  "pitch": "-6Hz",
+  "voice_fx": "trailer"
+}

@@ -286,7 +286,7 @@ export function renderPlan(plan, o = {}) {
   const dia = (m, steps, k) => { const sc2 = MODES[k.mode]; let x = snapScale(m, k); for (let q = 0; q < Math.abs(steps); q++) { let y = x + Math.sign(steps); while (!inScale(y, k)) y += Math.sign(steps); x = y; } return x; };
   for (const [pi, p] of (sc.parts || []).entries()) {
     const fn = syn(p);
-    if (!fn) { warnings.push(M(`第 ${pi + 1} 层"${p.name || p.synth}"：没有这个音色 ${p.synth}`, `Layer ${pi + 1} "${p.name || p.synth}": no such instrument ${p.synth}`)); continue; }
+    if (!fn && typeof p.play !== 'function') { warnings.push(M(`第 ${pi + 1} 层"${p.name || p.synth}"：没有这个音色 ${p.synth}`, `Layer ${pi + 1} "${p.name || p.synth}": no such instrument ${p.synth}`)); continue; }
     const bus = new Bus(duration), from = p.from ?? 0, to = p.to ?? 3;
     const isDrum = p.play === 'drum' || DRUMS.has(p.synth), role = isDrum ? (['snare', 'clap', 'rim', 'chipsnare'].includes(p.synth) ? 'back' : 'drum') : p.play === 'bass' ? 'bass' : 'keys';
     const JIT = { drum: 3, back: 3, bass: 6, keys: 10 }[role], vary = sc.vary !== false && p.vary !== false;
@@ -460,7 +460,7 @@ export function renderPlan(plan, o = {}) {
   for (let i = 0; i < n; i++) { gv += (EG[clamp(energyAt(i / SR), 0, 3)] - gv) * kk; gEnv[i] = gv; }
   for (const m of mom) if (m.kind === 'stop') { const a = Math.round((m.t - B) * SR), b2 = Math.round(m.t * SR), f = Math.round(0.03 * SR); for (let i = Math.max(0, a); i < Math.min(b2, n); i++) gEnv[i] *= 1 - 0.85 * Math.min(1, (i - a) / f, (b2 - i) / f); }   // stop: the music almost fully stops for the beat before
   if (offT !== undefined) { const a = Math.round(offT * SR), f = Math.round(0.01 * SR); for (let i = Math.max(0, a); i < n; i++) gEnv[i] *= Math.max(0, 1 - (i - a) / f); }
-  for (const s of secs) if (s.gap) { const a = Math.round((s.at - s.gap) * SR), b = Math.round(s.at * SR), f = Math.round(0.04 * SR); for (let i = Math.max(0, a); i < Math.min(b, n); i++) gEnv[i] *= i - a < f ? 1 - (0.92 * (i - a)) / f : 0.08; }
+  for (const s of secs) if (s.gap) { const a = Math.round((s.at - s.gap) * SR), b = Math.round(s.at * SR), f = Math.round(0.04 * SR), lo = s.hush ? 0 : 0.08; for (let i = Math.max(0, a); i < Math.min(b, n); i++) gEnv[i] *= i - a < f ? 1 - ((1 - lo) * (i - a)) / f : lo; }   // hush: true silence (a trailer's pre-title beat)
   // Mix
   let mL = new Float32Array(n), mR = new Float32Array(n);
   // Narrated films: the busy layer is mixed separately (drops out while speaking)

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Nunito (round, friendly Latin) + Noto Sans SC for Chinese. three.js loads from jsDelivr (import map); time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/nunito@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#E8EFEA}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/isometric.js"></script>
+</head><body><div id="stage"></div><script>
+// Isometric miniature world (等距微缩世界) · promo: how to write it is in the skill's styles/isometric/STYLE.md. Every piece of on-screen text must be traceable to brief.md
+// A product shown as a system at work: each tile is one part of what it does (the input, the engine, the output), something travels across them on the beat,
+//   the part being named lifts while the rest fades, and the camera ends pulled back on the whole world with the name and URL in the sky.
+PROMO.compose({
+  bpm: 112, offset: 0.3, duration: 16, grain: false,
+  theme: { bg: '#E8EFEA', fg: '#22303C', muted: '#5A6672', ink: '#22303C', paper: '#FFFFFF', accent: '#FF6B4A', fonts: { display: 'Nunito, "Noto Sans SC", sans-serif', serif: 'Nunito, "Noto Sans SC", sans-serif', sans: 'Nunito, "Noto Sans SC", sans-serif', script: 'Nunito, sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), W = await PROMO.isometric(F, { palette: 'day', accent: '#FF6B4A' });
+    F.section(0, 1, { name: 'build' }); F.section(b(8), 2, { name: 'work' }); F.section(b(22), 3, { name: 'resolve', hit: true });
+    // three tiles on the beat: input → engine → output (replace with the product's own parts). A zigzag (+x, then −z) runs left to right on screen
+    const t1 = W.tile({ x: 0, z: 0, top: 'grass', at: b(0) }), t2 = W.tile({ x: 9, z: 0, top: 'concrete', at: b(1) }), t3 = W.tile({ x: 9, z: -9, top: 'grass', at: b(2) });
+    [[-2.4, -2], [0.4, -2.4], [2.6, -1.6]].forEach(([x, z]) => W.house({ tile: t1, x, z }));
+    W.road({ tile: t1, pts: [[-4, 1.6], [4, 1.6]] });
+    W.walls({ tile: t2, w: 7.6, d: 7.6, sides: ['n', 'w'], doors: { w: [[0.6, 2.6]], n: [[2.0, 3.8]] }, sign: '产品名', signMark: true });
+    const belt = W.conveyor({ tile: t2, from: [-3, 1.6], to: [2.9, 1.6] }); W.scanner({ on: belt, u: 0.5 }).scan(b(10.5)); W.rack({ tile: t2, x: -2.6, z: -2.4 }); W.rack({ tile: t2, x: -1.7, z: -2.4 });
+    W.tower({ tile: t3, x: -1, z: -1.6 }); W.tree({ tile: t3, x: -2.6, z: 2.4 }); W.road({ tile: t3, pts: [[2.9, 4], [2.9, -4]] });
+    // one thing crosses the world on the beat; volume shown as a stream on the belt
+    const pc = W.parcel({ at: b(4), tape: 'accent', mark: 'accent' }).place(t1.p(2.6, 0.6));
+    pc.move([t1.p(2.6, 0.6), t1.p(4, 1.6), belt.path[0]], b(6), { dur: b(8) - b(6) }).move(belt, b(8), { dur: belt.dur() });
+    W.stream(belt, { tile: t2, at: b(12), until: F.duration, every: 0.6 });
+    W.route([t1.p(-2, 1.6), belt.path[0], belt.path[1], t2.p(2.9, -4), t3.p(2.9, 1)], { at: b(14), dur: 1.2, until: F.duration });
+    W.label(belt, { text: '一句卖点', at: b(10), until: b(14) });
+    W.counter(t3.p(1.2, 0), { to: 100, unit: '%', at: b(16), until: b(21.5), h: 1.6 });
+    W.focus([t2], b(8), b(14)); W.focus([t3], b(16), b(21));
+    W.lights(t3, b(18));
+    W.title({ text: '产品名', sub: 'example.com', at: b(22), until: F.duration });
+    W.camera([
+      { at: 0, fit: [t1, t2, t3] },
+      { at: b(7.5), fit: [t2], dur: 1.0 },
+      { at: b(15.5), fit: [t3], dur: 1.0 },
+      { at: b(21.5), fit: [t1, t2, t3], room: { top: 0.24, bottom: 0.08 }, dur: 1.2 },
+    ]);
+    W.run();
+  },
+});
+</script></body></html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · trailer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/trailer.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · movie trailer, narrated (the deep trailer voice: script.json "voice_fx": "trailer"). Read styles/trailer/STYLE.md first.
+// Hand-written PROMO.compose timed from the narration (T.start / T.end): the ident in the lead-in, then per line a shot or a card, the cuts
+// getting faster toward the end, a beat of silence, the title, the date. Write the lines like a trailer: short, one idea each ("在一个……的世界里",
+// "直到……", "今年……"); place a line with "at" (seconds) when it must land between two downbeats. Every on-screen line must be traceable to brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 90, offset: 0, grain: false, chapters: false, tail: 0.5,
+  theme: { bg: '#000', fg: '#e9e6e0', ink: '#e9e6e0', muted: '#a8a39b', accent: '#e9e6e0', paper: '#060606', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, R = PROMO.trailer(F, { grade: 'teal-orange' }), P2 = R.paint;
+
+    // the lead-in: an invented studio ident (never a real studio's mark)
+    const t1 = s('l1') - 0.1;
+    R.ident({ a: 0, b: t1 });
+    F.section(0, 0, { name: 'open' });
+
+    // l1 · act one: a wide, slow shot of the world (a ridge at dusk and a figure from behind — replace with the film's own world)
+    F.section(t1, 1, { name: 'world' });
+    { const S = R.shot(t1, e('l1') + 0.3); S.cam({ s: 1.0, x: -0.01 }, { s: 1.08, x: 0.01 });
+      S.layer({ z: 6, paint: (c, U) => { P2.sky(c, U, { stops: [[0, '#0a1424'], [0.75, '#3a3346'], [1, '#c98a5a']] }); P2.sun(c, U, { x: U.W * 0.62, y: 760, r: 26 }); } });
+      S.layer({ z: 3, paint: (c, U) => P2.ridge(c, U, { y: 770, amp: 90, seed: 4, color: '#141820' }) });
+      S.layer({ z: 1, paint: (c, U) => { P2.ridge(c, U, { y: 870, amp: 40, seed: 9, color: '#07080b' }); P2.figure(c, U, { x: U.W * 0.42, y: 880, h: 300, rim: 'rgba(255,190,130,.7)', rimSide: 1 }); } });
+      F.sfx(t1 + 0.4, 'ping', 0.4); }
+
+    // … one block per line. The turn: a card ("直到……", R.card(a, b, text, { enter: 'rise' })), the music thins (F.section(at, 1, { name: 'turn' })),
+    //   the clock ticks (R.pulse(a, b)). Act three: F.section(at, 3, { name: 'climax' }), R.smash(at, { flash: true }), then
+    //   R.ramp(a, b, { first: 1.6, last: 0.4 }).forEach(([a2, b2], i) => one of the earlier shots, closer, faster; R.flash on the last few).
+
+    // the title after a beat of silence, then the date: script.json ends with a pure pause for them, { "id": "title", "silence": 7 }
+    const end = T.lines.find((l) => l.id === 'title'), z = (end ? end.start : e('l1') + 0.3) + 0.8;
+    R.title({ a: z, b: z + 3.2, main: M('片名', 'TITLE'), en: 'TITLE', silence: 0.8 });
+    F.section(z + 3.2, 0, { name: 'tail' });
+    R.release({ a: z + 3.2, b: F.duration, line: M('今年冬天', 'This winter'), date: M('12月21日', 'DEC 21') });
+  },
+});
+</script></body></html>

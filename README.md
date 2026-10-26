@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 17 visual styles |
+| [`bb-video`](skills/bb-video) | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 19 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -32,6 +32,8 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `newsreel` | a 1930s cinema newsreel: archive photos with source tags, supers and rubber stamps on scratchy black-and-white film, intertitles, a brass march |
 | `filmroom` | a coach's film session: real footage stops, a pen rings the player and draws her path, rewind and slow-motion replay with a tracked ring; a top-down tactics board and shot charts from game data |
 | `mystery` | a deadpan mock-science TV show: a blue 4:3 old-TV picture, an outlined title with red key words, numbered "symptoms" in brush script acted out by rubber-hose cartoon stickers, a chat screen, a storm of words, then a test card; or a case-file look (fog, struck-out guesses, an evidence board, a sourced answer) |
+| `isometric` | an isometric miniature world: tiles on plinths, low-poly buildings, belts, vans and little people that move on their own; one thing followed through a whole system, its route painted on the ground, a clock on each stage, the part being talked about lifts while the rest fades (three.js) |
+| `trailer` | a Hollywood movie trailer in a 2.39:1 letterbox: code-painted cinematic shots (space, planets, corridors, rim-lit silhouettes) under a teal-orange grade and grain, black one-phrase cards in metallic type, a lone piano ping and a ticking clock, then BRAAMs and taiko as the cuts speed up, a beat of silence, the title slam, the release date and the billing block |
 
 What it covers:
 

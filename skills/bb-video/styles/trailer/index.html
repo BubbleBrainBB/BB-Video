@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · trailer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/trailer.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · movie trailer (promo, no voiceover: title cards only). Read styles/trailer/STYLE.md. A product launch cut as a trailer: the world before
+// the product (act one), "until…" the product arrives (the turn), what it makes possible (act three, cuts speeding up), silence, the name, the date.
+// Every on-screen line must be traceable to brief.md. Sections (F.section) are named for the score's parts: open / world / turn / rise / climax / title / tail.
+const { M, E, seg } = PROMO;
+PROMO.compose({
+  bpm: 90, offset: 0, duration: 34, grain: false,
+  theme: { bg: '#000', fg: '#e9e6e0', ink: '#e9e6e0', muted: '#a8a39b', accent: '#e9e6e0', paper: '#060606', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), R = PROMO.trailer(F, { grade: 'teal-orange' }), P2 = R.paint;
+    // an invented studio ident (never a real studio's mark)
+    R.ident({ a: 0, b: b(4), name: M('远灯影业', 'Farlamp Pictures') });
+    F.section(0, 0, { name: 'open' });
+
+    // act one: the world — long, slow shots, one card
+    F.section(b(4), 1, { name: 'world' });
+    { const S = R.shot(b(4), b(10)); S.cam({ s: 1.0, x: -0.01 }, { s: 1.08, x: 0.01 });
+      S.layer({ z: 6, paint: (c, U) => { P2.sky(c, U, { stops: [[0, '#0a1424'], [0.7, '#3a3a48'], [1, '#c98a5a']] }); P2.sun(c, U, { x: U.W * 0.62, y: 760, r: 34 }); } });
+      S.layer({ z: 3, paint: (c, U) => P2.ridge(c, U, { y: 770, amp: 90, seed: 4, color: '#141820' }) });
+      S.layer({ z: 1, paint: (c, U) => { P2.ridge(c, U, { y: 860, amp: 50, seed: 9, color: '#07080b' }); P2.figure(c, U, { x: U.W * 0.4, y: 870, h: 260, rim: 'rgba(255,190,130,.7)', rimSide: 1 }); } }); }
+    R.card(b(10), b(13), M('每天，都是同一天', 'Every day is the same day'));
+
+    // the turn
+    F.section(b(13), 1, { name: 'turn' });
+    R.card(b(13), b(16), M('直到那一天', 'Until one day'), { enter: 'rise' });
+    { const S = R.shot(b(16), b(20)); S.cam({ s: 1.12 }, { s: 1.0 }); S.focus(4, 1, b(16), b(18));
+      S.layer({ z: 4, paint: (c, U) => P2.sky(c, U, { stops: [[0, '#04070d'], [1, '#0d1726']] }) });
+      S.layer({ z: 1, paint: (c, U) => P2.screen(c, U, { x: U.W / 2 - 420, y: 260, w: 840, h: 480 }) });
+      S.text(M('产品名 · 一句话', 'Product · one line'), { x: R.GU / 2, y: 470, size: 48, a: b(16.5), b: b(20), type: true, glow: 6, color: '#bfe4ff' }); }
+
+    // act three: the cuts speed up (R.ramp), a flash on the last few
+    F.section(b(20), 2, { name: 'rise' }); F.section(b(24), 3, { name: 'climax' });
+    R.ramp(b(20), b(32), { first: 2.0, last: 0.45, snap: F.B / 2 }).forEach(([a2, b2], i) => {
+      const S = R.shot(a2, b2); S.cam({ s: 1.0, x: (i % 2 ? -1 : 1) * 0.01 }, { s: 1.07, x: 0 });
+      S.layer({ z: 3, paint: (c, U) => { P2.sky(c, U, { stops: [[0, '#05080e'], [1, i % 2 ? '#1c2a3e' : '#3a2418']] }); P2.stars(c, U, { n: 400, seed: i + 1 }); } });
+      S.layer({ z: 1, draw: (c, U, t) => P2.particles(c, U, { t, kind: i % 2 ? 'stream' : 'embers', n: 140, seed: i }) });
+      if (i > 2) R.flash(a2, { dur: 0.1, peak: 0.7 });
+    });
+    R.card(b(32), b(34), M('改变一切', 'Changes everything'), { enter: 'slam', exit: 'cut' });
+
+    // silence, the title, the date
+    R.title({ a: b(35), b: b(40), main: M('片名', 'TITLE'), en: 'TITLE', silence: 0.8 });
+    F.section(b(40), 0, { name: 'tail' });
+    R.release({ a: b(40), b: b(44), line: M('今年冬天', 'This winter'), date: M('12月21日', 'DEC 21') });
+    R.billing({ a: b(44), b: F.duration, top: M('远灯影业 出品', 'FARLAMP PICTURES PRESENTS'), title: M('片名', 'TITLE'), credits: [{ role: M('导演', 'directed by'), name: M('某某', 'A. NAME') }], logos: ['FARLAMP'] });
+  },
+});
+</script></body></html>

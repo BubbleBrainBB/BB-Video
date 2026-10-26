@@ -79,8 +79,23 @@ const VOICE_FX = {
   radio: 'highpass=f=400,lowpass=f=3000,acompressor=threshold=-18dB:ratio=6:attack=3:release=60:makeup=5,asoftclip=type=atan',
   phone: 'highpass=f=500,lowpass=f=2800,acompressor=threshold=-16dB:ratio=5:attack=3:release=50:makeup=4',
   doc: 'highpass=f=70,acompressor=threshold=-24dB:ratio=3.5:attack=6:release=140:makeup=4,equalizer=f=3200:t=q:w=1.2:g=2,alimiter=limit=0.8:attack=3:release=60',
+  // trailer = the deep movie-trailer read (chest boosted, pressed, a short hall); distant = a transmission from far away (radio band + a long, faint echo)
+  trailer: 'highpass=f=45,equalizer=f=110:t=q:w=1:g=5,equalizer=f=2800:t=q:w=1.4:g=2,acompressor=threshold=-24dB:ratio=4:attack=5:release=120:makeup=5,aecho=0.8:0.55:38|71:0.14|0.08,alimiter=limit=0.85:attack=3:release=60',
+  distant: 'highpass=f=380,lowpass=f=3100,acompressor=threshold=-18dB:ratio=6:attack=3:release=60:makeup=5,asoftclip=type=atan,aecho=0.7:0.6:140|290:0.22|0.12',
 };
 const voiceFx = () => { try { const v = JSON.parse(fs.readFileSync(path.join(proj, 'script.json'), 'utf8')).voice_fx; return v ? VOICE_FX[v] ?? String(v) : ''; } catch { return ''; } };
+// Lines with their own colour ("fx" on a line in script.json, copied into timeline.json by tts.py): the voice track is split, each colour gated to its
+//   lines' spans (plus a little tail for echoes), then mixed back. Returns a filter_complex fragment from [in] to [out], or null when no line has its own fx
+const voiceChain = (inp, out, dur) => {
+  const L = tlLines().filter((l) => !l.silence && l.end > l.start), own = L.filter((l) => l.fx);
+  if (!own.length) return null;
+  const fxOf = (l) => (l.fx ? VOICE_FX[l.fx] ?? String(l.fx) : voiceFx()), groups = new Map();
+  for (const l of L) { const k = fxOf(l); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(l); }
+  const G = [...groups.entries()], parts = [`[${inp}]asplit=${G.length}${G.map((_, i) => `[vs${i}]`).join('')}`];
+  G.forEach(([fx, ls], i) => { const on = ls.map((l) => `between(t,${Math.max(0, l.start - 0.25).toFixed(3)},${(l.end + 0.6).toFixed(3)})`).join('+'); parts.push(`[vs${i}]volume=0:enable='not(${on})'${fx ? ',' + fx : ''},apad=whole_dur=${dur}[vg${i}]`); });
+  parts.push(`${G.map((_, i) => `[vg${i}]`).join('')}amix=inputs=${G.length}:duration=longest:normalize=0[${out}]`);
+  return parts.join(';');
+};
 // Spans where someone is speaking (count as "something happening" in the dead-air check); the cover before the first line (up to 2.5 s) is the title being read, so it counts too — a longer silence is still reported
 const speechSpans = () => { const L = tlLines().filter((l) => !l.silence && l.end > l.start).map((l) => [l.start, l.end]); return L.length ? [[0, Math.min(L[0][0], 2.5)], ...L] : L; };
 const play = (plan, duration, voice) => renderPlan({ ...withMusic(plan), duration }, { score: SCORE, palette: PALETTE, voice });
@@ -313,7 +328,7 @@ async function buildAudio(page, comp, tmp) {
   // Mix: narration (padded with silence if too short) + score / background music / the user's own music file
   const out = path.join(tmp, 'mix.wav'), inputs = [], chains = [];
   let k = 0;
-  if (voice) { inputs.push('-i', NARRATION); chains.push(`[${k++}:a]aresample=${SR},${voiceFx() ? voiceFx() + ',' : ''}apad=whole_dur=${dur}[v]`); }
+  if (voice) { inputs.push('-i', NARRATION); const vc = voiceChain('v0', 'v', dur); chains.push(vc ? `[${k++}:a]aresample=${SR}[v0];${vc}` : `[${k++}:a]aresample=${SR},${voiceFx() ? voiceFx() + ',' : ''}apad=whole_dur=${dur}[v]`); }
   if (music) { inputs.push('-i', music); chains.push(`[${k++}:a]aresample=${SR},apad=whole_dur=${dur}[m]`); }
   else if (opt('bgm')) {
     inputs.push('-stream_loop', '-1', '-t', String(dur), '-i', path.resolve(opt('bgm')));
@@ -587,9 +602,11 @@ function phoneSilence(plan, duration) {
   for (const w of info.warnings) issues.push({ level: 'warn', t: 0, src: '', what: M('声音', 'sound'), msg: w });
   if (!info.hasMusic) return issues; // With effects only, silence is part of the design (long silences are flagged by the sound-design check)
   const avg = 10 * Math.log10(pb.reduce((s, v) => s + Math.pow(10, v.phone / 10), 0) / pb.length);
+  // deliberate silences (F.hush, a section's hush gap: a trailer's beat before the title) are meant to be silent; a little reverb tail after them too
+  const hushed = (t) => (plan.hush || []).some(([a, b]) => t >= a - 0.1 && t < b + 0.25);
   let run = null;
   pb.forEach((v, i) => {
-    const t = i * 0.05, quiet = v.phone < avg - 24 && t < duration - 1.0;
+    const t = i * 0.05, quiet = v.phone < avg - 24 && t < duration - 1.0 && !hushed(t);
     // Stricter at the start: the first hit must be audible (0.3 s), 0.5 s elsewhere
     if (quiet) run ??= t; else if (run !== null) { if (t - run >= (run < 0.05 ? 0.3 : 0.5)) issues.push({ level: 'warn', t: run, src: '', what: M('手机上没声音', 'silent on phones'), msg: M(`${run.toFixed(2)}–${t.toFixed(2)} 秒手机外放基本听不到（150Hz 以上比平均低 24 dB 以上）：加一点中高频（快门、擦过声、和弦）或者别让音乐断这么久`, `${run.toFixed(2)}–${t.toFixed(2)} s is nearly inaudible on a phone speaker (above 150 Hz, more than 24 dB below average): add some mid/high content or don't let the music drop out so long`) }); run = null; }
   });
@@ -650,7 +667,7 @@ async function reviewSheets(proj, comp, page) {
     lines.push(`${t.toFixed(1).padStart(5)} | ${mv.toFixed(2).padStart(5)} | ${en('phone').padStart(6)} | ${en('full').padStart(6)} | ${evs.join(M('，', ', '))}`);
   }
   {   // With narration only look where no one speaks (speaking spans and the opening cover count as something)
-    const vz = hasVoice(), acts = { sfx: plan ? plan.sfx.map((x) => x.t) : [], texts: ev.texts.map((x) => ({ a: x.a, text: x.text })), speech: vz ? speechSpans() : [], live: ev.lives || [] };
+    const vz = hasVoice(), acts = { sfx: plan ? plan.sfx.map((x) => x.t) : [], texts: ev.texts.map((x) => ({ a: x.a, text: x.text })), speech: vz ? speechSpans() : [], live: [...(ev.lives || []), ...((plan && plan.hush) || [])] };   // a deliberate silence (F.hush) is the beat itself, not dead air
     const dead = deadAir(diff, 30, 0, acts);
     lines.push('', dead.length ? M(`空放（画面只有慢动、没有新的字、没有音效，≥ 1.2 秒）：${dead.map(([a, b]) => `${a.toFixed(1)}–${b.toFixed(1)}s`).join('，')}`, `Dead air (only slow motion, no new text, no sound effect, ≥ 1.2 s): ${dead.map(([a, b]) => `${a.toFixed(1)}–${b.toFixed(1)}s`).join(', ')}`) : M('空放：没有', 'Dead air: none'));
     const quiet = quietGaps(diff.length, 30, 0, acts, ev.cuts || [], 1.5, vz ? diff : null).filter(([a, b]) => !dead.some(([x, y]) => x < b && y > a));
@@ -725,7 +742,7 @@ async function main() {
       // Board-style renders with --aspect get a suffixed file name: look for both names
       const video = [nameFor('video', plan0), `video-${(opt('aspect') || '16:9').replace(':', 'x')}.mp4`, 'video.mp4'].map((f) => path.join(proj, 'out', f)).find((f) => fs.existsSync(f));
       if (!video) { console.error(M(`没有成片（out/${nameFor('video', plan0)}）：先渲染`, `No video (out/${nameFor('video', plan0)}): render it first`)); return; }
-      const ev = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], appears: window.__appears ? window.__appears() : [], trans: window.__transitions ? window.__transitions() : [], lives: window.__lives ? window.__lives() : [], sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
+      const ev = (await first.eval('({ cuts: window.__cuts ? window.__cuts() : [], appears: window.__appears ? window.__appears() : [], trans: window.__transitions ? window.__transitions() : [], lives: [...(window.__lives ? window.__lives() : []), ...(window.__hushes ? window.__hushes() : [])], sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
       console.log(M(`成片：${video}`, `Video: ${video}`));
       await popScan(video, fps, 0, ev.cuts || [], { sfx: ev.sfx, texts: ev.texts, live: ev.lives }, ev.appears || [], voice, ev.trans || [], (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);
       return;
@@ -986,7 +1003,7 @@ async function main() {
     const logs = pages.flatMap((p) => p.logs);
     if (logs.length) console.log([...new Set(logs)].join('\n'));
     console.log(M(`完成：${out}（${(to - from).toFixed(1)} 秒，${fps}fps，用时 ${((Date.now() - t0) / 1000).toFixed(0)} 秒）`, `Done: ${out} (${(to - from).toFixed(1)} s, ${fps}fps, took ${((Date.now() - t0) / 1000).toFixed(0)} s)`));
-    const acts = (await first.eval('({ sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], live: window.__lives ? window.__lives() : [], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
+    const acts = (await first.eval('({ sfx: window.__audioPlan ? window.__audioPlan().sfx.map((x) => x.t) : [], live: [...(window.__lives ? window.__lives() : []), ...(window.__hushes ? window.__hushes() : [])], texts: window.__textWins ? window.__textWins().map((x) => ({ a: x.a, text: x.text })) : [] })')).result.value;
     const appears = (await first.eval('window.__appears ? window.__appears() : []')).result.value || [];
     const trans = (await first.eval('window.__transitions ? window.__transitions() : []')).result.value || [];
     const dScan = await popScan(out, fps, from, cuts, acts, appears, voice, trans, (await first.eval('window.__stillMax ? window.__stillMax() : 0.6')).result.value);

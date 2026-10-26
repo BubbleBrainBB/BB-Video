@@ -235,7 +235,10 @@
     // Music section: energy 0 (pad only) … 3 (full drum kit); hit: a heavy hit at the start of the section
     //   gap: seconds of silence before the section starts (e.g. 0.25), so the hit lands harder
     //   build: true = the section goes from muffled to bright (low-pass opening, building up); stop: seconds = before the start the music slows to a halt like tape, rests, then slams back in on the beat
-    section(at, energy, o = {}) { this.sections.push({ at, energy, hit: !!o.hit, gap: o.gap || 0, name: o.name || '', build: !!o.build, stop: o.stop || 0 }); this.sections.sort((a, b) => a.at - b.at); }
+    //   hush: true = the gap is full silence (a trailer's pre-title beat), not just the music pulled far down; the checks accept it (F.hush)
+    section(at, energy, o = {}) { this.sections.push({ at, energy, hit: !!o.hit, gap: o.gap || 0, hush: !!o.hush, name: o.name || '', build: !!o.build, stop: o.stop || 0 }); this.sections.sort((a, b) => a.at - b.at); if (o.hush && o.gap) this.hush(at - o.gap, at); }
+    // A deliberate silence [a, b] (a trailer's beat before the title, a held breath): the phone-speaker check and the dead-air check leave it alone. Keep it short (≤ 1 s)
+    hush(a, b) { (this.hushes ??= []).push([a, b]); }
     // Register on-screen text (automatic checks: fact check, overlap, reading time)
     //   text may be html with <i> / <b>: the fact check uses the text with tags stripped
     // o.overlap: true = this text deliberately sits on top of something (collaborator cursor name flags, dragged blocks), skip the overlap check; o.noFact: true = decorative text (VS), skip the fact check
@@ -1039,7 +1042,10 @@
         const tn = [...leaf.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim()); rg.selectNodeContents(tn); const rr = rg.getBoundingClientRect();
         const cx = rr.left + rr.width / 2 - sr.left, cy = rr.top + rr.height / 2 - sr.top;
         if (!rr.width || cx < 0 || cy < 0 || cx > F.W || cy > F.H) return null;   // text off frame (the camera moved away)
-        const fg = rgb(cs0.color); if (!fg) return null;
+        // type filled with a gradient clipped to the letters (metallic / gold title type): the letters' colour is the gradient's average, and that gradient is not the ground
+        const clipT = (cs) => cs.backgroundClip === 'text' || cs.webkitBackgroundClip === 'text';
+        const gst = clipT(cs0) ? [...cs0.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0])).filter(Boolean) : [];
+        const fg = gst.length ? { r: gst.reduce((s2, c) => s2 + c.r, 0) / gst.length, g: gst.reduce((s2, c) => s2 + c.g, 0) / gst.length, b: gst.reduce((s2, c) => s2 + c.b, 0) / gst.length, a: 1 } : rgb(cs0.color); if (!fg) return null;
         // Ground: ask the browser "what is painted under the text's centre" (grounds laid by sibling layers count: cutout paper strips, the launch stage). Only layers under the text (layers on top are occlusion, not ground);
         //   semi-transparent grounds stack up until an opaque solid colour; if an image / canvas comes first, don't measure
         const stack = document.elementsFromPoint(rr.left + rr.width / 2, rr.top + rr.height / 2);
@@ -1053,6 +1059,7 @@
           // The ground must back most of the text: thin things touching only the text's centre (cords, thin lines, borders) are not ground
           if (n !== leaf) { const q = n.getBoundingClientRect(), ov = Math.max(0, Math.min(q.right, rr.right) - Math.max(q.left, rr.left)) * Math.max(0, Math.min(q.bottom, rr.bottom) - Math.max(q.top, rr.top)); if (ov < ta * 0.5) continue; }
           const cs = getComputedStyle(n);
+          if (clipT(cs)) continue;
           if (/url\(/.test(cs.backgroundImage) || ['IMG', 'CANVAS', 'VIDEO', 'svg'].includes(n.tagName)) return null;
           // Gradients (glow, spotlight): count as one layer at their densest colour stop
           const stops = cs.backgroundImage === 'none' ? [] : [...cs.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0])).sort((p, q) => q.a - p.a);
@@ -1182,13 +1189,14 @@
           const byWin = (a, b) => a.win[0] - b.win[0], nm = F.texts.filter((x) => x.kind === 'logo').sort(byWin)[0] ?? F.texts.filter((x) => x.kind === 'endcard').sort(byWin)[0]; if (nm && !out.some((x) => x.kind === 'name')) out.push({ t: nm.win[0], kind: 'name' });
           return out.sort((a, b) => a.t - b.t);
         };
-        window.__audioPlan = () => ({ bpm: F.bpm, offset: F.offset, duration: F.duration, music: o.music || {}, sections: F.sections, sfx: F.sfxList, moments: moments() });
+        window.__audioPlan = () => ({ bpm: F.bpm, offset: F.offset, duration: F.duration, music: o.music || {}, sections: F.sections, sfx: F.sfxList, moments: moments(), hush: F.hushes || [] });
         window.__texts = () => [...new Set([...F.texts.filter((x) => x.kind !== 'caption' && !x.noFact).map((x) => x.text), ...(F.facts || [])].filter(Boolean))];
         window.__coverAt = o.cover ?? null; // which frame (seconds) to use as the cover; frame 0 if unset
         window.__textWins = () => [...F.texts.map((x) => ({ text: x.text, kind: x.kind, a: x.win[0], b: x.win[1] })), ...(F.factWins || [])]; // for the review report and the dead-air check
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
         window.__lives = () => [...(F.lives || [])];
+        window.__hushes = () => [...(F.hushes || [])];
         window.__stillMax = () => F._stillMax ?? 0.6;
         window.__blurBase = () => F._blurBase ?? null;
         window.__credits = () => F.credits || [];

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Nunito (round, friendly Latin) + Noto Sans SC for Chinese. three.js loads from jsDelivr (import map); time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/nunito@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#E8EFEA}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/isometric.js"></script>
+</head><body><div id="stage"></div><script>
+// Isometric miniature world · explainer (follows the narration): how to write it is in the skill's styles/isometric/STYLE.md. Every piece of on-screen text must be findable in brief.md
+// All times come from the narration: s('l1') = this line starts, w('l1', 'some word') = when that word is said. Captions and the chapter bar are added automatically.
+// This skeleton: three tiles (a hall with a belt, a road, a street of houses) drop in → a parcel rides the belt → a van carries it along a drawn route
+//   → a label and a counter → the street lights up while the rest fades → pull back to the whole system. Replace the world with your own system.
+PROMO.compose({
+  bpm: 100, offset: 0.2, grain: false,
+  captions: { size: 46, bg: 'rgba(34,48,60,.78)' },
+  theme: { bg: '#E8EFEA', fg: '#22303C', muted: '#5A6672', ink: '#22303C', paper: '#FFFFFF', accent: '#FF6B4A', fonts: { display: 'Nunito, "Noto Sans SC", sans-serif', serif: 'Nunito, "Noto Sans SC", sans-serif', sans: 'Nunito, "Noto Sans SC", sans-serif', script: 'Nunito, sans-serif' } },
+  build: async (F) => {
+    const TL = F.T, s0 = TL.start, w = TL.word, W = await PROMO.isometric(F, { palette: 'day' });
+    const L1 = s0('l1'), L1e = TL.end('l1'), b = (k) => L1 + (L1e - L1) * k / 16;   // the skeleton has one narration line: timing follows its length; once the narration is written use s0('l3') / w('l3', '…')
+    F.section(0, 1, { name: 'hook' }); F.section(b(8), 2, { name: 'build' });
+    // the world: tiles first (routes and labels find the ground under them)
+    const hall = W.tile({ x: -9, z: 0, w: 8, d: 8, top: 'concrete', at: 0.1 });
+    const road = W.tile({ x: 0, z: 0, w: 8, d: 8, top: 'grass', at: 0.25 });
+    const town = W.tile({ x: 9, z: 0, w: 8, d: 8, top: 'grass', at: 0.4 });
+    W.walls({ tile: hall, w: 7.4, d: 7.4, sides: ['n', 'w'], sign: '仓库', signMark: true });
+    const belt = W.conveyor({ tile: hall, from: [-3, -1.5], to: [2.5, -1.5] });
+    W.shelf({ tile: hall, x: -1.5, z: 1.8, w: 3, levels: 3 });
+    const R = W.road({ tile: road, pts: [[-4, 1], [4, 1]] });
+    W.tree({ tile: road, x: -2, z: -2 }); W.tree({ tile: road, x: 1.5, z: -2.6, kind: 'pine' });
+    [[-2.4, -2], [0.4, -2.2], [2.8, -1.6]].forEach(([x, z]) => W.house({ tile: town, x, z }));
+    W.road({ tile: town, pts: [[-4, 1], [3, 1]] });
+    // the parcel rides the belt, then the van takes it along the road
+    const pc = W.parcel({ at: b(1) }).place(belt.at(0));
+    pc.move(belt, b(1.5), { dur: belt.dur() });
+    const van = W.van({ at: b(3), brand: { text: '示例快递' } }).place(hall.p(3, 2.6), -1e9, Math.PI / 2);
+    pc.toss(van.pos(0).add(new W.THREE.Vector3(0, 1, 0)), b(1.5) + belt.dur(), { dur: 0.4 }); pc.ride(van, b(1.5) + belt.dur() + 0.4, van.bed(0)); pc.hide(b(1.5) + belt.dur() + 0.45, { fast: true });
+    const lane = [hall.p(3, 2.6), road.p(-4, 1.5), town.p(-1, 1.5)];
+    W.route(lane, { at: b(6), dur: 1.2 });
+    van.move(lane, b(7), { dur: 2.2 });
+    W.label(van, { text: '标签', sub: '一行说明', at: b(8), until: b(11) });
+    W.counter(town.p(-2.4, -2), { to: 3, unit: ' 户', at: b(11), until: F.duration });
+    W.focus([town], b(11), F.duration);
+    W.camera([
+      { at: 0, fit: [hall, road, town], drift: 0.02 },
+      { at: b(1), fit: [hall], dur: 1.2 },
+      { at: b(6.5), fit: [road, van], dur: 1.2 },
+      { at: b(11), fit: [town], dur: 1.2 },
+      { at: b(14), fit: [hall, road, town], dur: 1.4 },
+    ]);
+    TL.lines.filter((l) => !l.silence).forEach((l) => F.info('diorama', l.start, l.end, { group: l.id }));   // the world itself carries information on every line (routes, counts and labels also register automatically)
+    W.run();
+  },
+});
+</script></body></html>

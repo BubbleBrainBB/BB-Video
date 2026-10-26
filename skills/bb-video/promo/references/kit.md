@@ -235,6 +235,10 @@ Film room (`filmroom`) likewise: hand-written only (`PROMO.filmroom(F, opt)`, `s
 
 Suspense mystery (`mystery`) likewise: hand-written only (`PROMO.mystery(F, opt)`, `styles/mystery/STYLE.md`), starters `styles/mystery/index.html` and `explain.html`.
 
+Isometric miniature world (`isometric`) likewise: hand-written only (`PROMO.isometric(F, opt)`, `styles/isometric/STYLE.md`), starters `styles/isometric/index.html` and `explain.html`.
+
+Movie trailer (`trailer`) likewise: hand-written only (`PROMO.trailer(F, opt)`, `styles/trailer/STYLE.md`), starters `styles/trailer/index.html` (title cards on the beat) and `explain.html` (the deep trailer voice); sparse dialogue uses script.json lines with `"at"` and a per-line `"fx"`.
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

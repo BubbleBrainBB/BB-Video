@@ -109,6 +109,12 @@ async def main(proj: Path):
     timeline = []
     for l in lines:
         cursor += l.get("pause_before", 0)
+        # "at": the line starts at this second (music-first films such as a trailer place their lines between the beats); never earlier than the previous line allows
+        if "at" in l:
+            lead = (words_by_id[l["id"]][0]["start"] if l.get("text") and words_by_id[l["id"]] else 0)
+            if cursor > l["at"] - lead + 0.02:
+                print(f"warning: line {l['id']} wants to start at {l['at']}s but the previous line runs until {cursor + lead:.2f}s", file=sys.stderr)
+            cursor = max(cursor, l["at"] - lead)
         if not l.get("text"):  # pure pause: {"id": "beat", "silence": 1.2}
             d = l.get("silence", 1.0)
             timeline.append({"id": l["id"], "text": "", "silence": True, "start": round(cursor, 3), "end": round(cursor + d, 3), "words": []})
@@ -130,6 +136,7 @@ async def main(proj: Path):
             "start": round(cursor + (words[0]["start"] if words else 0), 3),
             "end": round(cursor + speech_end, 3),
             "words": [{"text": w["text"], "start": round(cursor + w["start"], 3), "end": round(cursor + w["end"], 3)} for w in words],
+            **({"fx": l["fx"]} if l.get("fx") else {}),   # this line's own voice colour (render.mjs: a voice_fx preset or an ffmpeg filter chain), e.g. a radio message among plain lines
         })
         cursor += speech_end + gap + l.get("pause_after", 0)
 
