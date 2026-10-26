@@ -160,6 +160,14 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4">Full video</a>
 </td>
 </tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4"><img src="examples/dossier/preview.gif" width="100%" alt="dossier"></a><br>
+<b><code>dossier</code></b> · AI's bill (AI 的账单): US tech stocks in October 2026, from a record high to the week of the Fed<br>
+<sub>News commentary, not investment advice · documents quoted from SEC, TSMC, Federal Reserve and company releases · pictures drawn in code</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4">Full video</a>
+</td>
+</tr>
 </table>
 <!-- gallery:end -->
 

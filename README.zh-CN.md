@@ -160,6 +160,14 @@
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4">完整视频</a>
 </td>
 </tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4"><img src="examples/dossier/preview.gif" width="100%" alt="dossier"></a><br>
+<b><code>dossier</code></b> · 《AI 的账单》：2026 年 10 月美股科技股，从历史新高到美联储议息周<br>
+<sub>仅为新闻解读，不构成投资建议 · 原文摘自 SEC、台积电、美联储及各公司公告 · 配图由代码绘制</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4">完整视频</a>
+</td>
+</tr>
 </table>
 <!-- gallery:end -->
 
