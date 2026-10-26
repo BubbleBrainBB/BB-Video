@@ -152,7 +152,12 @@
 <sub>虚构内容，仅供娱乐 · 卡通画面由代码绘制</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">完整视频</a>
 </td>
-<td width="33%" valign="top"></td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4"><img src="examples/trailer/preview.gif" width="100%" alt="trailer"></a><br>
+<b><code>trailer</code></b> · 《深空回声》：一部原创虚构科幻片的预告片<br>
+<sub>虚构电影 · 画面、声音和人名全部由代码生成</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4">完整视频</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->

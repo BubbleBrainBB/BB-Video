@@ -152,7 +152,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>Fiction, for fun · cartoons drawn in code</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/mystery.mp4">Full video</a>
 </td>
-<td width="33%" valign="top"></td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4"><img src="examples/trailer/preview.gif" width="100%" alt="trailer"></a><br>
+<b><code>trailer</code></b> · Deep Space Echo (深空回声), the trailer for an original, fictional sci-fi film<br>
+<sub>A fictional film · every shot, sound and name made in code</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/trailer.mp4">Full video</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->
