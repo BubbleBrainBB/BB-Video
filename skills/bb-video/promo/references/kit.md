@@ -241,6 +241,8 @@ Movie trailer (`trailer`) likewise: hand-written only (`PROMO.trailer(F, opt)`, 
 
 Clipping-file commentary (`dossier`) likewise: hand-written only (`PROMO.dossier(F, opt)`, `styles/dossier/STYLE.md`), starters `styles/dossier/index.html` (one of each piece, on the beat) and `explain.html` (narrated: the usual way to use it); the chapter bar and outlined captions come from the runtime (`compose({ chapters: false })`).
 
+Manga / motion comic (`manga`) likewise: hand-written only (`PROMO.manga(F, opt)`, `styles/manga/STYLE.md`), starters `styles/manga/index.html` (on the beat) and `explain.html` (narrated); the chapter tags and anime-style outlined captions come from the runtime (`compose({ chapters: false })`).
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

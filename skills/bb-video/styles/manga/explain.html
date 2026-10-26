@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · 漫画</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/dela-gothic-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/manga.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · manga / motion comic (narrated). Hand-written PROMO.compose: every page and panel is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md, then the panel plan in storyboard.md (pages → panels → which line each panel carries).
+// Read styles/manga/STYLE.md: reading order (right to left), one beat per panel, punch-ins and shakes only on the hits, the splash for the climax.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 140, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#000', fg: '#fff', ink: '#141414', muted: '#777', accent: '#e0442a', paper: '#fff', fonts: { display: '"ZCOOL QingKe HuangYou", sans-serif', sans: '"Noto Sans SC", sans-serif', serif: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word, PT = F.portrait;
+    const R = PROMO.manga(F, { spot: '#e0442a' });   // spot: one accent colour (false = pure black and white)
+
+    // ---------- cast: define each character once, call them by name (styles/CHARACTERS.md). Original designs only ----------
+    //   proportions hero / stocky / chibi (the chibi shot switches by itself), build slim / normal / heavy, hair spiky / short / fluffy / long / bald / a function,
+    //   hairTone black / white / tone, eyes sharp / round / sleepy, outfit { top, bottom, coat, collar, belt, shoes }, scarf, mark (an emblem function)
+    R.cast({
+      主角: { build: 'slim', hair: 'spiky', hairTone: 'black', eyes: 'sharp', outfit: { top: 'white', bottom: 'black', coat: 'white', collar: true }, scarf: 'spot' },
+      对手: { build: 'heavy', proportions: 'stocky', hair: 'fluffy', hairTone: 'tone', eyes: 'sleepy', outfit: { top: 'tone', bottom: 'black' } },
+    });
+
+    // ===== page 1 · three tiers, read right to left; each panel inks in on its line =====
+    const a1 = 0, b1 = e('l1') + 0.4;
+    const pg = R.page(a1, b1);
+    const [p1, p2, p3] = pg.tiers([[1], [1, 1]], { at: [s('l1'), s('l1') + 1.2, s('l1') + 2.2] });
+    p1.bg('speed', { angle: 0 });
+    p1.char('主角', { x: 0.5, y: 0.98, size: 0.9, pose: 'run', face: 'determined' });
+    p1.sfx(M('冲', 'DASH'), { x: 0.82, y: 0.4, size: 0.5 });
+    p2.char('对手', { shot: 'bust', x: 0.5, y: 0.55, size: 0.75, face: 'tired', facing: -1, at: p2.at });
+    p2.balloon('talk', M('……谁？', '…who?'), { x: 0.25, y: 0.25, tail: [0.45, 0.4] });
+    p3.bg('focus'); p3.char('主角', { shot: 'eyes', y: 0.5, face: 'determined', at: p3.at });
+    pg.read([p1, p2, p3], [p1.at, p2.at, p3.at]);
+    pg.punch(p3.at + 0.4, p3, { pad: 0.9 });
+
+    // ===== the climax: a splash page (one bleed panel), flash + shake built in =====
+    //   const sp = R.splash(a, b, { bg: 'focus' }); sp.P.char(…, { shot: 'silhouette' }); sp.P.sfx('ドン', { size: 0.6 });
+
+    // ===== the last page =====
+    R.end(b1, F.duration, { title: '__TITLE__', sub: M('一句话总结', 'One-line takeaway'), sources: [M('资料来源（机构 · 年份）', 'Sources (issuer · year)')] });
+
+    F.section(0, 1, { name: 'cold' });
+    F.section(b1, 1, { name: 'end' });
+  },
+});
+</script></body></html>

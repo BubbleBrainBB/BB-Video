@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · 漫画</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/dela-gothic-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/manga.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · manga / motion comic promo, on the beat (styles/manga/STYLE.md). Every time is F.beat(n); every word on the page is in brief.md.
+// The shape of a manga promo: a page that sets up the problem (panels read in order) → the rival / the pain (a rumble, a silhouette) →
+// the hero arrives (intro box: the product's name and its real numbers) → the fight (punch, ドン, shake) → the splash (the product's promise) → the last page.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 140, offset: 0, duration: 24, grain: false, chapters: false,
+  theme: { bg: '#000', fg: '#fff', ink: '#141414', muted: '#777', accent: '#e0442a', paper: '#fff', fonts: { display: '"ZCOOL QingKe HuangYou", sans-serif', sans: '"Noto Sans SC", sans-serif', serif: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n);
+    const R = PROMO.manga(F, { spot: '#e0442a' });
+    R.cast({
+      主角: { build: 'slim', hair: 'spiky', tall: [2, 3, 4], hairTone: 'black', eyes: 'sharp', brows: 'thick', outfit: { top: 'black', bottom: 'black', coat: 'white' }, scarf: 'spot' },
+      对手: { build: 'heavy', proportions: 'stocky', hair: 'fluffy', hairTone: 'tone', eyes: 'sleepy', outfit: { top: 'tone', bottom: 'black' } },
+    });
+
+    // ===== page 1 · the problem, read panel by panel =====
+    const pg = R.page(0, b(16));
+    const [p1, p2, p3] = pg.tiers([{ cols: [1], h: 1 }, { cols: [1, 1], h: 1.3, cuts: [0.05] }], { at: [b(1), b(4), b(7)] });
+    p1.balloon('narr', M('某个周一的早上', 'One Monday morning'), { x: 0.2, y: 0.2, at: b(1.5) });
+    p1.bg('tone', { density: 0.18 }); p1.char('对手', { shot: 'bust', x: 0.6, y: 0.45, size: 0.55, face: 'tired', facing: -1 });
+    p2.bg('odoro'); p2.char('对手', { shot: 'silhouette', x: 0.5, y: 1.04, size: 1 }); p2.sfx('ゴゴゴ', { x: 0.82, y: 0.5, size: 0.2, style: 'rumble', vertical: true, until: b(10) });
+    p3.bg('focus'); p3.char('主角', { shot: 'eyes', x: 0.5, y: 0.5, face: 'determined' });
+    pg.read([p1, p2, p3], [b(1), b(4), b(7)]);
+    pg.punch(b(9), p3, { pad: 0.95 });
+    const hero = R.page(b(10), b(16), { in: 'slash' });
+    const [h1] = hero.tiers([[1]], { at: b(10) });
+    h1.bg('speed'); h1.char('主角', { x: 0.62, y: 0.97, size: 0.9, pose: 'ready', face: 'determined' });
+    h1.intro(M('产品名', 'Product'), { name: M('产品名', 'Product'), lines: [M('一个真实数字', 'One real number')], x: 0.06, y: 0.16, at: b(11) });
+
+    // ===== the splash: the product's promise =====
+    const sp = R.splash(b(16), b(22), { bg: 'focus' });
+    sp.P.char('主角', { x: 0.5, y: 1.0, size: 0.95, pose: 'victory', face: 'grin' });
+    sp.P.sfx(M('一句承诺', 'PROMISE'), { x: 0.76, y: 0.32, size: 0.22, fill: 'black', at: b(17) });
+
+    R.end(b(22), F.duration, { title: '__TITLE__', sub: M('网址 / 一句话', 'URL / one line'), in: 'turn' });
+    F.section(0, 1, { name: 'cold' }); F.section(b(4), 2, { name: 'rise' }); F.section(b(10), 3, { name: 'battle', hit: true }); F.section(b(22), 2, { name: 'end' });
+  },
+});
+</script></body></html>

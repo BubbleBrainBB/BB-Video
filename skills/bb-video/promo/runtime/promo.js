@@ -978,6 +978,7 @@
         const k0 = 'vc|' + x.text; if (seen.has(k0)) continue;
         for (const e of [x.el, ...x.el.querySelectorAll('*')]) {
           if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || !vis(e)) continue;
+          if (/^vertical/.test(getComputedStyle(e).writingMode)) continue;   // vertical text (manga lettering) runs top to bottom: up / down centring doesn't apply
           let r = null;
           for (const n of e.childNodes) { if (n.nodeType !== 3 || !n.textContent.trim()) continue; rg.selectNodeContents(n); for (const q of rg.getClientRects()) r = r ? { top: Math.min(r.top, q.top), bottom: Math.max(r.bottom, q.bottom) } : { top: q.top, bottom: q.bottom }; }
           if (!r || r.bottom - r.top < 6) continue;
