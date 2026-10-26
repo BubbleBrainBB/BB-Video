@@ -1,0 +1,5 @@
+{
+  "lead_in": 1.6,
+  "rate": "+6%",
+  "voice": { "zh": "zh-CN-YunyangNeural", "en": "en-US-GuyNeural" }
+}

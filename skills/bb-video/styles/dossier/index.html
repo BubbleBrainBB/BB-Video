@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · dossier</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-serif-4@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-serif-4@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-serif-4@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/dossier.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · clipping-file commentary (promo, no narration). One of each piece, on the beat. Replace the content; read styles/dossier/STYLE.md.
+// Every word on paper comes from brief.md: documents are short verbatim excerpts of the real source (with its source line), re-typeset in our layout.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 100, offset: 0, duration: 30, grain: false, chapters: false,
+  theme: { bg: '#000', fg: '#fff', ink: '#fff', muted: '#9a9a96', accent: '#fff', paper: '#151515', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    // an invented channel and masthead: never a real outlet's name, logo or masthead
+    const R = PROMO.dossier(F, { brand: { name: M('铅字局', 'Leadtype'), en: 'LEADTYPE' }, masthead: 'THE LEADTYPE POST',
+      chapters: [{ title: M('第一章', 'Part one'), start: 0, end: 9.6 }, { title: M('第二章', 'Part two'), start: 9.6, end: 19.2 }, { title: M('第三章', 'Part three'), start: 19.2, end: 30 }] });
+    const B = F.B;
+
+    // 1 · the clipping page: headline with a highlighter stroke, halftone photo; the camera drifts in, then dissolves to a second page
+    { const a = 0, b = 4.8, S = R.shot(a, b, { bg: 'news' });
+      const pg = S.page({ headline: M('一句话的大标题', 'A one-line headline'), mark: true, en: 'AN ENGLISH SUBHEAD', sub: M('一行英文副标题', 'A line of English under it'), photo: 'skyline', date: '2026-01-01',
+        lead: M('导语：用 brief.md 里的事实写的一段真实导语。', 'Lead: a real lead written from the facts in brief.md.'),
+        stories: [{ head: M('小标题', 'Subhead'), text: M('正文：用事实写的真实短讯，每段只印一次。', 'Copy: a real short report written from the facts, printed once.') }] });
+      S.push({ x: R.FW / 2 + 60, y: 470, h: 980 }, { on: pg.headMark, pad: 1.9, dy: 160 }, a, b); }
+    // 2 · the source document under our masthead: whole page → push into one line, translation bar + tag + marker on the exact words
+    { const a = 4.8, b = 9.6, S = R.shot(a, b, { bg: 'paper', in: 'blur' });
+      const d = S.doc({ kind: 'statement', y: 30, title: M('原文标题', 'Source document title'), date: M('日期', 'Date'), blocks: [{ p: M('第一段原文。', 'First paragraph of the source.') }, { p: M('第二段原文，里面有要讲的那一句。', 'The second paragraph holds the line we talk about.') }], source: M('来源：发布机构 · 日期', 'Source: issuer · date') });
+      const line = d.block(1);
+      S.cam(a, { x: R.FW / 2, y: 520, h: 1250 }); S.cam(a + 1.6, { on: line, pad: 2.2 });
+      S.translate(line, M('这一句的中文翻译', 'The line, translated'), { at: a + 2.0, color: 'red', mode: 'above' });
+      S.mark(line, { at: a + 2.6 });
+      S.tag(line, M('关键', 'Key'), { at: a + 3.2, side: 'left' }); }
+    // 3 · brush smear into a picture; a printed sheet flies in and lands; the camera pushes into it
+    { const a = 9.6, b = 15.6, S = R.shot(a, b, { in: 'brush' });
+      S.backdrop('servers', { tone: 'bw' });
+      const d = S.doc({ kind: 'release', w: 1000, x: 420, y: 140, rot: -4, at: a + 1.2, enter: 'fly', masthead: false, issuer: M('发布方', 'Issuer'), title: M('新闻稿标题', 'Press release title'), blocks: [{ li: M('要点一', 'Point one') }, { li: M('要点二：一个数字', 'Point two: a number') }] });
+      S.cam(a + 2.2, { x: R.FW / 2, y: 500, h: 1000 }); S.cam(a + 3.4, { on: d.block(1), pad: 2.6 });
+      S.translate(d.block(1), M('要点二的翻译', 'Point two, translated'), { at: a + 3.8, color: 'blue', mode: 'over' }); }
+    // 4 · numbers: a printed chart clipping, then a callout from → to
+    { const a = 15.6, b = 21.6, S = R.shot(a, b, { bg: 'desk' });
+      const ch = S.chart({ x: 340, y: 120, w: 1100, h: 700, rot: 1.5, at: a + 0.3, enter: 'drop', title: M('图表标题', 'Chart title'), unit: M('单位', 'Unit'), labels: ['1', '2', '3', '4', '5', '6'], series: [{ values: [3, 4, 3.6, 5, 4.4, 2.6] }], points: [{ i: 5, text: '2.6', at: a + 1.9 }], source: M('来源：…', 'Source: …') });
+      S.push({ x: R.FW / 2, y: 480, h: 1000 }, { on: ch, pad: 1.05 }, a, a + 3);
+      S.callout({ at: a + 3.4, x: R.FW / 2, y: 330, icon: 'down', from: '5.0', to: '2.6', label: M('一句说明', 'What it means'), b }); }
+    // 5 · the thumbnail-style title card
+    R.title(21.6, 25, { lines: [M('大字标题', 'BIG TITLE'), M('第二行', 'Line two')], art: 'wafer' });
+    // 6 · the closing sheet
+    R.end(25, 30, { sub: M('一句话总结', 'One-line takeaway'), sources: [M('资料来源写在这里（机构 · 日期）', 'Sources here (issuer · date)')] });
+
+    F.section(0, 1, { name: 'open' }); F.section(4.8, 2, { name: 'report' }); F.section(21.6, 3, { hit: true, name: 'turn' }); F.section(25, 1, { name: 'close' });
+  },
+});
+</script></body></html>

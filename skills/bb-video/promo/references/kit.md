@@ -239,6 +239,8 @@ Isometric miniature world (`isometric`) likewise: hand-written only (`PROMO.isom
 
 Movie trailer (`trailer`) likewise: hand-written only (`PROMO.trailer(F, opt)`, `styles/trailer/STYLE.md`), starters `styles/trailer/index.html` (title cards on the beat) and `explain.html` (the deep trailer voice); sparse dialogue uses script.json lines with `"at"` and a per-line `"fx"`.
 
+Clipping-file commentary (`dossier`) likewise: hand-written only (`PROMO.dossier(F, opt)`, `styles/dossier/STYLE.md`), starters `styles/dossier/index.html` (one of each piece, on the beat) and `explain.html` (narrated: the usual way to use it); the chapter bar and outlined captions come from the runtime (`compose({ chapters: false })`).
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.
