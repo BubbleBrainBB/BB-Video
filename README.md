@@ -168,6 +168,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>News commentary, not investment advice · documents quoted from SEC, TSMC, Federal Reserve and company releases · pictures drawn in code</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4">Full video</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4"><img src="examples/manga/preview.gif" width="100%" alt="manga"></a><br>
+<b><code>manga</code></b> · Caffeine's 45 minutes (咖啡因的45分钟): how a cup of coffee keeps you awake, told as a shōnen battle<br>
+<sub>General health information, not medical advice · original characters drawn in code · sources: IOM, EFSA, FDA, Reichert et al. 2022</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4">Full video</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->

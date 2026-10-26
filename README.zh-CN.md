@@ -168,6 +168,12 @@
 <sub>仅为新闻解读，不构成投资建议 · 原文摘自 SEC、台积电、美联储及各公司公告 · 配图由代码绘制</sub><br>
 <a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/dossier.mp4">完整视频</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4"><img src="examples/manga/preview.gif" width="100%" alt="manga"></a><br>
+<b><code>manga</code></b> · 《咖啡因的45分钟》：一杯咖啡为什么让人清醒，讲成一场少年漫对决<br>
+<sub>一般健康信息，不构成医疗建议 · 角色原创、由代码绘制 · 资料来源：IOM、EFSA、FDA、Reichert 等 2022</sub><br>
+<a href="https://github.com/DylanDDeng/BB-Video/releases/download/samples/manga.mp4">完整视频</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->
