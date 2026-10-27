@@ -56,6 +56,11 @@ Look at images: `--strip 0.5,end,24` for an overview of the whole film; around e
 - **Jitter**: position flips back and forth 7 or more times in 1 s (intentional ones like screen shake just need confirming).
 - **Too fast**: a large element travels more than 6% of the screen height per frame (it blurs and strobes); hard cuts, whip pans (windows registered with `F.blur`) and things mostly cropped by an outer layer (slot-machine number strips) don't count. Only listed; judge for yourself.
 - **Camera jerk** (warning): a full-screen layer starts or stops linearly, or a sustained camera move changes speed by more than half within one frame, not on a sound effect.
+- **Stiff motion** (warnings) — the film is "correct" but feels like a slide deck:
+  - *Text pops in*: registered text goes from hidden to fully shown in one frame and then stands dead still (no move, scale, fade, retyping), not on a hard cut or `F.appear` — switched on, not brought in. Three or more is a warning. *Text pops out* (the same on exit) is only listed.
+  - *The same entrance repeated*: a picture or panel (image / canvas / video inside, or a background) enters with the same move (duration, direction, distance, scale) six or more times in a row, each within 4 s of the last. Impact words are exempt (slamming one after another is the style).
+  - *Empty box*: a panel stands empty 0.45 s or more before the first text inside it appears.
+- **Too many light leaks** (warning, from lint): more than three `PROMO.leak` in a film, or two within 3 s.
 - Motion drawn in canvas / WebGL / a board (op stripes, ASCII characters, whiteboard, riso, ink) can't be measured; the motion sheet says so; see the final-video check and the measured rhythm.
 - Texture layers (grain, constantly spinning rays and other things that aren't "moves"): put `data-motion="skip"` on the element.
 - Thresholds were set on films the user called "good" (grok-bot-launch and others: 0 problems, at most 9 moving at once). Recalibrate when the user judges new films: `window.__motion({ th: { crowd, fast, cam, abrupt } })`.

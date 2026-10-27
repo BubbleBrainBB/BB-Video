@@ -66,6 +66,10 @@ A launch film doesn't mean a dark stage. The ground is **set by the product**; t
 - A white flash on every transition: keep flashes for the heaviest one or two moments.
 - UI screenshots too small: unreadable on a phone; push in or add a big headline (`--check` reports "手机上读不清" (unreadable on a phone)).
 - Too many impact words: three or four words are enough for the opening; real UI must follow.
+- Text switched on and off: hand-written text that just toggles `display` (no rise, scale or fade) looks like a slide deck. Use `PROMO.headline` / `slam` / `typing`, or give your own text a 0.2–0.4 s entrance and an exit.
+- A run of pictures shown one by one with the same move (a window flying in, again and again): gather them into one montage (wall, carousel, vertical strips, `references/motion.md`) or change the move and camera each time. If the pictures are videos (samples, demos), let them play rather than holding a still.
+- An empty card first, its words a beat later: bring the card and its words in together.
+- A light leak on every section: two or three per film, for the heaviest changes only; elsewhere push, truck or dim down.
 - Self-check per `references/review.md`.
 
 ## 10. Room for variation

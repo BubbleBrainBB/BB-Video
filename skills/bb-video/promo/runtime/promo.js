@@ -107,6 +107,12 @@
     const tex = [...F.stage.querySelectorAll('[data-motion="texture"]')];
     const n = Math.floor(F.duration * fps), tr = els.map(() => new Array(n).fill(null)), ops = els.map(() => new Array(n).fill(null));   // ops: opacity recorded separately (frames at 0 too, so flicker can be measured)
     const effOp = (e) => { let v = 1; for (let m = e; m && m !== F.stage; m = m.parentElement) { if (m.style.display === 'none') return 0; const x = m.style.opacity; if (x !== '') v *= +x; } return v; };
+    // For the "stiff" checks (hard pop-in, the same entrance over and over, an empty box waiting for its words): registered text per frame
+    //   (visibility, box in H units, content) and each element's first clearly visible frame (box, whether it is an empty panel)
+    const txs = (F.texts || []).filter((x) => x.el && x.kind !== 'caption' && !x.chrome && F.stage.contains(x.el));
+    const tv = txs.map(() => new Float32Array(n)), tg = txs.map(() => new Array(n).fill(null)), tc = txs.map(() => new Array(n).fill(''));
+    const firstVis = els.map(() => null);
+    const emptyPanel = (e) => { if ((e.textContent || '').trim() || e.querySelector('img,canvas,video,svg,picture,iframe')) return false; const cs = getComputedStyle(e), a = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number); return (a.length === 4 ? a[3] : a.length === 3 ? 1 : 0) >= 0.04 || parseFloat(cs.borderTopWidth) > 0 || cs.backgroundImage !== 'none'; };
     // Parts clipped by an ancestor are invisible: find each element's nearest overflow-clipping ancestor once, and measure only the visible area per frame (a full-page screenshot scrolling in a window is not a "camera")
     const clipAnc = els.map((e) => { for (let m = e.parentElement; m && m !== F.stage; m = m.parentElement) { const cs = getComputedStyle(m); if (cs.overflow !== 'visible' || cs.clipPath !== 'none') return m; } return null; });
     for (let i = 0; i < n; i++) {
@@ -120,6 +126,15 @@
         if (ar >= A0 * 0.002 && r.width) ops[k][i] = op;
         if (op < 0.02 || ar < A0 * 0.0005) continue;
         tr[k][i] = [(r.left - sr.left + r.width / 2) / H, (r.top - sr.top + r.height / 2) / H, Math.sqrt(ar) / H, op, ar / A0];
+        const onA = Math.max(0, Math.min(r.left + r.width, sr.right) - Math.max(r.left, sr.left)) * Math.max(0, Math.min(r.top + r.height, sr.bottom) - Math.max(r.top, sr.top));   // on screen (a sheet waiting off camera on a big world is not shown yet)
+        if (!firstVis[k] && op >= 0.5 && ar >= A0 * 0.015 && onA >= A0 * 0.015) firstVis[k] = { f: i, x0: (r.left - sr.left) / H, y0: (r.top - sr.top) / H, x1: (r.left - sr.left + r.width) / H, y1: (r.top - sr.top + r.height) / H, empty: ar < A0 * 0.6 && emptyPanel(e) };
+      }
+      for (let k = 0; k < txs.length; k++) {
+        const e = txs[k].el, op = effOp(e); tv[k][i] = op; if (op < 0.02) continue;
+        const r = e.getBoundingClientRect(); tg[k][i] = [(r.left - sr.left + r.width / 2) / H, (r.top - sr.top + r.height / 2) / H, r.width / H, r.height / H];
+        // content + the reveal styles on the way up (a clip-path wipe, a mask, a blur coming into focus are entrances the box can't see)
+        let fx = ''; for (let m = e; m && m !== F.stage; m = m.parentElement) fx += `${m.style.clipPath}|${m.style.webkitMaskImage || m.style.maskImage || ''}|${m.style.filter};`;
+        tc[k][i] = e.textContent + '\n' + fx;
       }
       for (const [e, v] of held) e.style.transform = v;
     }
@@ -185,6 +200,83 @@
     // Too fast: elements mostly clipped by an overflow ancestor (slot machine, counter digit strips) can't be seen moving that fast: not counted
     const clipRatio = (e) => { const r = e.getBoundingClientRect(), ar = r.width * r.height; if (!ar) return 0; let x0 = r.left, y0 = r.top, x1 = r.right, y1 = r.bottom; for (let m2 = e.parentElement; m2 && m2 !== F.stage; m2 = m2.parentElement) { const cs = getComputedStyle(m2); if (cs.overflow !== 'visible' || cs.clipPath !== 'none') { const q = m2.getBoundingClientRect(); x0 = Math.max(x0, q.left); y0 = Math.max(y0, q.top); x1 = Math.min(x1, q.right); y1 = Math.min(y1, q.bottom); } } return Math.max(0, x1 - x0) * Math.max(0, y1 - y0) / ar; };
     out.fast = out.fast.filter((x) => { F.render(x.t); return clipRatio(els[x.k]) >= 0.5; });
+    // ---- Stiff motion ----
+    // Hard pop-in / pop-out: registered text going from hidden to fully shown (or back) in one frame, not on a hard cut or a registered appearance,
+    //   and standing dead still for the next ~0.27 s (no move, no scale, no fade, no retyping, no clip / mask / blur reveal, nothing inside it moving): it was switched on, not brought in
+    const appears = F.appears || [], nearAppear = (f) => appears.some((a2) => Math.abs(a2 - f / fps) < 2.5 / fps);
+    const tlabel = (k) => `"${String(txs[k].text).replace(/\s+/g, ' ').slice(0, 24)}"`;
+    const desc = txs.map((x) => els.map((e, m) => (x.el !== e && x.el.contains(e) ? m : -1)).filter((m) => m >= 0));
+    const lives = (k, a2, b2) => {
+      const g0 = tg[k][a2];
+      for (let f = a2; f <= b2; f++) {
+        const g = tg[k][f]; if (!g || !g0) return true;
+        if (Math.abs(g[0] - g0[0]) > 0.003 || Math.abs(g[1] - g0[1]) > 0.003 || Math.abs(g[2] - g0[2]) > 0.02 * g0[2] + 0.001 || Math.abs(g[3] - g0[3]) > 0.02 * g0[3] + 0.001 || Math.abs(tv[k][f] - tv[k][a2]) > 0.05 || tc[k][f] !== tc[k][a2]) return true;
+        for (const m of desc[k]) { const p = abs[m][f], q = abs[m][a2]; if (!p !== !q || (p && (Math.abs(p[0] - q[0]) > 0.003 || Math.abs(p[1] - q[1]) > 0.003 || Math.abs(p[3] - q[3]) > 0.05))) return true; }
+      }
+      return false;
+    };
+    const hold = Math.round(fps * 0.27);
+    out.pop = []; out.popout = []; out.repeat = []; out.empty = [];
+    txs.forEach((x, k) => {
+      for (let i = 1; i < n; i++) {
+        const a2 = tv[k][i - 1], b2 = tv[k][i], t = Math.round((i / fps) * 100) / 100;
+        if (a2 < 0.05 && b2 > 0.85 && !nearCut(i) && !nearAppear(i) && i + hold < n && !lives(k, i, i + hold)) out.pop.push({ t, k, i, what: tlabel(k) });
+        if (a2 > 0.85 && b2 < 0.05 && !nearCut(i) && i - 1 - hold >= 0 && !lives(k, i - 1 - hold, i - 1)) out.popout.push({ t, k, i, what: tlabel(k) });
+      }
+    });
+    // A value swapped in place (a UI's selected option, a status word changing) is the UI working, not an entrance: a pop-in where another text popped out on the same spot
+    const pair = (x, y) => { const p = tg[y.k][y.i - 1], q = tg[x.k][x.i]; return Math.abs(y.i - x.i) <= 1 && p && q && Math.abs(p[1] - q[1]) < 0.02 && Math.abs(p[0] - q[0]) < (p[2] + q[2]) / 2; };   // same line, overlapping
+    const ins = out.pop, outs = out.popout;
+    out.pop = ins.filter((x) => !outs.some((y) => pair(x, y))); out.popout = outs.filter((y) => !ins.some((x) => pair(x, y)));
+    // The same entrance over and over: a big element's first move after it appears (duration, direction and distance, scale), six or more in a row,
+    //   each within 4 s of the last, reads as flipping slides — vary the entrance, move the camera, or gather them into one montage
+    //   Pictures and panels only (an image, canvas or video inside, or a background): impact words slamming in one after another are the launch style's own move
+    const ent = [], step = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]) + Math.abs(q[2] - p[2]);
+    const pictorial = (e) => { if (e.querySelector('img,canvas,video,svg,picture,iframe')) return true; const cs = getComputedStyle(e), a = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number); return (a.length === 4 ? a[3] : a.length === 3 ? 1 : 0) >= 0.04 || cs.backgroundImage !== 'none'; };
+    els.forEach((e, k) => {
+      const a2 = abs[k], fa = a2.findIndex((x) => x);
+      if (fa < 0 || a2[fa][4] < 0.04 || a2.slice(fa, fa + fps).some((x) => x && x[4] > 0.85) || !pictorial(e)) return;
+      let g = fa; while (g + 1 < n && a2[g + 1] && g - fa < fps * 1.5 && !(step(a2[g], a2[g + 1]) <= TH.mov && (!a2[g + 2] || step(a2[g + 1], a2[g + 2]) <= TH.mov))) g++;
+      if (g - fa < 4) return;
+      const s = a2[fa], z = a2[g];
+      ent.push({ f: fa, k, sig: [Math.round(((g - fa) / fps) * 10), Math.round((z[0] - s[0]) / 0.03), Math.round((z[1] - s[1]) / 0.03), Math.round((z[2] / s[2]) * 10)].join(',') });
+    });
+    // Runs per signature (other entrances in between don't break a run; a window and the picture inside it entering together make two runs over the same span: report one)
+    ent.sort((x, y) => x.f - y.f);
+    const runs = [];
+    for (const sig of new Set(ent.map((x) => x.sig))) {
+      const L = ent.filter((x) => x.sig === sig);
+      // held about a beat or more each (a rapid-fire run under 0.7 s per picture is a montage, not slides)
+      for (let i = 0; i < L.length;) { let j = i; while (j + 1 < L.length && L[j + 1].f - L[j].f <= 4 * fps) j++; if (j - i + 1 >= 6 && (L[j].f - L[i].f) / (j - i) >= 0.7 * fps) runs.push({ a: L[i].f, b: L[j].f, c: j - i + 1, k: L[i].k }); i = j + 1; }
+    }
+    runs.sort((x, y) => y.c - x.c);
+    for (const r of runs) {
+      if (out.repeat.some((x) => r.a <= x.b && r.b >= x.a)) continue;
+      out.repeat.push({ t: Math.round((r.a / fps) * 100) / 100, k: r.k, a: r.a, b: r.b, what: M(`${label(els[r.k])} 这类进场连用 ${r.c} 次（${(r.a / fps).toFixed(1)}–${(r.b / fps).toFixed(1)}s）`, `${label(els[r.k])}: the same entrance ${r.c} times (${(r.a / fps).toFixed(1)}–${(r.b / fps).toFixed(1)}s)`) });
+    }
+    // An empty box waiting for its words: a panel (background or border, no text, image or canvas inside) shows 0.45 s or more before the first text inside its area appears
+    els.forEach((e, k) => {
+      const b = firstVis[k]; if (!b || !b.empty) return;
+      let best = null;
+      for (let q = 0; q < txs.length; q++) {
+        for (let f = b.f; f <= Math.min(n - 1, b.f + 3 * fps); f++) {
+          if (tv[q][f] < 0.5 || !tg[q][f]) continue;
+          const g = tg[q][f];
+          if (g[0] > b.x0 && g[0] < b.x1 && g[1] > b.y0 && g[1] < b.y1 && (ops[k][f] ?? 0) > 0.3 && (!best || f < best.f)) best = { f, q };
+          break;
+        }
+      }
+      // Covered by something in front (a sheet waiting under the one on screen) is not shown: hit-test a few points inside the box at its first frame
+      const shown = () => {
+        const hs = document.createElement('style'); hs.textContent = '#stage, #stage * { pointer-events: auto !important; }'; document.head.appendChild(hs);
+        F.render(b.f / fps);
+        // what lies on top, ignoring see-through things: texture / blend layers (grain, light leaks), the box's own containers, and big transparent layers
+        const glass = (m) => { if (m === e || e.contains(m)) return false; if (m.contains(e) || m.dataset.motion === 'skip' || m.dataset.motion === 'texture') return true; const cs = getComputedStyle(m); if (cs.mixBlendMode !== 'normal' || +cs.opacity < 0.5) return true; const r = m.getBoundingClientRect(), al = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number); return r.width * r.height >= A0 * 0.85 && (al.length === 4 ? al[3] : al.length === 3 ? 1 : 0) < 0.5 && cs.backgroundImage === 'none' && !m.querySelector(':scope > img, :scope > canvas, :scope > video'); };
+        const hit = [[0.5, 0.5], [0.25, 0.3], [0.75, 0.3], [0.25, 0.7], [0.75, 0.7]].some(([u, v]) => { const top = document.elementsFromPoint(sr.left + (b.x0 + (b.x1 - b.x0) * u) * H, sr.top + (b.y0 + (b.y1 - b.y0) * v) * H).find((m) => F.stage.contains(m) && m !== F.stage && !glass(m)); return top && (top === e || e.contains(top)); });
+        hs.remove(); return hit;
+      };
+      if (best && (best.f - b.f) / fps >= 0.45 && shown()) out.empty.push({ t: Math.round((b.f / fps) * 100) / 100, k, what: M(`装 ${tlabel(best.q)} 的框先空了 ${((best.f - b.f) / fps).toFixed(1)} 秒`, `the box for ${tlabel(best.q)} stands empty for ${((best.f - b.f) / fps).toFixed(1)} s`) });
+    });
     const sec = Math.ceil(n / fps), perSec = Array.from({ length: sec }, (_, s2) => { let mx = 0; for (let x = s2 * fps; x < Math.min(n, (s2 + 1) * fps); x++) { let a2 = 0, c = 0; for (let y = Math.max(0, x - 7); y <= Math.min(n - 1, x + 7); y++) { a2 += moving[y]; c++; } mx = Math.max(mx, a2 / c); } return Math.round(mx * 10) / 10; });
     const peakSec = perSec.reduce((b, v, s2) => (v > perSec[b] ? s2 : b), 0);
     // Duration families: bucket by 0.1 s
@@ -485,6 +577,32 @@
     el('div', `left:50%;top:${F.px(12)}px;width:${F.px(110)}px;height:${F.px(32)}px;margin-left:${-F.px(55)}px;border-radius:${F.px(20)}px;background:#111;z-index:50`, view);
     return { win: frame, view, P: (px, py) => [x + b + px, y + b + py], w, h };
   }
+  // A video playing in place (a screen recording, a sample film, licence-clean footage): put the video in assets/src/ and run
+  //   node explainer/scripts/assets.mjs <project> (→ a JPEG sequence at the source's own rate, at most 30 fps; the page loads assets/manifest.js).
+  //   PROMO.clip(F, parent, key, { a, b, from, to, rate, loop, fit, x, y, w, h }) → the <img>: fills parent (a browser / phone view, a card) or the x/y/w/h box,
+  //   object-fit `fit` (default cover); plays from `from` at `rate` between a and b, holds the last frame if the shot outlasts the clip (loop: true wraps).
+  //   The playing counts as action (F.live) and as a 'clip' information picture; a credit in the manifest goes to the end roll and CREDITS.txt
+  function clip(F, parent, key, o = {}) {
+    const c = (window.MEDIA_ASSETS && window.MEDIA_ASSETS.clips && window.MEDIA_ASSETS.clips[key]) || null;
+    if (!c) throw new Error(M(`PROMO.clip：assets/manifest.js 里没有视频片段 "${key}"（视频放进 assets/src/，跑 node explainer/scripts/assets.mjs <项目>；页面要加载 <script src="assets/manifest.js">）`, `PROMO.clip: no clip "${key}" in assets/manifest.js (put the video in assets/src/, run node explainer/scripts/assets.mjs <project>; the page must load <script src="assets/manifest.js">)`));
+    const a = o.a ?? 0, b = o.b ?? F.duration, rate = o.rate ?? 1, last = (c.frames - 1) / c.fps, from = o.from ?? 0, to = Math.min(o.to ?? last, last), runs = (to - from) / rate;
+    const box = o.w ? `left:${o.x ?? 0}px;top:${o.y ?? 0}px;width:${o.w}px;height:${o.h}px` : 'left:0;top:0;width:100%;height:100%';
+    const img = el('img', `${box};object-fit:${o.fit ?? 'cover'};display:none`, parent);
+    if (!o.loop && b - a > runs + 0.1) console.warn(M(`PROMO.clip：片段 "${key}" 在 ${(a + runs).toFixed(1)}s 放完，到 ${b.toFixed(1)}s 才收：最后一格会定住（缩短、调慢 rate 或 loop: true）`, `PROMO.clip: clip "${key}" runs out at ${(a + runs).toFixed(1)}s but stays until ${b.toFixed(1)}s: its last frame holds (shorten, slow the rate or loop: true)`));
+    let cur = '';
+    F.add((t) => {
+      const on = t >= a && t < b; set(img, { display: on ? '' : 'none' }); if (!on) return;
+      const run = Math.max(0, t - a) * rate, ct = o.loop ? from + (run % Math.max(1 / c.fps, to - from)) : Math.min(to, from + run);
+      const url = `assets/clips/${key}/${String(Math.min(c.frames, Math.floor(ct * c.fps + 1e-6) + 1)).padStart(4, '0')}.jpg`;
+      if (url === cur) return;
+      cur = url; img.src = url;
+      return img.decode().catch(() => {});   // the screenshot waits for this frame's picture
+    });
+    if (c.credit) F.credit({ ...c.credit, file: `clips/${key}` });
+    F.info('clip', a, b);
+    F.live(a, o.loop ? b : Math.min(b, a + runs));
+    return img;
+  }
   // ---------- UI demo: the window stays put, the page inside it is pushed in ----------
   // PROMO.screen(F, parent, o): real screenshots in a browser window (landscape) / phone (portrait, when the screenshot is portrait); the camera pushes in only on the page inside the window —
   //   the window and the headline above stay still; the page edges are clamped when pushing in so no blank shows; the spotlight (rest dimmed) and cursor live in the page and scale with it.
@@ -699,6 +817,7 @@
   // Light leak sweep
   function leak(F, at, o = {}) {
     const d = o.dur ?? 1.0;
+    (F.leaks ??= []).push(at);   // counted by lint: a light leak is a seasoning, two or three per film
     // Dark ground: warm light leak, screen blend (brightens); light ground (o.light): screen is invisible on white, so use a faint brand-colour band with multiply instead
     const c = o.color && /^#[0-9a-f]{6}$/i.test(o.color) ? [1, 3, 5].map((i) => parseInt(o.color.slice(i, i + 2), 16)).join(',') : '255,170,90';
     const e = el('div', `left:-40%;top:0;width:40%;height:100%;background:linear-gradient(90deg,rgba(${c},0),rgba(${c},${o.light ? 0.28 : 0.55}),rgba(${o.light ? c : '255,230,180'},0));mix-blend-mode:${o.light ? 'multiply' : 'screen'};z-index:${o.z ?? 700};opacity:0;pointer-events:none`, F.stage);
@@ -1096,6 +1215,9 @@
       const b = shown(x.el); if (!b) continue;
       if (b.y + b.h > F.H * 0.8 || b.y < F.H * 0.08) add('warn', x.win[0], M('竖屏安全区', 'portrait safe area'), M(`"${x.text.slice(0, 20)}" 在画面${b.y < F.H * 0.08 ? '顶部 8%' : '底部 20%'} 以内，会被平台的${b.y < F.H * 0.08 ? '顶栏' : '文案 / 账号信息'}挡住`, `"${x.text.slice(0, 20)}" is within the ${b.y < F.H * 0.08 ? 'top 8%' : 'bottom 20%'} of the frame and will be covered by the platform's ${b.y < F.H * 0.08 ? 'top bar' : 'caption / account info'}`));
     }
+    // Light leaks: a seasoning for the one or two heaviest section changes. More than three in a film, or two within 3 s, reads as a smudge passing over and over
+    const lk = [...(F.leaks || [])].sort((a, b) => a - b), close = lk.findIndex((t, i) => i > 0 && t - lk[i - 1] < 3);
+    if (lk.length > 3 || close > 0) add('warn', lk[close > 0 ? close : 3], M('漏光太多', 'too many light leaks'), M(`漏光用了 ${lk.length} 次${close > 0 ? `（${lk[close - 1].toFixed(1)}s 和 ${lk[close].toFixed(1)}s 只隔 ${(lk[close] - lk[close - 1]).toFixed(1)} 秒）` : ''}：一部片子两三次就够，留给段落之间最重的一两下，其余换镜头推拉、横移或压暗转场`, `${lk.length} light leaks${close > 0 ? ` (${lk[close - 1].toFixed(1)}s and ${lk[close].toFixed(1)}s only ${(lk[close] - lk[close - 1]).toFixed(1)} s apart)` : ''}: two or three per film, kept for the heaviest section changes; use camera moves or dim-downs elsewhere`));
     return out;
   }
 
@@ -1156,8 +1278,9 @@
         F.T = T; F.voiced = voiced;
         await o.build(F, { aspect, T });
         if (voiced && o.captions !== false && !F.caps) captions(F, o.captions || {});
-        // disclaimer: a small line in a corner for the whole film — e.g. "Unofficial demo · not affiliated with X · footage from its public site"
-        //   for a film made from someone else's website. UI chrome: never a fact claim, never the "unreadable text" warning
+        // disclaimer: a small line in a corner for the whole film, only where a style's genre carries one (dossier's "not investment advice",
+        //   mystery's "fiction") or the user asks. Never an "unofficial demo / not affiliated" line on a promo (GUIDE).
+        //   UI chrome: never a fact claim, never the "unreadable text" warning
         if (o.disclaimer) {
           const d = typeof o.disclaimer === 'string' ? { text: o.disclaimer } : o.disclaimer;
           const e = el('div', `left:${F.px(28)}px;bottom:${F.px(d.bottom ?? 22)}px;z-index:90;white-space:nowrap;font:500 ${F.px(d.size ?? 22)}px/1.3 ${d.font || 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif'};color:rgba(255,255,255,.88);background:rgba(0,0,0,.5);padding:${F.px(5)}px ${F.px(10)}px;border-radius:${F.px(4)}px;pointer-events:none`, F.stage, d.text);
@@ -1225,7 +1348,7 @@
     }
     return obj;
   }
-  window.PROMO = { M, compose, captions, chapterBar, Film, E, spring, seg, set, el, esc, words, scramble, rgbSplit, develop, pulse, slam, decode, headline, slot, counter, odometer, typing, field, frameT, browser, phone, screen, camera, cursor, reorder, whip, iris, morph, flash, leak, carousel, strips, endcard, gsapTimeline, three, physics, textPath, clamp, lerp };
+  window.PROMO = { M, compose, captions, chapterBar, Film, E, spring, seg, set, el, esc, words, scramble, rgbSplit, develop, pulse, slam, decode, headline, slot, counter, odometer, typing, field, frameT, browser, phone, clip, screen, camera, cursor, reorder, whip, iris, morph, flash, leak, carousel, strips, endcard, gsapTimeline, three, physics, textPath, clamp, lerp };
   // Real UIs in a browser / phone / window, drag-to-reorder demos: information pictures (density check)
   //   Cursor taps (path = [[t, x, y], …], the last may carry a disappear time): act out operations on the UI
   const cursorInfo = (F, parent, path, ...rest) => { const L = path && path[path.length - 1]; if (L && !EV.muted()) EV.info('ui', path[0][0], L[3] ?? L[0] + 0.5); return EV.mute(() => cursor(F, parent, path, ...rest)); };

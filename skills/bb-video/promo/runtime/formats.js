@@ -3,8 +3,7 @@
 //
 //   PROMO.film({ style: 'op' | 'pop' | 'cutout' | 'origami' | 'launch' | …, bpm, offset, kit: { style options }, theme: { theme overrides },
 //                brand: '#brand colour', accent: '#second colour' (each style applies them in its own materials, P.kit.brand), ground: 'light' | 'dark' | 'brand' (launch, ASCII),
-//                scenes: [{ variant, energy, cues: [...] }, …], end: { title, tagline, url, beats },
-//                disclaimer: 'Unofficial demo · not affiliated with X' (a small corner line for the whole film; see compose) })
+//                scenes: [{ variant, energy, cues: [...] }, …], end: { title, tagline, url, beats } })
 //
 // ---- Big-word telling (kinetic, the default) ----
 // One background per scene (variant changes pattern / colour); between scenes comes this style's transition; inside a scene the cues come one after another, all on the beat:

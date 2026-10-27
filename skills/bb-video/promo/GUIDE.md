@@ -100,7 +100,7 @@ Then, following `references/structure.md`, settle the length, BPM, each section'
 
 ### 5. Write the frames
 Edit `index.html`: `PROMO.compose({ bpm, offset, duration, theme, cover, build })`; music goes in `score.js`, sound design in `sound.js`.
-**A film made from someone else's website** (a demo, a pitch, a sample — not their own release) carries `disclaimer: '非官方演示 · 与 X 无关联 · 画面取自其公开官网'` (or `{ text, bottom, size }`) in `PROMO.compose` / `PROMO.film`: a small line in the bottom-left corner for the whole film, so nobody takes it for the company's own video. It is UI chrome: not fact-checked, never flagged as unreadable. `bpm` is the music's tempo and also the picture's beat grid — set the music tempo before writing the frames.
+**No "unofficial demo / not affiliated" corner line on a promo**, whoever's product it is: nobody takes it for the company's own film, and a caption box sitting on the picture for the whole film spoils it. Don't add one unless the user asks. `bpm` is the music's tempo and also the picture's beat grid — set the music tempo before writing the frames.
 - All times sit on the beat: `F.beat(n)`.
 - `F.section(at, energy, { hit })` marks the music's sections; the music is arranged from these.
 - Landscape and portrait are **the same code**: sizes use `F.px()`, layouts branch on `F.portrait`.
@@ -121,7 +121,7 @@ node scripts/render.mjs videos/<name> --strip 20.5,22,8           # around one t
 node scripts/render.mjs videos/<name> --strip 0.5,39.5,24 --aspect 9:16
 node scripts/render.mjs videos/<name> --audio                     # only music + sound effects to preview → out/audio.wav
 ```
-Go through `references/review.md` item by item and fix until everything passes. At the end `--check` prints the **motion sheet** (how many things move at once, duration families, linear starts/stops, flashes, too fast, sudden camera changes; charts in `review/motion-*.png`); how to read it is in review.md.
+Go through `references/review.md` item by item and fix until everything passes. At the end `--check` prints the **motion sheet** (how many things move at once, duration families, linear starts/stops, flashes, too fast, sudden camera changes, and stiff motion: text switched on with no entrance, the same entrance over and over, empty boxes waiting for their words; charts in `review/motion-*.png`); how to read it is in review.md.
 
 ### 7. Render
 ```bash

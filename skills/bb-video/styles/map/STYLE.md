@@ -11,7 +11,7 @@ Runtime: `runtime/map.js` (`await PROMO.map(F, opt)`, canvas 2D + HTML / SVG lab
 ## 0. Safety
 - **Real geodata, credited.** Every layer comes from open data with a known licence: Natural Earth (public domain), US Census TIGER/Line (public domain), OpenStreetMap (ODbL: credit "© OpenStreetMap contributors"; data derived from it stays ODbL), a city's or agency's open data (read its licence first: e.g. the MassDOT Developers License asks to credit MassDOT and forbids its logos and any implied endorsement). `geodata.mjs` writes each source's credit; the page registers them (`F.credit`) and the render lists them in `out/CREDITS.txt`; the end card names them too.
 - **Before downloading** any geodata, tell the user the files, source, licence and size, and wait for their OK (`geodata.mjs` prints the size of what it fetched).
-- **Our own map design.** Line names and line colours are facts and can be used; logos, trademarks and an official map's design (its diagram, its station symbols, its layout) are not. A film about an organisation that is not ours says so: compose's `disclaimer` ("非官方介绍 · 与 … 无关联").
+- **Our own map design.** Line names and line colours are facts and can be used; logos, trademarks and an official map's design (its diagram, its station symbols, its layout) are not. No "unofficial / not affiliated" corner line; sources go on the end card and in `out/CREDITS.txt`.
 - **Honest geometry.** Today's routes drawn for a past year say so on screen (`G.note('线路为今日走向')`); a guessed position (a demolished incline, an ancient battle line) is labelled illustrative in brief.md. Borders in disputed areas: use the data's own (Natural Earth's de facto lines) and say so when it matters.
 
 ## 1. When to use
