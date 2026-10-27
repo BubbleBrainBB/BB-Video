@@ -49,7 +49,7 @@ What it covers:
 <!-- gallery:start -->
 ## Examples
 
-One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s with sound are on the [samples release](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)). Narration is in Chinese; the three website promos are music-only.
+One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s with sound are on the [samples release](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)). Narration is in Chinese; the four website promos are music-only.
 
 <table>
 <tr>

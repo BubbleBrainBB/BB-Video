@@ -49,7 +49,7 @@
 <!-- gallery:start -->
 ## 样例
 
-每种风格一支样片，都是用这个技能做的（GIF 是 7 秒的片段；带声音的完整 mp4 在 [samples 发布页](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)）。旁白是中文；三支网站宣传片只有音乐。
+每种风格一支样片，都是用这个技能做的（GIF 是 7 秒的片段；带声音的完整 mp4 在 [samples 发布页](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)）。旁白是中文；四支网站宣传片只有音乐。
 
 <table>
 <tr>
