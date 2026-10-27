@@ -61,7 +61,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/riso.mp4"><img src="examples/riso/preview.gif" width="100%" alt="riso"></a><br>
 <b><code>riso</code></b> · Grok Bot, a kinetic promo<br>
-<sub>Unofficial demo · not affiliated with xAI / Grok · footage from its public website</sub><br>
+<sub>Footage from its public website</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/riso.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
@@ -74,7 +74,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/launch.mp4"><img src="examples/launch/preview.gif" width="100%" alt="launch"></a><br>
 <b><code>launch</code></b> · Grok Bot, a launch film<br>
-<sub>Unofficial demo · not affiliated with xAI / Grok · footage from its public website and app</sub><br>
+<sub>Footage from its public website and app</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/launch.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/op.mp4"><img src="examples/op/preview.gif" width="100%" alt="op"></a><br>
 <b><code>op</code></b> · Stripe, from its homepage<br>
-<sub>Unofficial demo · not affiliated with Stripe · footage from its public website</sub><br>
+<sub>Footage from its public website</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/op.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
@@ -132,13 +132,13 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/toy3d.mp4"><img src="examples/toy3d/preview.gif" width="100%" alt="toy3d"></a><br>
 <b><code>toy3d</code></b> · Linear website promo<br>
-<sub>Unofficial demo · not affiliated with Linear · footage from its public website</sub><br>
+<sub>Footage from its public website</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/toy3d.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/newsreel.mp4"><img src="examples/newsreel/preview.gif" width="100%" alt="newsreel"></a><br>
 <b><code>newsreel</code></b> · The 2026 Tesla Roadster reveal, as a 1930s newsreel<br>
-<sub>Not affiliated with Tesla · photos from Wikimedia Commons (CC0 / public domain / CC BY 2.0 Steve Jurvetson)</sub><br>
+<sub>Photos from Wikimedia Commons (CC0 / public domain / CC BY 2.0 Steve Jurvetson)</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/newsreel.mp4">Full video</a>
 </td>
 </tr>
@@ -186,7 +186,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
 <b><code>map</code></b> · The Boston subway (波士顿地铁): from the 1897 tunnel under Boston Common to today's four-colour network<br>
-<sub>Unofficial introduction, not affiliated with the MBTA · map drawn from MassDOT / MBTA data, U.S. Census TIGER/Line and Natural Earth</sub><br>
+<sub>Map drawn from MassDOT / MBTA data, U.S. Census TIGER/Line and Natural Earth</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4">Full video</a>
 </td>
 </tr>

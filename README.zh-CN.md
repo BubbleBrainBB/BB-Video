@@ -61,7 +61,7 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/riso.mp4"><img src="examples/riso/preview.gif" width="100%" alt="riso"></a><br>
 <b><code>riso</code></b> · Grok Bot 动态文字宣传片<br>
-<sub>非官方演示 · 与 xAI / Grok 无关联 · 画面取自其公开官网</sub><br>
+<sub>画面取自其公开官网</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/riso.mp4">完整视频</a>
 </td>
 <td width="33%" valign="top">
@@ -74,7 +74,7 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/launch.mp4"><img src="examples/launch/preview.gif" width="100%" alt="launch"></a><br>
 <b><code>launch</code></b> · Grok Bot 发布片<br>
-<sub>非官方演示 · 与 xAI / Grok 无关联 · 画面取自其公开官网和 App</sub><br>
+<sub>画面取自其公开官网和 App</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/launch.mp4">完整视频</a>
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/op.mp4"><img src="examples/op/preview.gif" width="100%" alt="op"></a><br>
 <b><code>op</code></b> · Stripe 官网宣传片<br>
-<sub>非官方演示 · 与 Stripe 无关联 · 画面取自其公开官网</sub><br>
+<sub>画面取自其公开官网</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/op.mp4">完整视频</a>
 </td>
 <td width="33%" valign="top">
@@ -132,13 +132,13 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/toy3d.mp4"><img src="examples/toy3d/preview.gif" width="100%" alt="toy3d"></a><br>
 <b><code>toy3d</code></b> · Linear 官网宣传片<br>
-<sub>非官方演示 · 与 Linear 无关联 · 画面取自其公开官网</sub><br>
+<sub>画面取自其公开官网</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/toy3d.mp4">完整视频</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/newsreel.mp4"><img src="examples/newsreel/preview.gif" width="100%" alt="newsreel"></a><br>
 <b><code>newsreel</code></b> · 特斯拉 2026 Roadster 发布会，做成三十年代新闻片<br>
-<sub>与特斯拉无关联 · 照片来自 Wikimedia Commons（CC0 / 公有领域 / CC BY 2.0 Steve Jurvetson）</sub><br>
+<sub>照片来自 Wikimedia Commons（CC0 / 公有领域 / CC BY 2.0 Steve Jurvetson）</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/newsreel.mp4">完整视频</a>
 </td>
 </tr>
@@ -186,7 +186,7 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
 <b><code>map</code></b> · 《波士顿地铁》：从 1897 年波士顿公园底下的一段隧道，讲到今天的四色线网<br>
-<sub>非官方介绍 · 与 MBTA 无关联 · 地图数据来自 MassDOT / MBTA、美国人口普查局 TIGER/Line、Natural Earth</sub><br>
+<sub>地图数据来自 MassDOT / MBTA、美国人口普查局 TIGER/Line、Natural Earth</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4">完整视频</a>
 </td>
 </tr>
