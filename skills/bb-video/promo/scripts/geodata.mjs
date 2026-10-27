@@ -50,7 +50,7 @@ const usage = M(`用法：node geodata.mjs <项目> fetch tiger <图层> <FIPS>[
        node geodata.mjs <project> build [geo.json]`);
 if (!proj || !['fetch', 'info', 'build'].includes(cmd)) { console.error(usage); process.exit(1); }
 const SRC = path.join(proj, 'assets', 'geo', 'src');
-const UA = 'bb-video/1.0 (https://github.com/DylanDDeng/BB-Video; geodata for code-made map films)';
+const UA = 'bb-video/1.0 (https://github.com/BubbleBrainBB/BB-Video; geodata for code-made map films)';
 const kb = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const today = () => new Date().toISOString().slice(0, 10);
 

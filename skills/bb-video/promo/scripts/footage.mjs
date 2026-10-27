@@ -25,7 +25,7 @@ const usage = M('用法：node footage.mjs <项目> search "<关键词>" [--lice
 if (!proj || !['search', 'fetch'].includes(cmd)) { console.error(usage); process.exit(1); }
 
 const API = 'https://commons.wikimedia.org/w/api.php';
-const UA = 'bb-video/1.0 (https://github.com/DylanDDeng/BB-Video; footage search for code-made films)';
+const UA = 'bb-video/1.0 (https://github.com/BubbleBrainBB/BB-Video; footage search for code-made films)';
 const cands = path.join(proj, 'research', 'candidates.json');
 const strip = (h) => String(h || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/\s+/g, ' ').trim();
 // licence class from Commons' LicenseShortName / License
