@@ -156,13 +156,19 @@
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/mystery.mp4">完整视频</a>
 </td>
 <td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4"><img src="examples/isometric/preview.gif" width="100%" alt="isometric"></a><br>
+<b><code>isometric</code></b> · 《一个快递是怎么到你手里的》：跟着一个包裹，从仓库走到你家门口<br>
+<sub>数据：国家邮政局（2025 年）· 微缩世界和快递品牌都由代码画成</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4">完整视频</a>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4"><img src="examples/trailer/preview.gif" width="100%" alt="trailer"></a><br>
 <b><code>trailer</code></b> · 《深空回声》：一部原创虚构科幻片的预告片<br>
 <sub>虚构电影 · 画面、声音和人名全部由代码生成</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4">完整视频</a>
 </td>
-</tr>
-<tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/dossier.mp4"><img src="examples/dossier/preview.gif" width="100%" alt="dossier"></a><br>
 <b><code>dossier</code></b> · 《AI 的账单》：2026 年 10 月美股科技股，从历史新高到美联储议息周<br>
@@ -175,6 +181,8 @@
 <sub>一般健康信息，不构成医疗建议 · 角色原创、由代码绘制 · 资料来源：IOM、EFSA、FDA、Reichert 等 2022</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/manga.mp4">完整视频</a>
 </td>
+</tr>
+<tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
 <b><code>map</code></b> · 《波士顿地铁》：从 1897 年波士顿公园底下的一段隧道，讲到今天的四色线网<br>

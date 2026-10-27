@@ -156,13 +156,19 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/mystery.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4"><img src="examples/isometric/preview.gif" width="100%" alt="isometric"></a><br>
+<b><code>isometric</code></b> · How a parcel gets to you (一个快递是怎么到你手里的): one parcel followed from the warehouse to your door<br>
+<sub>Figures: China's State Post Bureau, 2025 · the little world and its courier brand are drawn in code</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4">Full video</a>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4"><img src="examples/trailer/preview.gif" width="100%" alt="trailer"></a><br>
 <b><code>trailer</code></b> · Deep Space Echo (深空回声), the trailer for an original, fictional sci-fi film<br>
 <sub>A fictional film · every shot, sound and name made in code</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4">Full video</a>
 </td>
-</tr>
-<tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/dossier.mp4"><img src="examples/dossier/preview.gif" width="100%" alt="dossier"></a><br>
 <b><code>dossier</code></b> · AI's bill (AI 的账单): US tech stocks in October 2026, from a record high to the week of the Fed<br>
@@ -175,6 +181,8 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>General health information, not medical advice · original characters drawn in code · sources: IOM, EFSA, FDA, Reichert et al. 2022</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/manga.mp4">Full video</a>
 </td>
+</tr>
+<tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
 <b><code>map</code></b> · The Boston subway (波士顿地铁): from the 1897 tunnel under Boston Common to today's four-colour network<br>
