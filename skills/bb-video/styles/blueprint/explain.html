@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · blueprint</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-condensed@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-condensed@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-stencil-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<style>html,body{margin:0;background:#0B2B55}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/blueprint.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · blueprint engineering drawing, narrated (an explainer following the voiceover). Read styles/blueprint/STYLE.md first.
+// First verify the facts in brief.md (every dimension, tooth count, rate and name on the sheet), write script.json → tts.py writes timeline.js; then the sheet.
+//   T.start('l3') / T.end('l3') / T.word('l3', 'some word') = when this line / this word is spoken: each part is drafted, named and dimensioned as it is said.
+// One big sheet; each line gets a view (or a detail of one) and the camera travels there in the pause; the mechanism keeps turning while you talk about it.
+// Keep the caption band free (landscape below 0.84 H, portrait below 0.68 H): S.fit(box, pad, band) frames a view above it. Portrait is its own layout (views stacked).
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0, grain: false, tail: 1.6,
+  theme: { bg: '#0B2B55', fg: '#F2F8FF', ink: '#F2F8FF', muted: '#9CC3E8', accent: '#FF5D4D', paper: '#123F77', fonts: { display: '"Saira Stencil One", "Noto Sans SC", sans-serif', sans: '"Saira Condensed", "Noto Sans SC", sans-serif' } },
+  captions: { max: 18, font: '"Noto Sans SC", sans-serif', weight: 500, bg: 'rgba(8,30,62,.84)' },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word, B = PROMO.blueprint(F), PT = F.portrait, L = B.L;
+    const gap = (a, b) => (e(a) + s(b)) / 2;
+    const S = B.sheet({ a: 0, w: 6000, h: 4000, x: 600, y: 400 });
+    B.frame({ at: 0.2 });
+    B.block({ title: '__TITLE__', no: 'BP-001', scale: '1:1', sheets: 1, at: 0.4 });
+
+    // ===== l1 · a view drafted as it is named: construction first, then the final line, then dimensions and a leader =====
+    const V1 = B.view(S, { x: 0, y: 0, scale: 10 });   // local units: mm, drawn at 10:1
+    S.cam({ at: 0, ...S.fit({ x: -320, y: -260, w: 640, h: 520 }, 0.08, 0.16) });
+    B.circle(V1, { x: 0, y: 0, r: 20, at: s('l1') + 1.0, cons: true });
+    B.centre(V1, { x: 0, y: 0, r: 20, at: s('l1') + 0.6 });
+    B.dim(V1, { kind: 'dia', x: 0, y: 0, r: 20, text: 'Ø40', at: s('l1') + 1.6 });
+    B.leader(V1, { from: [14, 14], to: [28, 22], n: 1, text: '零件名称 PART', at: s('l1') + 2.2 });
+
+    // ===== l2 … one block per line. The moves, each timed from the narration:
+    //   mechanisms:  const M1 = B.mech(V, { time: B.clock([{ at: 0, rate: 1 }]) });
+    //                M1.gear({ id: 'a', x: 0, y: 0, teeth: 60, m: 0.5, rate: 0.05, at: w('l2', '齿轮') });
+    //                M1.gear({ id: 'b', mesh: 'a', dir: 20, teeth: 12, m: 0.5, kind: 'pinion', at: … });   // ratio, direction and meshing phase are solved
+    //                M1.spin('b', { text: '5 : 1', at: … })
+    //   annotation:  B.dim(V, { a, b, text, at }) · B.leader(V, { from, to, n, text, at }) · B.table(V, { x, y, cols, head, rows, at, every })
+    //   section:     B.cutline(V, { a, b, letter: 'A', at }) then a section view with B.hatch(V2, { rect | pts, at })
+    //   detail:      a callout circle on the drawing, S.cam a push into it, B.focus(V, { x, y, r, at }) lets the rest fall back; notes on a second view (same placement)
+    //   exploded:    const G = B.group(V); draw a part into G; G.to({ at, dy: -30 }) … G.to({ at, dy: 0 })
+    //   new subject: const S2 = B.sheet({ a: T.start('l3') - 0.2, enter: 'expose' | 'slide' }); S2.cam({ at: 0, ...S2.fit(box, 0.05, 0.16) })
+    //                (never pan sideways over one sheet to the next subject: it reads as sliding the paper; on a sheet only push in / pull out)
+    //   accent:      B.pencil(V, { kind: 'ring', x, y, r, at }) — the one red pencil mark per idea
+
+    F.section(0, 1, { name: 'hook' });
+  },
+});
+</script></body></html>

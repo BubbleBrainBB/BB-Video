@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 24 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 25 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -39,6 +39,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `map` | an animated map from real geodata (地图动画): paper land, engraved water lines along the coast, parks, street texture, cartographic labels; routes draw on stroke by stroke, a tram or train travels a line and stops on the word, stations pop in, areas spread like ink, callout cards pinned to places, a year counter and a locator globe; the camera turns the globe, dives to the street, flies between places and tilts to follow a train |
 | `swiss` | Swiss poster kinetic typography (瑞士风动态排版): giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
 | `lumen` | a dark motivational animated short (暗调励志动画): a code-drawn room nearly all black, lit by one motivated light — a phone screen on a face, a red alarm clock, a desk lamp, moonlight through blinds, dawn at a window — with rim light, a giant shadow on the wall, haze and grain; one original protagonist (a soft square head, a cowlick that shows the mood) acts everything with eyes and brows; slow push-ins that hold on the face, a low second-person voice, white thumbnail-style title cards; facts told in light: a clock racing, gauges, the night as a line, an x-ray of the head |
+| `blueprint` | a blueprint engineering drawing (蓝图工程图): cyanotype paper with a grid, white line work drafted in construction lines first, dimensions, leaders with numbered balloons, hatched sections, a parts list, a title block and one red pencil; mechanisms really work — gear trains mesh and turn at the right ratios, an escapement locks and releases, springs wind down, cams and levers move — in slow motion or time-lapse shown on the sheet; each subject arrives on a new sheet, and the camera pushes into a detail while the rest of the drawing falls back |
 
 What it covers:
 
@@ -202,6 +203,14 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>lumen</code></b> · Five more minutes (再刷五分钟): revenge bedtime procrastination — the night that won't end, what it costs the next day, and one small decision<br>
 <sub>General health information, not medical advice · original character and sets drawn in code · sources: Kroese et al. 2014, CDC / AASM, Williamson &amp; Feyer 2000, Van Dongen et al. 2003, Chang et al. 2015</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/lumen.mp4">Full video</a>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4"><img src="examples/blueprint/preview.gif" width="100%" alt="blueprint"></a><br>
+<b><code>blueprint</code></b> · What happens inside a mechanical watch (机械表里发生了什么): mainspring, going train, escapement, balance, motion work — drawn and running at the right ratios<br>
+<sub>A generic, illustrative movement · facts from Wikipedia</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4">Full video</a>
 </td>
 </tr>
 </table>

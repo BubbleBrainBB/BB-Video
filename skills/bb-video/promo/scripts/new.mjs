@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // new.mjs: create a new promo project
-// Usage: node new.mjs <project dir> [--title name] [--style origami | pop | op | cutout | ascii | shadow | bauhaus | pixel | chat | toy3d | newsreel | filmroom | mystery | isometric | trailer | dossier | manga | map | swiss | lumen] [--quick]
+// Usage: node new.mjs <project dir> [--title name] [--style origami | pop | op | cutout | ascii | shadow | bauhaus | pixel | chat | toy3d | newsreel | filmroom | mystery | isometric | trailer | dossier | manga | map | swiss | lumen | blueprint] [--quick]
 //       --style: visual style (a folder name under styles/); omitted = the default launch motion. The style's index.html / sound.js replace the generic skeleton
 //       --quick: quick mode (use with --style): index.html becomes the "write a script, PROMO.film renders it" skeleton, fonts taken from the style (references/kit.md)
 //       node new.mjs <project dir> --update-lib     only refresh lib/ (after a runtime update)
@@ -22,7 +22,7 @@ fs.cpSync(path.join(skill, '..', 'core', 'runtime', 'core.js'), path.join(lib, '
 const BOARDS = { whiteboard: { files: ['whiteboard.js', 'whiteboard.css', 'media.js'], fonts: 'fonts.css' }, riso: { files: ['riso.js', 'riso.css', 'media.js'], fonts: 'fonts-riso.css' }, ink: { files: ['ink.js', 'ink.css', 'media.js'], fonts: 'fonts-ink.css' } };
 const boardStyle = opt('style', null) && BOARDS[opt('style')] ? opt('style') : Object.keys(BOARDS).find((k) => fs.existsSync(path.join(lib, `${k}.js`)));
 if (boardStyle) { const ert = path.join(skill, '..', 'explainer', 'runtime'); for (const f of BOARDS[boardStyle].files) fs.cpSync(path.join(ert, f), path.join(lib, f)); fs.cpSync(path.join(ert, BOARDS[boardStyle].fonts), path.join(lib, 'fonts.css')); }
-for (const f of ['promo.js', 'origami.js', 'pop.js', 'op.js', 'cutout.js', 'ascii.js', 'shadow.js', 'bauhaus.js', 'pixel.js', 'chat.js', 'toy3d.js', 'newsreel.js', 'filmroom.js', 'mystery.js', 'isometric.js', 'trailer.js', 'dossier.js', 'manga.js', 'map.js', 'swiss.js', 'lumen.js', 'kit.js', 'formats.js']) fs.cpSync(path.join(skill, 'runtime', f), path.join(lib, f));
+for (const f of ['promo.js', 'origami.js', 'pop.js', 'op.js', 'cutout.js', 'ascii.js', 'shadow.js', 'bauhaus.js', 'pixel.js', 'chat.js', 'toy3d.js', 'newsreel.js', 'filmroom.js', 'mystery.js', 'isometric.js', 'trailer.js', 'dossier.js', 'manga.js', 'map.js', 'swiss.js', 'lumen.js', 'blueprint.js', 'kit.js', 'formats.js']) fs.cpSync(path.join(skill, 'runtime', f), path.join(lib, f));
 if (args.includes('--update-lib')) { console.log(M('已刷新 ', 'Refreshed ') + lib); process.exit(0); }
 if (fs.existsSync(path.join(proj, 'index.html'))) { console.error(M('项目已存在（只想刷新运行时请加 --update-lib）', 'Project already exists (to refresh only the runtime, add --update-lib)')); process.exit(1); }
 const title = opt('title', path.basename(proj));

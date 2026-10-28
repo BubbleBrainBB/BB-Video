@@ -125,7 +125,7 @@
         const ar = (r.visW ?? r.width) * (r.visH ?? r.height);
         if (ar >= A0 * 0.002 && r.width) ops[k][i] = op;
         if (op < 0.02 || ar < A0 * 0.0005) continue;
-        tr[k][i] = [(r.left - sr.left + r.width / 2) / H, (r.top - sr.top + r.height / 2) / H, Math.sqrt(ar) / H, op, ar / A0];
+        tr[k][i] = [(r.left - sr.left + r.width / 2) / H, (r.top - sr.top + r.height / 2) / H, Math.sqrt(ar) / H, op, ar / A0, Math.sqrt(r.width * r.height) / H];   // [5] = the full (unclipped) size: the scale children are measured against
         const onA = Math.max(0, Math.min(r.left + r.width, sr.right) - Math.max(r.left, sr.left)) * Math.max(0, Math.min(r.top + r.height, sr.bottom) - Math.max(r.top, sr.top));   // on screen (a sheet waiting off camera on a big world is not shown yet)
         if (!firstVis[k] && op >= 0.5 && ar >= A0 * 0.015 && onA >= A0 * 0.015) firstVis[k] = { f: i, x0: (r.left - sr.left) / H, y0: (r.top - sr.top) / H, x1: (r.left - sr.left + r.width) / H, y1: (r.top - sr.top + r.height) / H, empty: ar < A0 * 0.6 && emptyPanel(e) };
       }
@@ -142,7 +142,8 @@
     //   movement = change in proportional coordinates × the parent's current size. No such ancestor = measure against the frame directly (sc = 1)
     const idx = new Map(els.map((e, k) => [e, k])), par = els.map((e) => { for (let m = e.parentElement; m && m !== F.stage; m = m.parentElement) if (idx.has(m)) return idx.get(m); return -1; });
     const abs = tr.map((a) => a.slice());
-    tr.forEach((a, k) => { for (let i = 0; i < n; i++) { const x = abs[k][i]; if (!x) continue; const p = par[k] >= 0 ? abs[par[k]][i] : null; a[i] = p && p[2] > 0 ? [(x[0] - p[0]) / p[2], (x[1] - p[1]) / p[2], x[2] / p[2], x[3], x[4], p[2]] : [...x, 1]; } });
+    //   The parent's scale is its full size, not its visible part: a camera box larger than the frame (a big sheet or world) is clipped to the frame, and scaling by the clipped size would make still children look as if they move whenever the camera zooms
+    tr.forEach((a, k) => { for (let i = 0; i < n; i++) { const x = abs[k][i]; if (!x) continue; const p = par[k] >= 0 ? abs[par[k]][i] : null, ps = p ? p[5] || p[2] : 0; a[i] = p && ps > 0 ? [(x[0] - p[0]) / ps, (x[1] - p[1]) / ps, x[2] / ps, x[3], x[4], ps] : [x[0], x[1], x[2], x[3], x[4], 1]; } });
     // Camera hits that land on a sound effect (the whole layer shaking as impact text slams down, a push on the downbeat) are by design: a sound within 3 frames means it is not a camera jolt
     const hits = (F.sfxList || []).filter((x) => x.type !== 'type').map((x) => x.t), onHit = (f) => hits.some((h) => Math.abs(h - f / fps) <= 3 / fps);
     // Name: use data-what if the component set one (e.g. "B.slogan 色块", i.e. colour block), plus the text inside; otherwise the text or tag name

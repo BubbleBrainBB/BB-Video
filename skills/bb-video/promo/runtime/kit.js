@@ -675,6 +675,116 @@
     },
   });
 
+  // ======================= Blueprint engineering drawing =======================
+  P.kit.register('blueprint', {
+    runtime: 'blueprint',
+    theme: { bg: '#123F77', fg: '#F2F8FF', ink: '#F2F8FF', paper: '#123F77', accent: '#FF5D4D', muted: '#9CC3E8', fonts: { display: '"Saira Stencil One", "Noto Sans SC", sans-serif', serif: '"Saira Condensed", "Noto Sans SC", sans-serif', sans: '"Saira Condensed", "Noto Sans SC", sans-serif', script: '"Saira Condensed", "Noto Sans SC", sans-serif', mono: '"Saira Condensed", "Noto Sans SC", sans-serif' } },
+    make(F, opt) {
+      const B = P.blueprint(F, opt), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = B.colors;
+      const S = { lead: 0.5, push: 0.004, ink: C2.text, paper: C2.bg, colors: [C2.acc, '#9CC3E8', '#5E8FC7'], raw: B };
+      // every scene is a sheet of its own (grid variant per scene); kit coordinates are frame px, the sheet's are design px
+      const sheetOf = (layer) => layer._bp ?? (layer._bp = B.paper(layer, { variant: 0 }));
+      const V = (layer) => sheetOf(layer).view, d = (x) => x / u;
+      let n = 0;
+      S.bg = (layer, o = {}) => { const P2 = B.paper(layer, { variant: o.variant ?? 0 }); layer._bp = P2; return { el: P2.box }; };
+      // big word: stencil lettering plotted in, a heavy rule and a thin one drawn under it
+      S.word = (layer, o) => { const sz = Math.min(o.size ?? (PT ? 150 : 180), d(o.maxW ?? W * 0.88) / Math.max(1, estUnits(o.text)) / 1.1);
+        return B.title(V(layer), { x: d(o.x ?? W / 2), y: d(o.y ?? H * 0.45), text: o.text, size: sz, at: o.at, until: o.until, kind: o.kind ?? 'slam', w: Math.min(d(W * 0.9), estUnits(o.text) * sz * 1.08) }); };
+      S.line = (layer, o) => B.label(V(layer), { x: d(o.x ?? W / 2), y: d(o.y ?? H * 0.68), text: o.text, size: Math.min(56, o.size ?? 46), maxW: d(o.maxW ?? W * 0.84), align: o.align ?? 'center', at: o.at, until: o.until, kind: o.kind ?? 'label', lh: 1.3 });
+      // card: a drafted frame (construction first) with corner ticks; content goes in the returned element
+      S.card = (layer, o) => {
+        const x = d(o.x - o.w / 2), y = d(o.y - o.h / 2), w = d(o.w), h = d(o.h), Vl = V(layer);
+        B.rect(Vl, { x, y, w, h, at: o.at - 0.1, dur: 0.5, until: o.until, cons: true });
+        for (const [cx, cy] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) B.centre(Vl, { x: cx, y: cy, r: 10, at: o.at - 0.2, dur: 0.2, until: o.until });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;display:none;z-index:${o.z ?? 10}`, layer);
+        F.add((t) => set(c, { display: t >= o.at - 0.1 && t < (o.until ?? 1e9) ? '' : 'none' }));
+        return { el: c, w: o.w, h: o.h };
+      };
+      // screenshot: unaltered, revealed inside a drafted frame, with its overall width dimensioned along the top
+      S.shot = (layer, o) => {
+        const Vl = V(layer), x = d(o.x - o.w / 2), y = d(o.y - o.h / 2), w = d(o.w), h = d(o.h), a0 = o.at - 0.45, until = o.until ?? 1e9;
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;display:none;z-index:${o.z ?? 9};background:${o.fit === 'contain' ? 'transparent' : C2.bg}`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${o.fit === 'contain' ? 'contain' : 'cover'}`, box); im.src = o.src;
+        F.add((t) => { const on = t >= a0 && t < until; set(box, { display: on ? '' : 'none' }); if (on) { const q = seg(t, a0, o.at, E.cubicInOut), qo = until < 1e8 ? seg(t, until - 0.3, until) : 0; set(box, { clipPath: q < 1 ? `inset(0 ${f1((1 - q) * 100)}% 0 0)` : '', opacity: qo ? String(1 - qo) : '' }); } });
+        B.rect(Vl, { x, y, w, h, at: o.at - 0.2, dur: 0.5, until: o.until, pen: false });
+        if (o.sfx !== false) F.sfx(a0, 'slide', 0.3);
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      };
+      // signature move: the red pencil rings the word (the one correction on the sheet)
+      S.accent = (layer, o) => { const r = d(F.px(o.size ?? 200)) * 0.9; B.pencil(V(layer), { kind: 'ring', x: d(o.x), y: d(o.y), r: Math.min(d(W * 0.42), r * 1.8), ry: r * 0.55, at: o.at + 0.1, until: o.until }); return {}; };
+      // transition: a UV exposure bar sweeps the frame; the next sheet develops behind it (full cover at `cover`)
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none', 90);
+        const at = o.cover, dur = 0.7, bar = el('div', `top:0;left:0;width:${f1(W * 1.3)}px;height:100%;background:linear-gradient(90deg, transparent, rgba(225,240,255,.6) 18%, ${C2.bg} 32%, ${C2.bg} 68%, rgba(225,240,255,.6) 82%, transparent);display:none`, wl);
+        bar.dataset.motion = 'skip';
+        F.add((t) => { const on = t >= at - dur / 2 && t < at + dur / 2; set(bar, { display: on ? '' : 'none' }); if (on) set(bar, { transform: `translateX(${f1(-W * 1.3 + seg(t, at - dur / 2, at + dur / 2, E.sine) * W * 2.6)}px)` }); });
+        F.sfx(at - dur / 2, 'expose', 0.4, { dur }); F.transition(at - dur / 2, at + dur / 2); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the name in stencil with its rules, the line, the url in a drafted box with a drawing number
+      S.end = (layer, o) => {
+        const Vl = V(layer), cx = d(W / 2), cy = d(H * (PT ? 0.36 : 0.4)), sz = Math.min(PT ? 130 : 160, d(W * 0.86) / Math.max(1, estUnits(o.title)) / 1.1);
+        B.title(Vl, { x: cx, y: cy, text: o.title, size: sz, at: o.at + 0.6, kind: 'logo', w: Math.min(d(W * 0.9), estUnits(o.title) * sz * 1.08) });
+        if (o.tagline) B.label(Vl, { x: cx, y: cy + sz * 1.3, text: o.tagline, size: PT ? 46 : 50, align: 'center', maxW: d(W * 0.84), at: o.at + 1.3, kind: 'endcard' });
+        if (o.url) { const uy = cy + sz * 1.3 + (PT ? 130 : 110), uw = estUnits(o.url) * 44 + 60; B.rect(Vl, { x: cx - uw / 2, y: uy - 34, w: uw, h: 68, at: o.at + 1.7, dur: 0.5 }); B.label(Vl, { x: cx, y: uy, text: o.url, size: 44, align: 'center', at: o.at + 2.0, kind: 'endcard' }); }
+        F.sfx(o.at + 2.1, 'stamp', 0.4);
+      };
+      // ---- Telling information (blueprint): steps are numbered balloons on a leader chain; contrast is two views split by a centre line; numbers are dimensioned bars; a spot on the UI is a detail circle ----
+      S.steps = (layer, o) => {
+        const { items, T, until, C: R } = o, k = items.length, Vl = V(layer), row = !PT && R.w > R.h, br = 30, sz = Math.max(30, Math.min(PT ? 40 : 44, d(row ? R.w / k : R.w) / 7));
+        const pos = items.map((_, j) => lanePos(R, k, j, row)).map((p2) => [d(p2.x), d(p2.y)]);
+        return items.map((it, j) => {
+          const [x, y] = pos[j];
+          if (j) { const [px, py] = pos[j - 1], dx = x - px, dy = y - py, l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l; B.line(Vl, { a: [px + ux * (br + 6), py + uy * (br + 6)], b: [x - ux * (br + 6), y - uy * (br + 6)], kind: 'centre', at: T[j] - 0.15, dur: 0.35, until, pen: false }); }
+          B.circle(Vl, { x, y, r: br, at: T[j] - 0.1, dur: 0.3, until, pen: false, color: it.hot ? 'acc' : undefined });
+          B.label(Vl, { x, y, text: String(j + 1), size: 34, align: 'center', at: T[j], dur: 0.15, until, fact: false, font: 'stencil', color: it.hot ? 'acc' : 'text' });
+          B.label(Vl, { x: row ? x : x + br + 20, y: row ? y + br + 20 + sz * 0.6 : y, text: it.text, size: sz, align: row ? 'center' : 'left', valign: 'middle', maxW: row ? d(R.w / k) * 0.92 : d(R.w) - br * 2 - 30, at: T[j] + 0.2, until, kind: 'label' });
+          if (it.note) B.label(Vl, { x: row ? x : x + br + 20, y: row ? y + br + 20 + sz * 1.9 : y + sz * 1.1, text: it.note, size: sz * 0.62, color: 'mute', align: row ? 'center' : 'left', at: T[j] + 0.4, until, kind: 'label' });
+          return { x: x * u, y: y * u };
+        });
+      };
+      S.versus = (layer, o) => {
+        const { cols, T, at2, until, C: R } = o, k = cols.length, Vl = V(layer), stack = R.w < R.h * 1.1;
+        const cw = d(stack ? R.w : R.w / k), ch = d(stack ? R.h / k : R.h), x0 = d(R.x), y0 = d(R.y);
+        return cols.map((c, j) => {
+          const cx = stack ? x0 + cw / 2 : x0 + cw * (j + 0.5), top = stack ? y0 + ch * j : y0;
+          if (j) B.line(Vl, stack ? { a: [x0, top], b: [x0 + cw, top], kind: 'centre', at: T[j] - 0.3, dur: 0.5, until, pen: false } : { a: [x0 + cw * j, y0], b: [x0 + cw * j, y0 + ch], kind: 'centre', at: T[j] - 0.3, dur: 0.5, until, pen: false });
+          B.title(Vl, { x: cx, y: top + 54, text: c.title, size: PT ? 50 : 58, at: T[j], until, kind: 'label', w: Math.min(cw * 0.86, estUnits(c.title) * (PT ? 50 : 58) * 1.1) });
+          (c.points || []).forEach((pt, r) => B.label(Vl, { x: cx - cw * 0.4, y: top + 150 + r * 62, text: '— ' + ptText(pt), size: PT ? 36 : 40, maxW: cw * 0.82, at: at2(j, r), until, kind: 'label' }));
+          if (c.hot) B.pencil(Vl, { kind: 'tick', x: cx + Math.min(cw * 0.86, estUnits(c.title) * 58 * 1.1) / 2 + 30, y: top + 54, size: 30, at: T[j] + 0.5, until });
+          return { x: cx * u, y: (top + ch / 2) * u };
+        });
+      };
+      // figures: each value a drafted bar (hot ones hatched) with a dimension line above giving the value
+      S.figures = (layer, o) => {
+        const { data, ats, until, C: R } = o, k = data.length, Vl = V(layer), mx = Math.max(...data.map((x) => +x[1])), x0 = d(R.x) + d(R.w) * 0.22, wMax = d(R.w) * 0.7, gap = d(R.h) / k, bh = Math.min(46, gap * 0.38);
+        return data.map((row, j) => {
+          const y = d(R.y) + gap * (j + 0.55), w2 = Math.max(6, (wMax * +row[1]) / mx), hot = (o.hot || []).includes(j), t = ats[j];
+          B.label(Vl, { x: x0 - 22, y: y + bh / 2, text: String(row[0]), size: 36, align: 'right', at: t, until, kind: 'label' });
+          B.rect(Vl, { x: x0, y, w: w2, h: bh, at: t, dur: 0.45, until, pen: false });
+          if (hot) B.hatch(Vl, { rect: { x: x0, y, w: w2, h: bh }, at: t + 0.4, dur: 0.4, until });
+          const val = `${o.prefix ?? ''}${(+row[1]).toFixed(o.decimals ?? 0)}${o.unit ?? ''}`;
+          B.dim(Vl, { a: [x0, y], b: [x0 + w2, y], off: -26, text: val, size: 32, at: t + 0.35, until });
+          return { x: (x0 + w2 / 2) * u, y: y * u };
+        });
+      };
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until, letter = String.fromCharCode(65 + j);
+        const ring = `box-shadow:0 0 0 ${f1(F.px(3))}px ${C2.line}, 0 0 0 ${f1(F.px(9))}px ${alpha(C2.bg, 0.9)}`;
+        const r = magnify(F, layer, { box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring });
+        B.circle(V(layer), { x: d(rg.x + rg.w / 2), y: d(rg.y + rg.h / 2), r: d(Math.max(rg.w, rg.h)) * 0.62, kind: 'thin', at: a - 0.15, dur: 0.35, until: b });
+        B.label(V(layer), { x: d(rg.x + rg.w / 2 + Math.max(rg.w, rg.h) * 0.55), y: d(rg.y - 10), text: letter, size: 34, font: 'stencil', at: a, until: b, fact: false });
+        return r ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.text, accent: C2.acc, colors: [C2.acc, '#1C4F8C', '#0B2B55'], font: B.font.tech, display: B.font.stencil, weight: 400, line: F.px(2), outline: null, radius: 0, mark: C2.acc, cutSfx: 'stamp', flashAt: 'corner',
+        flashBg: (col) => `background:${col}`,
+        // the cell is a sheet of its own: a fine grid and a drawing number in the corner
+        flashDecor: (bg, col, i, R) => { el('div', `inset:0;background-image:linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px);background-size:${f1(F.px(40))}px ${f1(F.px(40))}px`, bg); const g = el('div', `right:${f1(R.w * 0.04)}px;top:${f1(R.h * 0.05)}px;font:400 ${f1(F.px(28))}px/1 ${B.font.stencil};letter-spacing:.1em;color:rgba(255,255,255,.5)`, bg); g.textContent = `SHEET ${i + 1}`; } });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -1547,6 +1657,7 @@
     const deep = cand.find((x) => hslOf(x)[2] < 0.22 && hslOf(x)[1] > 0.3);
     return { theme: { accent: acc, ...(deep ? { ink: deep, fg: deep } : {}) }, kit: { accent: acc, ...(deep ? { colors: { ink: deep } } : {}) }, color: acc };
   };
+  KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged
   KITS.op.tint = (c) => {   // op: the brand colour is the stripe colour, the black/white ground stays; it must be saturated enough to "dazzle"

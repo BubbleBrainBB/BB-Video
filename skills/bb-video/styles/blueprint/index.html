@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · blueprint</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-condensed@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-condensed@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/saira-stencil-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<style>html,body{margin:0;background:#0B2B55}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/blueprint.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · blueprint engineering drawing, on the beat (promo). Read styles/blueprint/STYLE.md first.
+// The product drawn as an engineering sheet: the hardware (or the system) as a plan / section, its parts named with leaders as the beat lands,
+// the numbers dimensioned, a detail view for the one part that matters, the mechanism running. Every name and number must be in brief.md.
+// Replace the placeholder shapes below with the product's real geometry (from its spec sheet / teardown photos you are allowed to use) — never another brand's drawing.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 100, offset: 0.4, duration: 24, grain: false,
+  theme: { bg: '#0B2B55', fg: '#F2F8FF', ink: '#F2F8FF', muted: '#9CC3E8', accent: '#FF5D4D', paper: '#123F77', fonts: { display: '"Saira Stencil One", "Noto Sans SC", sans-serif', sans: '"Saira Condensed", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), B = PROMO.blueprint(F), L = B.L, PT = F.portrait;
+    const S = B.sheet({ a: 0, w: 5000, h: 5000, x: 2000, y: 2000 });
+    B.frame({ at: 0.1 });
+    B.block({ title: '__TITLE__', no: 'BP-001', scale: '10:1', sheets: 1, at: 0.3, keys: [{ at: b(18), scale: '60:1' }, { at: b(34), scale: '10:1' }] });
+
+    // ---- hook (beats 0–8): the outline is drafted, the name lands ----
+    const V = B.view(S, { x: 0, y: 0, scale: 10 });   // local units: mm, drawn at 10:1
+    S.cam([{ at: 0, x: 0, y: 40, zoom: L(0.95, 0.8) }, { at: b(12), dur: b(8), x: 0, y: 20, zoom: L(1.05, 0.9), ease: E.sine }]);
+    B.rect(V, { x: -40, y: -18, w: 80, h: 36, at: b(2), cons: true });
+    B.centre(V, { x: -20, y: 0, r: 12, at: b(2.5) });
+    B.label(V, { x: 0, y: -30, text: '__TITLE__', size: 72, font: 'stencil', align: 'center', at: b(4), kind: 'headline', track: 0.1 });
+    F.section(0, 1, { name: 'hook' });
+
+    // ---- build (beats 8–16): parts named, a dimension, a mechanism turning ----
+    const Mx = B.mech(V, { time: B.clock([{ at: 0, rate: 1 }]) });
+    Mx.gear({ id: 'a', x: -20, y: 0, teeth: 40, m: 0.5, rate: 0.12, at: b(8) });
+    Mx.gear({ id: 'b', mesh: 'a', dir: 0, teeth: 16, m: 0.5, kind: 'pinion', at: b(9) });
+    B.leader(V, { from: [-24, -6], to: [-46, -26], n: 1, text: '零件 PART', at: b(10), side: -1, size: 32 });
+    B.dim(V, { a: [-40, 18], b: [40, 18], off: 50, text: '80', at: b(12), size: 32 });
+    Mx.spin('b', { text: '40 : 16', at: b(14), until: b(18), size: 32 });   // plan lettering leaves before the push would blow it up
+    F.section(b(8), 2, { name: 'build' });
+
+    // ---- the one part that matters (beats 16–30): a callout on the drawing, the camera pushes into it, the rest falls back ----
+    // (on one sheet the camera only pushes in or pulls out; a new subject gets a new sheet: B.sheet({ a, enter: 'expose' | 'slide' }))
+    const VA = B.view(S, { x: 0, y: 0, scale: 10 });   // same placement as V: the callout and its notes, not dimmed by the focus
+    B.circle(VA, { x: -9, y: 0, r: 6, kind: 'thin', at: b(16) });
+    B.label(VA, { x: -9, y: -7.6, text: 'A', size: 34, font: 'stencil', align: 'center', at: b(16.5), fact: false });
+    const push = S.fit({ x: -220, y: -130, w: 260, h: 260 }, 0.04, L(0, 0.2)), zs = (px) => px / push.zoom;
+    S.cam({ at: b(19), dur: b(2), ...push });
+    B.focus(V, { x: -9, y: 0, r: 6, at: b(17.5), dur: b(2), back: b(31) });
+    B.label(VA, { x: -9, y: 6.9, text: 'DETAIL A', size: zs(34), font: 'stencil', align: 'center', at: b(20), kind: 'label' });
+    B.dim(VA, { kind: 'dia', x: -6, y: 0, r: 4, angle: -40, text: '⌀ 8', at: b(22), size: zs(30) });
+    B.pencil(VA, { kind: 'ring', x: -9, y: 0, r: 3, at: b(24) });
+    F.section(b(16), 3, { name: 'drop', hit: true });
+
+    // ---- close (beats 30–): pull back out to the whole drawing; end with the name and the url ----
+    S.cam({ at: b(34), dur: b(4), x: 0, y: 40, zoom: L(0.95, 0.8), ease: E.sine });
+    B.label(V, { x: L(40, 0), y: L(30, 105), text: 'example.com', size: 64, align: 'center', at: b(36), kind: 'endcard' });
+    F.section(b(30), 1, { name: 'resolve' });
+  },
+});
+</script></body></html>
