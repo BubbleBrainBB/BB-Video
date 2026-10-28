@@ -209,7 +209,7 @@
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4"><img src="examples/blueprint/preview.gif" width="100%" alt="blueprint"></a><br>
 <b><code>blueprint</code></b> · 《机械表里发生了什么》：发条、轮系、擒纵、摆轮、走针——一边画一边按真实速比转起来<br>
-<sub>通用示意机芯 · 资料来源：Wikipedia</sub><br>
+<sub>通用示意机芯 · 资料来源：维基百科</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4">完整视频</a>
 </td>
 </tr>

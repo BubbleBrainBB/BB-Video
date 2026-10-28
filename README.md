@@ -3,7 +3,7 @@
 An agent skill for making videos **in pure code** — no editing app, no stock footage.
 Every frame is drawn with HTML / SVG / canvas as a pure function of time, rendered frame by frame in headless Chrome, with music and sound effects synthesized in code, and encoded with ffmpeg.
 
-[中文说明](README.zh-CN.md)
+[Chinese version](README.zh-CN.md)
 
 ## The skill
 
@@ -17,14 +17,14 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 |---|---|
 | `whiteboard` | an infinite hand-drawn board: handwriting, arrows, KaTeX formulas, cartoon characters that talk and point; ends on a numbered "knowledge map" |
 | `riso` | risograph print: spot-colour overprint, halftone, slight misregistration, one magazine page per chapter |
-| `ink` | ink-wash handscroll (水墨): brush strokes, seals, figures in Chinese painting style |
+| `ink` | ink-wash handscroll: brush strokes, seals, figures in Chinese painting style |
 | `launch` | launch-event motion design: big type, product screens, light / dark / brand-colour stages |
 | `origami` | folded paper: creases, shading, paper unfolding into the next scene |
 | `pop` | pop art: Ben-Day dots, bold outlines, comic panels |
 | `op` | op art: moving black-and-white fields (WebGL) |
 | `cutout` | Matisse paper cut-outs |
 | `ascii` | ASCII character art |
-| `shadow` | shadow puppetry (皮影戏): carved, translucent leather puppets on a lamp-lit screen |
+| `shadow` | shadow puppetry: carved, translucent leather puppets on a lamp-lit screen |
 | `bauhaus` | constructivism / Bauhaus: geometry, primary colours, diagonal type |
 | `pixel` | 8-bit game: sprites, game UI, chiptune |
 | `chat` | the story told in a messaging app: bubbles, typing, voice notes, cards |
@@ -35,11 +35,11 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `isometric` | an isometric miniature world: tiles on plinths, low-poly buildings, belts, vans and little people that move on their own; one thing followed through a whole system, its route painted on the ground, a clock on each stage, the part being talked about lifts while the rest fades (three.js) |
 | `trailer` | a Hollywood movie trailer in a 2.39:1 letterbox: code-painted cinematic shots (space, planets, corridors, rim-lit silhouettes) under a teal-orange grade and grain, black one-phrase cards in metallic type, a lone piano ping and a ticking clock, then BRAAMs and taiko as the cuts speed up, a beat of silence, the title slam, the release date and the billing block |
 | `dossier` | finance / news commentary made of paper: newspaper clippings with a highlighted headline and halftone photos, real source documents under an invented masthead with the camera pushing into the quoted line and a translation bar or tag landing on it, sheets flying in, ink-brush wipes, thumbnail title cards, data callouts, a chapter bar and outlined captions |
-| `manga` | a black-and-white manga page that moves (日漫): screentone, panels with gutters, slanted and bleeding frames, speed and focus lines, drawn sound effects (ドン / ゴゴゴ) and balloons; the camera reads panel by panel, punches in and shakes on the hits, pages turn or get slashed open, a full-page splash for the climax; original code-drawn characters |
-| `map` | an animated map from real geodata (地图动画): paper land, engraved water lines along the coast, parks, street texture, cartographic labels; routes draw on stroke by stroke, a tram or train travels a line and stops on the word, stations pop in, areas spread like ink, callout cards pinned to places, a year counter and a locator globe; the camera turns the globe, dives to the street, flies between places and tilts to follow a train |
-| `swiss` | Swiss poster kinetic typography (瑞士风动态排版): giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
-| `lumen` | a dark motivational animated short (暗调励志动画): a code-drawn room nearly all black, lit by one motivated light — a phone screen on a face, a red alarm clock, a desk lamp, moonlight through blinds, dawn at a window — with rim light, a giant shadow on the wall, haze and grain; one original protagonist (a soft square head, a cowlick that shows the mood) acts everything with eyes and brows; slow push-ins that hold on the face, a low second-person voice, white thumbnail-style title cards; facts told in light: a clock racing, gauges, the night as a line, an x-ray of the head |
-| `blueprint` | a blueprint engineering drawing (蓝图工程图): cyanotype paper with a grid, white line work drafted in construction lines first, dimensions, leaders with numbered balloons, hatched sections, a parts list, a title block and one red pencil; mechanisms really work — gear trains mesh and turn at the right ratios, an escapement locks and releases, springs wind down, cams and levers move — in slow motion or time-lapse shown on the sheet; each subject arrives on a new sheet, and the camera pushes into a detail while the rest of the drawing falls back |
+| `manga` | a black-and-white manga page that moves: screentone, panels with gutters, slanted and bleeding frames, speed and focus lines, drawn Japanese sound effects and balloons; the camera reads panel by panel, punches in and shakes on the hits, pages turn or get slashed open, a full-page splash for the climax; original code-drawn characters |
+| `map` | an animated map from real geodata: paper land, engraved water lines along the coast, parks, street texture, cartographic labels; routes draw on stroke by stroke, a tram or train travels a line and stops on the word, stations pop in, areas spread like ink, callout cards pinned to places, a year counter and a locator globe; the camera turns the globe, dives to the street, flies between places and tilts to follow a train |
+| `swiss` | Swiss poster kinetic typography: giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
+| `lumen` | a dark motivational animated short: a code-drawn room nearly all black, lit by one motivated light — a phone screen on a face, a red alarm clock, a desk lamp, moonlight through blinds, dawn at a window — with rim light, a giant shadow on the wall, haze and grain; one original protagonist (a soft square head, a cowlick that shows the mood) acts everything with eyes and brows; slow push-ins that hold on the face, a low second-person voice, white thumbnail-style title cards; facts told in light: a clock racing, gauges, the night as a line, an x-ray of the head |
+| `blueprint` | a blueprint engineering drawing: cyanotype paper with a grid, white line work drafted in construction lines first, dimensions, leaders with numbered balloons, hatched sections, a parts list, a title block and one red pencil; mechanisms really work — gear trains mesh and turn at the right ratios, an escapement locks and releases, springs wind down, cams and levers move — in slow motion or time-lapse shown on the sheet; each subject arrives on a new sheet, and the camera pushes into a detail while the rest of the drawing falls back |
 
 What it covers:
 
@@ -160,7 +160,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4"><img src="examples/isometric/preview.gif" width="100%" alt="isometric"></a><br>
-<b><code>isometric</code></b> · How a parcel gets to you (一个快递是怎么到你手里的): one parcel followed from the warehouse to your door<br>
+<b><code>isometric</code></b> · How a parcel gets to you: one parcel followed from the warehouse to your door<br>
 <sub>Figures: China's State Post Bureau, 2025 · the little world and its courier brand are drawn in code</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/isometric.mp4">Full video</a>
 </td>
@@ -168,19 +168,19 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4"><img src="examples/trailer/preview.gif" width="100%" alt="trailer"></a><br>
-<b><code>trailer</code></b> · Deep Space Echo (深空回声), the trailer for an original, fictional sci-fi film<br>
+<b><code>trailer</code></b> · Deep Space Echo, the trailer for an original, fictional sci-fi film<br>
 <sub>A fictional film · every shot, sound and name made in code</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/trailer.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/dossier.mp4"><img src="examples/dossier/preview.gif" width="100%" alt="dossier"></a><br>
-<b><code>dossier</code></b> · AI's bill (AI 的账单): US tech stocks in October 2026, from a record high to the week of the Fed<br>
+<b><code>dossier</code></b> · AI's bill: US tech stocks in October 2026, from a record high to the week of the Fed<br>
 <sub>News commentary, not investment advice · documents quoted from SEC, TSMC, Federal Reserve and company releases · pictures drawn in code</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/dossier.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/manga.mp4"><img src="examples/manga/preview.gif" width="100%" alt="manga"></a><br>
-<b><code>manga</code></b> · Caffeine's 45 minutes (咖啡因的45分钟): how a cup of coffee keeps you awake, told as a shōnen battle<br>
+<b><code>manga</code></b> · Caffeine's 45 minutes: how a cup of coffee keeps you awake, told as a shōnen battle<br>
 <sub>General health information, not medical advice · original characters drawn in code · sources: IOM, EFSA, FDA, Reichert et al. 2022</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/manga.mp4">Full video</a>
 </td>
@@ -188,19 +188,19 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4"><img src="examples/map/preview.gif" width="100%" alt="map"></a><br>
-<b><code>map</code></b> · The Boston subway (波士顿地铁): from the 1897 tunnel under Boston Common to today's four-colour network<br>
+<b><code>map</code></b> · The Boston subway: from the 1897 tunnel under Boston Common to today's four-colour network<br>
 <sub>Map drawn from MassDOT / MBTA data, U.S. Census TIGER/Line and Natural Earth</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4"><img src="examples/swiss/preview.gif" width="100%" alt="swiss"></a><br>
-<b><code>swiss</code></b> · Artificial Analysis Intelligence Index v5 (智能指数 v5): the AI benchmark launched on October 27, 2026 — nine evaluations, the leaderboard, the open-weights gap, cost per task<br>
+<b><code>swiss</code></b> · Artificial Analysis Intelligence Index v5: the AI benchmark launched on October 27, 2026 — nine evaluations, the leaderboard, the open-weights gap, cost per task<br>
 <sub>Figures and charts from artificialanalysis.ai</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4">Full video</a>
 </td>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/lumen.mp4"><img src="examples/lumen/preview.gif" width="100%" alt="lumen"></a><br>
-<b><code>lumen</code></b> · Five more minutes (再刷五分钟): revenge bedtime procrastination — the night that won't end, what it costs the next day, and one small decision<br>
+<b><code>lumen</code></b> · Five more minutes: revenge bedtime procrastination — the night that won't end, what it costs the next day, and one small decision<br>
 <sub>General health information, not medical advice · original character and sets drawn in code · sources: Kroese et al. 2014, CDC / AASM, Williamson &amp; Feyer 2000, Van Dongen et al. 2003, Chang et al. 2015</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/lumen.mp4">Full video</a>
 </td>
@@ -208,7 +208,7 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <tr>
 <td width="33%" valign="top">
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4"><img src="examples/blueprint/preview.gif" width="100%" alt="blueprint"></a><br>
-<b><code>blueprint</code></b> · What happens inside a mechanical watch (机械表里发生了什么): mainspring, going train, escapement, balance, motion work — drawn and running at the right ratios<br>
+<b><code>blueprint</code></b> · What happens inside a mechanical watch: mainspring, going train, escapement, balance, motion work — drawn and running at the right ratios<br>
 <sub>A generic, illustrative movement · facts from Wikipedia</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4">Full video</a>
 </td>
@@ -251,8 +251,8 @@ Just ask your agent, for example:
 - "Make a whiteboard explainer: why is the sky blue?"
 - "Turn this geometry problem into a walkthrough video" (attach a screenshot)
 - "Make a launch video for https://example.com, 16:9 and 9:16"
-- "Tell the story of 刘邦斩白蛇 as a shadow-puppet video"
-- "用聊天记录风格讲一个历史典故"
+- "Tell the story of Liu Bang slaying the white snake as a shadow-puppet video"
+- "Tell a historical anecdote as a chat-log video"
 
 The agent shows you the facts, narration and storyboard first, then voices, draws and renders. Output goes to `videos/<name>/out/` (mp4, cover, and for whiteboard / riso a board overview image). Open `videos/<name>/index.html` in a browser to preview and scrub.
 
