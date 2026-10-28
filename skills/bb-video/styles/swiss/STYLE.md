@@ -4,7 +4,7 @@
 
 A frame is a Swiss International Typographic Style poster in motion. Huge grotesk type is the picture: words fill the frame, are set tight, and are cropped by its edge. The ground is off-white grid paper, with black and **one** accent colour taken from the product's brand. Micro meta labels sit in the corners (index numerals `.1 .2`, a date, a section name), with big arrows → and hairline rules on a grid. Type is never switched on: letters rise one by one out of their line, sentences rise word by word, digits roll in strips. Information is told typographically: numbered lists, check-chip card grids, giant numerals, flat bar charts, old / new side by side, and real screenshots placed as poster elements with accent marks. Between scenes the ground flips (paper → black → accent), whips, drops bands or opens a dot.
 
-Runtime: `runtime/swiss.js` (`PROMO.swiss(F, opt)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style swiss`, promo `node scripts/new.mjs <dir> --style swiss` (add `--quick` for the quick version). Starter page: `styles/swiss/index.html`.
+Runtime: `runtime/swiss.js` (`PROMO.swiss(F, opt)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style swiss`, promo `node scripts/new.mjs <dir> --style swiss` (add `--quick` for the quick version). Starter pages: `styles/swiss/index.html` (promo, on the beat) and `styles/swiss/explain.html` (explainer, timed from the narration; `--explain --quick` gives the quick explainer skeleton instead).
 
 The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick version's big-type format (`templates/formats/kinetic.html`).
 
@@ -16,6 +16,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
 - **Launches, announcements and numbers**: benchmark and report releases, product launches with a few strong facts, annual results, "what's new in 3.0".
 - **Lists and structure**: what something is made of (numbered lists), feature sets (chip grids), rankings and prices (bars), before / after (old / new).
 - Design, editorial, developer and data products; brands with one strong colour.
+- **Explainers built on numbers, rules and parts**: how something is measured or counted (a calendar, a unit, a ranking), the rules of a system, what something is made of, before / after a change, data news. Each line of narration gets one typographic answer: a numeral, a list row, a chip, a bar.
 - Less suited: warm, hand-made products (cut-out, origami); stories with named people (this style has no characters, `../CHARACTERS.md`); content that needs lots of photos for mood.
 
 ## 2. What it is (and isn't)
@@ -37,7 +38,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
   - `X.line`: words (Chinese: groups of up to three characters) rise in.
   - `X.meta`: wiped in from the left.
   - `X.stat`: digits roll in strips.
-- Long Latin words may be hyphenated across lines (`'Intelli-\ngence'`), Swiss-poster fashion. `bleed: true` lets poster type run off the frame edge on purpose (the edge / top checks skip it) — only when the cropped part isn't the information: never crop a number, a version or a name.
+- Long Latin words may be hyphenated across lines (`'Typo-\ngraphy'`), Swiss-poster fashion. `bleed: true` lets poster type run off the frame edge on purpose (the edge / top checks skip it) — only when the cropped part isn't the information: never crop a number, a version or a name.
 - `mark: '2.0'` sets substrings in the accent; `colors: [...]` colours whole lines.
 
 ## 5. Motion
@@ -71,12 +72,13 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
   - `whoosh`: transitions.
 
   The logo is a click, a stamp and two bells.
+- With narration the music becomes a bed: the drums, the type pluck (an arpeggio), the bell motif and the supersaw drop out while someone speaks and come back in the pauses, scene changes and the end; only the pad and the sub stay under the voice. Effects under the voice drop 6 dB and light ones (gain < 0.45) are dropped; a title's `rise` / `snap` (gain 0.5) stay, so pass `sfx: false` on small labels that land while someone is speaking. Voice default: `explain.json` (zh: Yunxi, en: Andrew, rate +4%).
 
 ## 8. Signature moves (pick per film)
 - **The poster assembles, then pulls out into a wall of itself** (`X.wall`): at `at` a still copy of the scene is tiled around it in the other grounds (black / accent / paper) and the camera pulls out. Best right after the hook poster lands.
 - **Giant numeral cards on hard cuts**: one fact per card — `X.stat` + the feature / item name + one line — each card on a new ground, cut on the beat. This is the burst.
 - **Text-pattern wall** (`X.pattern`): a phrase repeated in rows drifting in opposite directions, grey, flipping to the accent row by row on a beat.
-- **Extruded glyph** (`X.extrude`): a numeral or letter extruded and turning in 3D, inside dotted orbit rings (`X.orbits`), for the drop (the leader's score, the version number).
+- **Extruded glyph** (`X.extrude`): a numeral or letter extruded and turning in 3D, inside dotted orbit rings (`X.orbits`), for the drop (the one number the film is about: a score, a year, a version, a price).
 - **Nested frames** (`X.frames`): rounded frames push in around one punchy line in a black pill.
 - **Giant cropped glyph** (`X.glyph`): a chapter number or initial far bigger than the frame, sliding behind a scene (decorative, not registered as text).
 - **Meta furniture**: index numerals `.1 .2`, a date, a section name in the corners, a big arrow →, a full-width hairline.
@@ -85,7 +87,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
 | Component | What it tells | Look |
 |---|---|---|
 | `X.list` | steps, points, categories (with values) | `.1 .2 .3` index, a big row of type, the value right-aligned, a hairline under each row |
-| `X.chips` | a feature set, the parts of something | check-chip cards tiling into a grid on a diagonal wave, black / card alternating, `hot` in the accent, a tag top-right |
+| `X.chips` | a feature set, the parts of something, yes / no cases | check-chip cards tiling into a grid on a diagonal wave, black / card alternating, `hot` in the accent, a tag top-right; `no: true` draws a cross instead of the tick |
 | `X.stat` | one number that matters | a giant numeral rolling in, a readable label under it |
 | `X.bars` | a few numbers compared (scores, prices) | flat horizontal bars from a hairline axis, values counting at the bar ends, `hot` in the accent |
 | `X.versus` | old / new, before / after | two columns (portrait: rows) split by a rule with an accent arrow; the old side greyed |
@@ -96,7 +98,7 @@ These register themselves with the density check. Real screenshots are captured 
 ## 10. Pitfalls and self-check
 - Too empty: a Swiss frame is spare but never vacant. Every scene needs one dominant element (a numeral, a poster word, a chart) plus meta furniture.
 - Too many sizes: keep to three or four steps per scene.
-- Cropping the information: `bleed` only for decorative crops; the hook title in portrait must still show its version / name.
+- Cropping the information: `bleed` only for decorative crops; the hook title in portrait must still show its key word in full.
 - Text over text: a pattern wall is a texture (other text may sit on it); everything else keeps its own space — the overlap check is on.
 - Long lines in montage cards: a card lasts 1.5–2 s; keep its line under ~12 Chinese characters / 5 words.
 - Self-check per `references/review.md`; look at portrait stills one by one (portrait is a new layout: stack, don't shrink).
@@ -106,6 +108,8 @@ These register themselves with the density check. Real screenshots are captured 
 - Grid: fine grid (variant 0), grid with column guides (1), baseline rows (2), plain (3).
 - Type voice: medium-weight, tight and cropped (default) ↔ lighter and airy with more space; Latin-led ↔ Chinese-led headlines.
 - Pace: one fact per beat in the burst ↔ a slower poster-by-poster read.
+
+**Explainers (narrated)**: every item lands when its word is said (`at: T.word('l3', '…')`); a scene lasts one line or two, and changes ground in the pause between lines (`(T.end(a) + T.start(b)) / 2`, the wipe covering the frame there). No beat grid: hard cuts only between lines. Keep the caption band free (landscape below 0.84 H, portrait below 0.68 H) — content sits higher than in a promo. One dominant element per line: the number being said, the rule being read, the case being named; the poster opener can pose the question, the end card gives the answer as a short rule or phrase. When the last line is spoken over the end card, pass `last: T.end(lastLine) + 0.2` so it still moves once the voice stops (otherwise the frame check reports dead air).
 
 ## 12. API quick reference
 ```js
@@ -118,7 +122,7 @@ X.meta(L, { text, x, y, size, align, color, at, until, fact: false, chrome });
 X.arrow(L, { x, y, size, dir, color, weight, at, until });
 X.rule(L, { x, y, w, h, vertical, color, from, at, until });
 X.list(L, { items: [{ text, value, note, hot, at }], x, y, w, size, gap, at, every, until, num: (j) => '.1' });
-X.chips(L, { items: [{ text, tag, hot, at }], x, y, w, h, cols, gap, size, icon, at, every, until, scheme: 'alt' | 'ink' | 'paper', order: 'diag' | 'list' });
+X.chips(L, { items: [{ text, tag, hot, no, at }], x, y, w, h, cols, gap, size, icon, at, every, until, scheme: 'alt' | 'ink' | 'paper', order: 'diag' | 'list' });
 X.stat(L, { value: '1,000', label, labelSize, labelW, labelPos: 'below' | 'above', x, y, size, align, color, maxW, roll, bleed, at, until });
 X.bars(L, { data: [[name, value, { hot, text, at }]], x, y, w, h, nameW, size, unit, prefix, decimals, max, at, every, until });
 X.versus(L, { cols: [{ label, value, title, points, ats, hot, at }], x, y, w, h, at, every, until, stack, arrow, dimOld });
@@ -130,11 +134,11 @@ X.extrude(L, { text, x, y, size, depth, layers, color, side, spin, tilt, from, t
 X.orbits(L, { x, y, r, rings, color, at, until });
 X.frames(L, { text, x, y, w, h, n, size, at, until });
 X.wipe({ at, kind: 'whip' | 'bands' | 'dot', onto: 'paper' | 'ink' | 'accent', color, dur, x, y });   // onto = the next ground: a slab that would match it switches colour
-X.end(L, { at, title, mark, sub, url, meta: [left, right, …], size });
+X.end(L, { at, title, mark, sub, url, meta: [left, right, …], size, last });   // last: when the url (or, without one, an accent underline) lands — in an explainer, T.end(last line) + 0.2
 ```
 Time: `at` = landed and readable (on the beat), `until` = fully gone. Units: `x, y, w, h, maxW` are frame px; `size` is a design size.
 
-Common interface (`runtime/kit.js`, used by the quick version and explainers in this style):
+Common interface (`runtime/kit.js`, used by the quick version and the quick explainer in this style):
 
 | Move | In this style |
 |---|---|

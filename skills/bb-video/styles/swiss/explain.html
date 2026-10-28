@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="__LANG__"><head><meta charset="utf-8"><title>__TITLE__</title>
+__FONTS__
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/swiss.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · Swiss poster kinetic typography, narrated (explainer following the voiceover; styles/swiss/STYLE.md, "Explainers").
+// First verify the facts in brief.md, write the narration in script.json (one id per line) → tts.py writes timeline.js; then the picture, scene by scene.
+//   T.start('l3') / T.end('l3') / T.word('l3', 'some word') = when this line / this word is spoken: every item lands when it is said.
+// One idea per scene, one dominant element (a poster word, a numeral, a list, a chart, a screenshot) + meta furniture; grounds alternate.
+// Keep the caption band free: landscape below 0.84 H, portrait below 0.68 H. Every on-screen word must be in brief.md.
+// The accent comes from the subject when it has one: const { theme, kit } = PROMO.kit.brand('swiss', { brand: '#…', accent: '#…' }) → compose({ theme }), PROMO.swiss(F, kit).
+PROMO.compose({
+  bpm: 120, offset: 0.5, grain: false, tail: 1.2,
+  theme: { bg: '#F1F0EB', fg: '#111111', ink: '#111111', paper: '#F1F0EB', accent: '#E5381F', muted: '#8C8B86', fonts: { display: '"Inter Tight", "Noto Sans SC", sans-serif', serif: '"Inter Tight", "Noto Sans SC", sans-serif', sans: '"Inter Tight", "Noto Sans SC", sans-serif', script: '"Inter Tight", "Noto Sans SC", sans-serif', mono: '"Inter Tight", "Noto Sans SC", sans-serif' } },
+  captions: { font: '"Inter Tight", "Noto Sans SC", sans-serif', weight: 600, bg: 'rgba(17,17,17,.82)' },
+  build: async (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word, X = PROMO.swiss(F), W = F.W, H = F.H, PT = F.portrait;
+    const L = (a, b) => (PT ? b : a);
+    // a scene change sits in the pause between two lines: the wipe covers the frame there, the next scene starts under it
+    const gap = (a, b) => (e(a) + s(b)) / 2;
+
+    // ===== 1 · The question as a poster: giant type, meta in the corners, an arrow =====
+    const z1 = e('l1') + 0.8;   // with more lines: const z1 = gap('l1', 'l2');
+    { const A = X.scene(0, z1, { ground: 'paper' });
+      X.meta(A, { text: '__TITLE__', x: W * 0.06, y: H * 0.08, at: s('l1'), until: z1, fact: false });
+      X.meta(A, { text: '.1', x: W * 0.94, y: H * L(0.78, 0.62), size: 64, align: 'right', at: s('l1') + 0.4, until: z1, fact: false });
+      X.type(A, { text: '一个问题', x: W * 0.06, y: H * L(0.5, 0.4), size: L(220, 160), maxW: W * 0.88, by: 'word', at: s('l1') + 0.3, until: z1 });
+      X.arrow(A, { x: W * L(0.86, 0.8), y: H * L(0.2, 0.18), size: L(150, 120), at: s('l1') + 0.6, until: z1 });
+      X.rule(A, { x: W * 0.06, y: H * L(0.72, 0.58), w: W * 0.88, at: s('l1') + 0.5, until: z1 }); }
+
+    // ===== 2 … one block per line or two. The moves, each timed from the narration:
+    //   X.wipe({ at: gap('l1', 'l2'), kind: 'whip', onto: 'ink' });   // rotate whip / bands / dot; onto = the next scene's ground
+    //   const B = X.scene(gap('l1', 'l2'), gap('l2', 'l3'), { ground: 'ink', variant: 1 });
+    //   steps / parts:  X.list(B, { items: [{ text: '第一条', at: w('l2', '第一') }, …], x, y, w, size: 64, until })
+    //   one number:     X.stat(B, { value: '42', label: '一句说明', at: w('l2', '42'), until, x, y, size: L(420, 340) })
+    //   a set of parts: X.chips(B, { items: [{ text, tag, hot }], cols: L(3, 2), at: w(…), every: 0.25, until })
+    //   numbers compared: X.bars(B, { data: [['A', 12], ['B', 30, { hot: true }]], at: w(…), every: 0.4, until })
+    //   before / after: X.versus(B, { cols: [{ label: '以前', title, points }, { label: '现在', title, points, hot: true }], at, until, stack: PT })
+    //   the real thing: X.shot(B, { src: 'shots/x.jpg', caption, marks: [{ x, y, w, h, note, at: w(…) }], at, until })
+    //   a key line:     X.frames(B, { text, at, until }) · a word everywhere: X.pattern(B, { text, at, until }) · the drop: X.extrude + X.orbits
+
+    // ===== End: the answer set big, a rule, one line =====
+    const endAt = z1;   // with more lines: the pause after the last line
+    X.wipe({ at: endAt, kind: 'bands', onto: 'paper' });
+    { const E2 = X.scene(endAt, F.duration + 1, { ground: 'paper' });
+      X.end(E2, { at: endAt + 0.5, title: '标题', sub: '一句话总结' }); }   // last line spoken over the end card? add last: e('lN') + 0.2
+
+    // music sections (the score ducks under the voice while someone speaks; it comes up in pauses, scene changes and the end)
+    F.section(0, 1, { name: 'hook' });
+    F.section(endAt, 1, { name: 'resolve', hit: true });
+  },
+});
+</script></body></html>

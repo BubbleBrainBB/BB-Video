@@ -138,7 +138,8 @@
       const st = { x: o.x ?? W / 2, y: o.y ?? H / 2 }, moves = [];
       const T = { el: wrap, size, rows, lines };
       T.move = (t, x, y, d = 0.6, e = E.expoInOut) => { moves.push({ a: t - d, b: t, x, y, e }); return T; };
-      const exitDur = 0.42, outPer = Math.min(0.03, 0.25 / Math.max(1, n));
+      // exit time scales with size like the rise (quartic ease-in peaks at 4× the mean speed)
+      const exitDur = Math.max(0.42, Math.min(0.8, (4 * LH * 0.96) / (0.055 * H * 30))), outPer = Math.min(0.03, 0.25 / Math.max(1, n));
       F.add((t) => {
         const on = t >= t0 && t < until; set(wrap, { display: on ? '' : 'none' }); if (!on) return;
         let x = st.x, y = st.y;
@@ -283,7 +284,8 @@
         card.dataset.what = 'X.chips';
         const ic = F.px(o.icon ?? 44), v = svg(card, `left:${f1(pad)}px;top:${f1(pad)}px;width:${f1(ic)}px;height:${f1(ic)}px`);
         const ring = sv('circle', { cx: 50, cy: 50, r: 44, fill: 'none', stroke: 'currentColor', 'stroke-width': 7, pathLength: 1, 'stroke-dasharray': '1 1' }, v);
-        const tick = sv('path', { d: 'M29 52 L44 66 L72 36', fill: 'none', stroke: 'currentColor', 'stroke-width': 8, 'stroke-linecap': 'square', pathLength: 1, 'stroke-dasharray': '1 1' }, v);
+        // no: true → a cross instead of the tick (a "no" in a yes / no grid)
+        const tick = sv('path', { d: it.no ? 'M33 33 L67 67 M67 33 L33 67' : 'M29 52 L44 66 L72 36', fill: 'none', stroke: 'currentColor', 'stroke-width': 8, 'stroke-linecap': 'square', pathLength: 1, 'stroke-dasharray': '1 1' }, v);
         // one line if it can: shrink up to ~28% to fit the card's width before allowing a wrap (a wrapped label grows up into the check icon)
         const tw = textW(it.text, `500 ${size}px ${X.body}`), fs = tw > cw - 2 * pad ? Math.max(size * 0.72, (size * (cw - 2 * pad)) / tw) : size;
         const tx = el('div', `left:${f1(pad)}px;right:${f1(pad)}px;bottom:${f1(pad * 0.85)}px;font:500 ${f1(fs)}px/${f1(fs * 1.12)}px ${X.body};letter-spacing:-0.015em`, card);
@@ -294,7 +296,8 @@
         F.add((t) => {
           const on = t >= a0 && t < until; set(card, { display: on ? '' : 'none' }); if (!on) return;
           const q = seg(t, a0, T, E.expoOut), qo = until < 1e8 ? seg(t, until - 0.35 + (k / n) * 0.1, until, E.quartIn) : 0;
-          set(card, { transform: `translateY(${f1((1 - q) * ch * 0.45 - qo * ch * 0.3)}px) scale(${f3(0.86 + 0.14 * q)})`, opacity: String(f3(Math.min(1, q * 1.6) * (1 - qo))) });
+          // travel is capped so tall cards don't land too fast
+          set(card, { transform: `translateY(${f1((1 - q) * Math.min(ch * 0.45, F.px(70)) - qo * Math.min(ch * 0.3, F.px(50)))}px) scale(${f3(0.86 + 0.14 * q)})`, opacity: String(f3(Math.min(1, q * 1.6) * (1 - qo))) });
           set(ring, { strokeDashoffset: String(f3(1 - seg(t, T - 0.2, T + 0.2, E.expoOut))) });
           set(tick, { strokeDashoffset: String(f3(1 - seg(t, T, T + 0.25, E.expoOut))) });
         });
@@ -352,7 +355,10 @@
     X.bars = (parent, o) => {
       const data = o.data, n = data.length, at = o.at ?? 0, every = o.every ?? F.B / 2, until = o.until ?? 1e9;
       const x = o.x ?? W * 0.08, w = o.w ?? W * 0.84, y = o.y ?? H * 0.25, h = o.h ?? H * 0.55, rowH = h / n;
-      const size = o.size ?? Math.min(PT ? 44 : 46, (rowH / u) * 0.36), nameW = o.nameW ?? w * (PT ? 0.4 : 0.3), valW = F.px(size * 3.4);
+      const size = o.size ?? Math.min(PT ? 44 : 46, (rowH / u) * 0.36), nameW = o.nameW ?? w * (PT ? 0.4 : 0.3);
+      const label = ([, val, ex = {}]) => String(ex.text ?? `${o.prefix ?? ''}${Number.isInteger(val) && o.decimals === undefined ? val : val.toFixed(o.decimals ?? 1)}${o.unit ?? ''}`);
+      // room for the widest value after the longest bar, so it never runs off the frame
+      const valW = Math.max(F.px(size * 3.4), ...data.map((d) => textW(label(d), `500 ${F.px(size * 1.25)}px ${X.font}`) * 1.04 + F.px(24)));
       const mx = o.max ?? Math.max(...data.map((d) => d[1])), barX = x + nameW, barMax = w - nameW - valW;
       X.rule(parent, { x: barX, y, len: h, vertical: true, h: 2, at: at - 0.2, until, color: 'ink', exit: o.exit });
       return data.map(([name, val, ex = {}], j) => {
@@ -360,7 +366,7 @@
         X.line(parent, { exit: o.exit, text: String(name), x, y: cy, size, maxW: nameW - F.px(24), at: T, until, color: hot ? 'acc' : 'ink', sfx: false, weight: hot ? 600 : 500 });
         const bar = el('div', `left:${f1(barX)}px;top:${f1(cy - bh / 2)}px;width:${f1(bw)}px;height:${f1(bh)}px;background:${hot ? 'var(--sw-acc)' : 'var(--sw-ink)'};transform-origin:0 50%;display:none;z-index:18`, parent);
         bar.dataset.what = 'X.bars'; bar.dataset.motion = 'snap';   // a bar shooting out from the axis is the move: not "too fast"
-        const vt = String(ex.text ?? `${o.prefix ?? ''}${Number.isInteger(val) && o.decimals === undefined ? val : val.toFixed(o.decimals ?? 1)}${o.unit ?? ''}`), np = numParts(vt);
+        const vt = label([name, val, ex]), np = numParts(vt);
         const v = el('div', `left:0;top:0;display:none;font:500 ${f1(F.px(size * 1.25))}px/1.1 ${X.font};letter-spacing:-0.03em;font-feature-settings:'tnum' 1;color:${hot ? 'var(--sw-acc)' : 'var(--sw-ink)'};white-space:nowrap;z-index:19`, parent);
         v.textContent = vt; F.text(v, 'label', vt, T - 0.6, until);
         F.prep(() => measure(v));
@@ -652,14 +658,16 @@
       const at = o.at, mx = W * (PT ? 0.07 : 0.06), mw = W - 2 * mx;
       (o.meta || []).forEach((m, i) => X.meta(parent, { text: m, x: i % 2 ? W - mx : mx, y: H * 0.1 + Math.floor(i / 2) * F.px(34), align: i % 2 ? 'right' : 'left', size: 24, at: at + 0.1 + i * 0.08, color: 'mute' }));
       X.type(parent, { text: o.title, x: mx, y: H * (PT ? 0.36 : 0.38), size: o.size ?? (PT ? 240 : 320), align: 'left', maxW: mw, at: at + 0.7, kind: 'logo', weight: 500, mark: o.mark, by: String(o.title).length > 14 ? 'word' : 'char' });
-      X.rule(parent, { x: mx, y: H * (PT ? 0.49 : 0.6), w: mw, h: 3, at: at + 0.9 });
+      // last: when the closing piece lands (default at + 1.9) — in a narrated film, just after the last line, so the end card still moves once the voice stops
+      const ry = H * (PT ? 0.49 : 0.6), close = o.last ?? at + 1.9;
+      X.rule(parent, { x: mx, y: ry, w: mw, h: 3, at: at + 0.9 });
       if (o.sub) X.line(parent, { text: o.sub, x: mx, y: H * (PT ? 0.55 : 0.68), size: PT ? 48 : 52, maxW: mw, at: at + 1.4, kind: 'endcard' });
       if (o.url) {
         const us = PT ? 66 : 72, uy = H * (PT ? 0.67 : 0.84);
-        X.arrow(parent, { x: mx + F.px(us) * 0.55, y: uy, size: us * 1.1, at: at + 1.9, color: 'acc', sfx: false });
-        X.type(parent, { text: o.url, x: mx + F.px(us) * 1.4, y: uy, size: us, align: 'left', at: at + 2.1, kind: 'endcard', color: 'ink', by: 'line', enter: 'slide', sfx: false, maxW: mw - F.px(us) * 1.4 });
-      }
-      F.sfx(at + 2.3, 'logo', 1);
+        X.arrow(parent, { x: mx + F.px(us) * 0.55, y: uy, size: us * 1.1, at: close, color: 'acc', sfx: false });
+        X.type(parent, { text: o.url, x: mx + F.px(us) * 1.4, y: uy, size: us, align: 'left', at: close + 0.2, kind: 'endcard', color: 'ink', by: 'line', enter: 'slide', sfx: false, maxW: mw - F.px(us) * 1.4 });
+      } else if (o.last != null) X.rule(parent, { x: mx, y: ry, w: mw, h: 12, at: close, color: 'acc' });   // no url: the accent rule underlines the answer
+      F.sfx(close + 0.4, 'logo', 1);
     };
 
     return P.infoKit ? P.infoKit(X, { list: 'flow', chips: 'features', bars: 'chart', versus: 'compare', shot: 'ui' }) : X;

@@ -19,7 +19,7 @@ export const M = (zh, en) => (process.env.BV_LANG === 'zh' ? zh : en);
 
 // Starter pages carry a few Chinese placeholder strings ('标题', '一句话' …). A project in another language gets them in English
 //   (only whole quoted strings are swapped, so real content is never touched)
-const PLACEHOLDERS = { 标题: 'Title', 一句话: 'One line', 一句话总结: 'One-line takeaway', 一句说明: 'One-line note', 一行说明: 'One-line caption', 标语: 'Slogan', 主角: 'Hero', 配角: 'Friend', 小明: 'Alex', 小像: 'Pixie', 第一条消息: 'First message', 回一句: 'A reply', 引用的原文: 'Quoted text', 出处: 'Source', 印: 'Seal' };
+const PLACEHOLDERS = { 标题: 'Title', 一句话: 'One line', 一句话总结: 'One-line takeaway', 一句说明: 'One-line note', 一行说明: 'One-line caption', 标语: 'Slogan', 一个问题: 'A question', 主角: 'Hero', 配角: 'Friend', 小明: 'Alex', 小像: 'Pixie', 第一条消息: 'First message', 回一句: 'A reply', 引用的原文: 'Quoted text', 出处: 'Source', 印: 'Seal' };
 export const englishPlaceholders = (html) => html
   .replace(/(['"])([\u4e00-\u9fff]{1,6})\1/g, (m, q, w) => (PLACEHOLDERS[w] ? q + PLACEHOLDERS[w] + q : m))
   // unquoted object keys too (a cast list: { 主角: { … } }), when the English name is a valid key
