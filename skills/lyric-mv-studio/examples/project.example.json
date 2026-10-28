@@ -1,0 +1,28 @@
+{
+  "title": "示例角色 MV",
+  "song": "song.mp3",
+  "lyrics": "lyrics.example.txt",
+  "character": {
+    "ref": "character.png",
+    "name": "小满",
+    "identity": "黑发齐肩、琥珀色眼睛、白衬衫、深绿半裙、红色发带",
+    "forbidden": "不要换发色、瞳色、服装；不要增加耳环"
+  },
+  "style": "illustrated",
+  "aspect": "16:9",
+  "resolution": "1920x1080",
+  "target_scene_seconds": 2.6,
+  "provider": "lovart",
+  "budget": {
+    "currency": "CNY",
+    "max": 60
+  },
+  "auto": {
+    "generate": true,
+    "approve_character": false,
+    "approve_style_frame": false,
+    "approve_batch": false
+  },
+  "notes": "这是数据示例，不是实际歌曲。先生成 character sheet 和 style frame，再批量。",
+  "duration": 12.0
+}

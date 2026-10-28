@@ -10,6 +10,7 @@
 | 技能 | 做什么 |
 |---|---|
 | <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，23 种画面风格 |
+| <a href="skills/lyric-mv-studio"><code>lyric&#8288;-&#8288;mv&#8288;-&#8288;studio</code></a> | **歌词 / 音乐 MV**：歌曲 + 角色形象 → 角色设定、分镜、生成场景、词级同步 MV；支持插画、像素、纸艺、3D、游戏 UI；包含 `pixel-lyric-mv` 时间/渲染引擎 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -38,6 +39,10 @@
 | `manga` 日漫 · 漫画分镜 | 会动的黑白漫画页：网点、分格和格间距、斜格和出血格、速度线和集中线、画进画面里的拟声词（ドン / ゴゴゴ）和对话框；镜头按阅读顺序一格格读，关键格推进、打击时震屏，翻页或斩切换页，高潮用整页大图；角色全部原创、用代码画 |
 | `map` 地图动画 | 用真实地理数据画的印刷感地图：纸色陆地、沿海岸刻线的水面、公园、街道纹理、按制图规范排的地名；线路一笔笔画出，电车 / 列车沿线开、说到哪站停哪站，车站依次弹出，区域像墨一样晕开，标注卡钉在地点上，年份计数器和定位小地球；镜头转地球、一路推到街道、在地点之间飞行、俯仰着跟车走 |
 | `swiss` 瑞士风动态排版 | 瑞士国际主义海报动起来：网格上巨大的无衬线字、被画面边缘裁切，只有黑色加一种从品牌取来的强调色；字母一个个升起，数字按位滚动到位，海报拉远成一面不同配色的海报墙，一个词铺成满屏图案；信息也用排版讲：编号列表、打勾卡片网格、巨型数字、条形图、新旧对比，真实截图像海报元素一样加标注 |
+
+### 歌词 MV
+
+[`lyric-mv-studio`](skills/lyric-mv-studio/SKILL.md) 是独立于 `bb-video` 的工作流：从歌曲 + 角色图出发，先做角色设定和分镜，再调用生图供应商（TapNow / Lovart / 百炼 / ComfyUI），最后组装成词级同步的 MV。它不绑定像素皮肤；`pixel-lyric-mv` 是时间/渲染引擎和像素皮肤。审批门禁与词级时间规则见它的 `SKILL.md`。
 
 能做什么：
 
@@ -207,13 +212,15 @@
 ```bash
 npx skills add BubbleBrainBB/BB-Video                                          # 交互式选择
 npx skills add BubbleBrainBB/BB-Video --skill bb-video -a claude-code -g   # 全局装到 Claude Code
+npx skills add BubbleBrainBB/BB-Video --skill lyric-mv-studio -a claude-code -g  # 歌词 MV 工作流
+npx skills add BubbleBrainBB/BB-Video --skill pixel-lyric-mv -a claude-code -g # 词级时间/渲染引擎
 ```
 
 或者自己拷文件夹：
 
 ```bash
 git clone https://github.com/BubbleBrainBB/BB-Video.git
-cp -r BB-Video/skills/bb-video ~/.claude/skills/
+cp -r BB-Video/skills/bb-video BB-Video/skills/lyric-mv-studio BB-Video/skills/pixel-lyric-mv ~/.claude/skills/
 ```
 
 

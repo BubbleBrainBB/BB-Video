@@ -1,0 +1,41 @@
+{
+  "title": "Word-synced lyric MV starter",
+  "audio": "audio.mp3",
+  "duration": 8.5,
+  "bpm": null,
+  "notes": "Line-level LRC/SRT is not enough. The word times below are a hand-authored demo; replace them with ASR + correction or tap calibration.",
+  "lines": [
+    {
+      "start": 0.4,
+      "end": 3.0,
+      "words": [
+        {"t": 0.4, "text": "这是"},
+        {"t": 0.9, "text": "一个"},
+        {"t": 1.4, "text": "词级", "key": "rose", "hero": "级"},
+        {"t": 2.0, "text": "歌词"},
+        {"t": 2.5, "text": "MV", "key": "gold"}
+      ]
+    },
+    {
+      "start": 3.4,
+      "end": 5.8,
+      "words": [
+        {"t": 3.4, "text": "不是"},
+        {"t": 3.9, "text": "逐字"},
+        {"t": 4.5, "text": "慢写"},
+        {"t": 5.0, "text": "是"},
+        {"t": 5.3, "text": "重音", "key": "rose", "hero": "重"}
+      ]
+    },
+    {
+      "start": 6.0,
+      "end": 8.2,
+      "words": [
+        {"t": 6.0, "text": "关键"},
+        {"t": 6.5, "text": "词"},
+        {"t": 6.9, "text": "砸出", "key": "gold", "hero": "砸"},
+        {"t": 7.4, "text": "来"}
+      ]
+    }
+  ]
+}

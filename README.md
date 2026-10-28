@@ -10,6 +10,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 | Skill | What it makes |
 |---|---|
 | <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 23 visual styles |
+| <a href="skills/lyric-mv-studio"><code>lyric&#8288;-&#8288;mv&#8288;-&#8288;studio</code></a> | **Lyric / music videos** from a song + a character reference: character sheet, storyboard, generated stills, word-synced MV — illustrated, pixel, paper, 3D or game UI; includes the `pixel-lyric-mv` timing/render engine |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -38,6 +39,11 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `manga` | a black-and-white manga page that moves (日漫): screentone, panels with gutters, slanted and bleeding frames, speed and focus lines, drawn sound effects (ドン / ゴゴゴ) and balloons; the camera reads panel by panel, punches in and shakes on the hits, pages turn or get slashed open, a full-page splash for the climax; original code-drawn characters |
 | `map` | an animated map from real geodata (地图动画): paper land, engraved water lines along the coast, parks, street texture, cartographic labels; routes draw on stroke by stroke, a tram or train travels a line and stops on the word, stations pop in, areas spread like ink, callout cards pinned to places, a year counter and a locator globe; the camera turns the globe, dives to the street, flies between places and tilts to follow a train |
 | `swiss` | Swiss poster kinetic typography (瑞士风动态排版): giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
+
+
+### Lyric MV
+
+[`lyric-mv-studio`](skills/lyric-mv-studio/SKILL.md) is a separate workflow from `bb-video`: it starts from a song + character image, builds a character sheet and shot list, calls an image-generation provider (TapNow / Lovart / Bailian / ComfyUI), then assembles a word-synced MV. It is style-agnostic; `pixel-lyric-mv` is the timing/rendering engine and the pixel skin. Read its `SKILL.md` for the approval gates and the word-timing rules.
 
 What it covers:
 
@@ -207,13 +213,15 @@ With the [`skills`](https://github.com/vercel-labs/skills) CLI (Claude Code, Cod
 ```bash
 npx skills add BubbleBrainBB/BB-Video                                          # pick interactively
 npx skills add BubbleBrainBB/BB-Video --skill bb-video -a claude-code -g   # globally for Claude Code
+npx skills add BubbleBrainBB/BB-Video --skill lyric-mv-studio -a claude-code -g  # lyric MV workflow
+npx skills add BubbleBrainBB/BB-Video --skill pixel-lyric-mv -a claude-code -g # its word-timing/render engine
 ```
 
 Or copy the folder yourself:
 
 ```bash
 git clone https://github.com/BubbleBrainBB/BB-Video.git
-cp -r BB-Video/skills/bb-video ~/.claude/skills/
+cp -r BB-Video/skills/bb-video BB-Video/skills/lyric-mv-studio BB-Video/skills/pixel-lyric-mv ~/.claude/skills/
 ```
 
 

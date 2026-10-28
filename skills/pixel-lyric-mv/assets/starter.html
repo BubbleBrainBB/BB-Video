@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Word-synced lyric MV · starter</title>
+<style>
+:root{
+  --paper:#FAFAF7; --cream:#F3E6CC; --ink:#1A1714; --muted:#6B6460;
+  --rose:#C25566; --gold:#C9A96E; --sage:#8FA27A; --night:#1F2A44;
+  --song:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC",serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#0D0C0B;color:#E8E0CF}
+body{font-family:var(--mono);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:18px}
+.app{width:min(1600px,100%)}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:0 2px 10px}
+.top h1{font-family:var(--song);font-size:20px;letter-spacing:.08em;margin:0;font-weight:900}
+.top .sub{font-size:9px;letter-spacing:.16em;color:#8A817A}
+.frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#1A1714;border:1px solid #3A342E;box-shadow:0 24px 70px #000a}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--paper);color:var(--ink);transition:background .18s}
+.stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(26,23,20,.055) 2px,transparent 2px),linear-gradient(90deg,rgba(26,23,20,.055) 2px,transparent 2px);background-size:28px 28px;pointer-events:none}
+.stage.night{background:var(--night);color:var(--paper)}
+.stage.night::before{background-image:linear-gradient(rgba(250,250,247,.055) 2px,transparent 2px),linear-gradient(90deg,rgba(250,250,247,.055) 2px,transparent 2px)}
+.stage.gold{background:var(--cream)}
+.moon{position:absolute;right:120px;top:90px;width:250px;height:250px;border-radius:50%;border:4px solid var(--ink);background:var(--cream);box-shadow:10px 10px 0 rgba(26,23,20,.18);z-index:1}
+.stage.night .moon{background:var(--gold);border-color:var(--paper);box-shadow:10px 10px 0 rgba(0,0,0,.25)}
+.stage.gold .moon{background:var(--paper)}
+.mtn{position:absolute;left:0;right:0;bottom:150px;height:260px;width:100%;opacity:.22;z-index:1}
+.hud{position:absolute;left:72px;top:64px;right:72px;display:flex;justify-content:space-between;align-items:flex-start;z-index:8;font-size:12px;letter-spacing:.08em}
+.hud-card{background:var(--paper);border:4px solid var(--ink);box-shadow:8px 8px 0 rgba(26,23,20,.2);padding:10px 14px;display:flex;gap:12px;align-items:center;color:var(--ink)}
+.stage.night .hud-card{background:var(--cream);border-color:var(--paper);box-shadow:8px 8px 0 #0008}
+.badge{background:var(--ink);color:var(--paper);font-size:10px;padding:4px 7px;letter-spacing:.14em}
+.stage.night .badge{background:var(--rose);color:var(--paper)}
+.stage-name{font-family:var(--song);font-size:18px;font-weight:900;letter-spacing:.04em}
+.hearts{display:flex;gap:3px}
+.heart{width:10px;height:9px;background:rgba(26,23,20,.12);clip-path:polygon(0 0,40% 0,50% 40%,60% 0,100% 0,100% 60%,50% 100%,0 60%)}
+.heart.on{background:var(--rose)}
+.score{font-size:10px;letter-spacing:.1em;text-align:right}
+.score b{font-size:18px;letter-spacing:.04em;display:block}
+.combo{font-size:10px;color:var(--rose);letter-spacing:.12em;margin-top:4px}
+.card{position:absolute;left:100px;top:300px;width:1120px;min-height:300px;background:var(--paper);border:4px solid var(--ink);box-shadow:12px 12px 0 rgba(26,23,20,.18);padding:22px 26px 18px;z-index:6}
+.stage.night .card{background:var(--cream);border-color:var(--paper);box-shadow:12px 12px 0 #0008;color:var(--ink)}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid rgba(26,23,20,.14);padding-bottom:9px;font-size:10px;letter-spacing:.14em;color:var(--muted)}
+.card-tag{background:var(--ink);color:var(--paper);padding:4px 8px;font-size:9px}
+.card-tag.rose{background:var(--rose)}
+.card-tag.gold{background:var(--gold);color:var(--ink)}
+.line{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;min-height:150px;padding:24px 0 12px;font-family:var(--song);font-weight:900;font-size:96px;line-height:1.02;letter-spacing:.01em}
+.word{display:inline-flex;align-items:baseline;padding:0 5px;border-radius:2px;transform-origin:50% 80%;opacity:0;white-space:nowrap}
+.word.show{opacity:1}
+.word.now{background:rgba(194,85,102,.14)}
+.word.key{color:var(--rose)}
+.word.key.gold{color:var(--gold)}
+.word.now.key{background:var(--rose);color:var(--paper);box-shadow:4px 4px 0 var(--ink)}
+.word.now.key.gold{background:var(--gold);color:var(--ink)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;border-top:2px solid rgba(26,23,20,.14);padding-top:8px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
+.ticks{display:flex;gap:3px}
+.tick{width:7px;height:7px;border:2px solid var(--ink);opacity:.25}
+.tick.on{opacity:1;background:var(--rose)}
+.hero{position:absolute;left:1300px;top:250px;width:300px;height:330px;background:var(--rose);border:4px solid var(--ink);box-shadow:12px 12px 0 rgba(26,23,20,.22);z-index:5;transform:rotate(2deg);display:flex;align-items:center;justify-content:center;opacity:0}
+.hero.gold{background:var(--gold)}
+.hero-char{font-family:var(--song);font-weight:900;font-size:300px;line-height:1;color:var(--cream);transform:rotate(-3deg);text-shadow:8px 8px 0 rgba(26,23,20,.2)}
+.hero.gold .hero-char{color:var(--ink)}
+.hero-tag{position:absolute;left:14px;bottom:-26px;background:var(--ink);color:var(--paper);font-size:9px;letter-spacing:.14em;padding:5px 8px;border:2px solid var(--ink)}
+.hero-keytag{position:absolute;left:-10px;top:-18px;background:var(--ink);color:var(--gold);font-size:8px;letter-spacing:.14em;padding:4px 7px;border:2px solid var(--ink)}
+.walker{position:absolute;left:1510px;bottom:190px;width:96px;height:144px;z-index:7;transform-origin:50% 100%}
+.walker svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.ground{position:absolute;left:0;right:0;bottom:150px;height:4px;background:var(--ink);opacity:.35;z-index:2}
+.marquee{position:absolute;left:0;right:0;bottom:64px;height:54px;background:var(--ink);color:var(--gold);overflow:hidden;z-index:8;border-top:3px solid var(--ink)}
+.marquee .inner{position:absolute;top:50%;left:0;white-space:nowrap;font-size:22px;letter-spacing:.16em;font-family:var(--song);font-weight:900;transform:translateY(-50%)}
+.toast{position:absolute;left:50%;top:106px;transform:translate(-50%,-12px);background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 rgba(26,23,20,.2);padding:10px 16px;font-size:10px;letter-spacing:.12em;z-index:9;opacity:0;transition:opacity .12s}
+.toast .tick{display:inline-block;margin-right:8px;width:7px;height:7px;background:var(--gold);border:0;vertical-align:middle}
+.cursor{position:absolute;left:800px;top:720px;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:24px solid var(--ink);transform:rotate(38deg);z-index:20;opacity:0}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 2px 0}
+button{font-family:var(--mono);font-size:10px;letter-spacing:.08em;background:#1A1714;color:#E8E0CF;border:1px solid #4A423A;padding:8px 12px;cursor:pointer}
+button:hover{background:#2A2521}
+button.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+#seek{flex:1;accent-color:var(--rose);min-width:80px}
+#time{font-size:10px;color:#8A817A;min-width:108px;text-align:right}
+.hint{font-size:9px;color:#6B6460;padding:8px 2px 0;letter-spacing:.08em}
+@media (max-width:700px){.top h1{font-size:16px}.bar{gap:6px}button{padding:7px 9px}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <h1>词级歌词 MV <span style="color:#8A817A">/ starter</span></h1>
+    <div class="sub">WORD STAMP · 0.12s · NO PER-CHAR CRAWL</div>
+  </div>
+  <div class="frame" id="frame">
+    <div class="stage" id="stage">
+      <div class="moon"></div>
+      <svg class="mtn" viewBox="0 0 1920 260" preserveAspectRatio="none" aria-hidden="true"><path d="M0 260V180l120-40 100 30 150-80 170 60 140-30 160 70 150-50 170 40 160-70 150 60 160-20 120 30v80Z" fill="currentColor" opacity=".35"/><path d="M0 260V220l160-30 180 20 150-40 220 30 180-20 220 40 200-30 180 20 160-10 260 20v40Z" fill="currentColor" opacity=".6"/></svg>
+      <div class="ground"></div>
+      <div class="hud">
+        <div class="hud-card"><span class="badge">STAGE</span><span class="stage-name" id="stageName">01 / 这是</span><span class="hearts" id="hearts"></span></div>
+        <div class="hud-card" style="text-align:right"><div class="score">SCORE<b id="score">000000</b><span class="combo" id="combo">×1</span></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span id="kicker">L1 / 03</span><span class="card-tag" id="tag">WORD</span></div>
+        <div class="line" id="line"></div>
+        <div class="card-foot"><span id="foot">CHARS 0 / 5</span><span class="ticks" id="ticks"></span></div>
+      </div>
+      <div class="hero" id="hero"><span class="hero-keytag" id="heroKey">KEY</span><span class="hero-char" id="heroChar">级</span><span class="hero-tag">CURRENT WORD</span></div>
+      <div class="walker" id="walker">
+        <svg viewBox="0 0 16 24" aria-hidden="true">
+          <rect x="2" y="2" width="12" height="2" fill="#C9A96E"/><rect x="5" y="0" width="6" height="2" fill="#C9A96E"/><rect x="5" y="3" width="6" height="4" fill="#F3E6CC"/><rect x="6" y="4" width="1" height="1" fill="#1A1714"/><rect x="9" y="4" width="1" height="1" fill="#1A1714"/><rect x="4" y="7" width="8" height="2" fill="#C25566"/><rect x="4" y="9" width="8" height="7" fill="#1A1714"/><rect x="4" y="12" width="8" height="1" fill="#C9A96E"/><rect x="2" y="9" width="2" height="5" fill="#C9A96E"/><rect x="12" y="9" width="2" height="6" fill="#1A1714"/><rect x="14" y="5" width="1" height="15" fill="#8B5A3C"/><rect x="5" y="16" width="2" height="6" fill="#1A1714"/><rect x="9" y="16" width="2" height="5" fill="#1A1714"/><rect x="4" y="21" width="3" height="2" fill="#C9A96E"/><rect x="9" y="20" width="3" height="2" fill="#C9A96E"/>
+        </svg>
+      </div>
+      <div class="marquee"><div class="inner" id="marquee">词级 · 歌词 MV · 一个词一个 stamp · 唱到哪 · 字到哪 · 词级 · 歌词 MV ·</div></div>
+      <div class="toast" id="toast"><span class="tick"></span><span id="toastText">NICE</span></div>
+      <div class="cursor" id="cursor"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <button id="playBtn">▶ 播放</button>
+    <input id="seek" type="range" min="0" max="8.5" step="0.01" value="0" aria-label="进度">
+    <span id="time">00:00.0 / 00:08.5</span>
+    <button id="loopBtn" class="on">LOOP ON</button>
+    <button id="freezeBtn">冻结</button>
+  </div>
+  <div class="hint">空格播放/暂停 · ← → 前后 1s · ?t=1.6 冻结截帧 · ?audio=audio.mp3 接入音频</div>
+</div>
+<audio id="audio" preload="auto"></audio>
+<script>
+'use strict';
+/* ---------- replace this block ---------- */
+const DURATION = 8.5;
+const TIMELINE = [
+  { start: 0.4, end: 3.0, name: '这是', tag: 'WORD', tone: 'paper', words: [
+    { t: 0.4, text: '这是' }, { t: 0.9, text: '一个' },
+    { t: 1.4, text: '词级', key: 'rose', hero: '级' },
+    { t: 2.0, text: '歌词' }, { t: 2.5, text: 'MV', key: 'gold' }
+  ]},
+  { start: 3.4, end: 5.8, name: '不是', tag: 'NOT', tone: 'night', words: [
+    { t: 3.4, text: '不是' }, { t: 3.9, text: '逐字' },
+    { t: 4.5, text: '慢写' }, { t: 5.0, text: '是' },
+    { t: 5.3, text: '重音', key: 'rose', hero: '重' }
+  ]},
+  { start: 6.0, end: 8.2, name: '关键', tag: 'KEY', tone: 'gold', words: [
+    { t: 6.0, text: '关键' }, { t: 6.5, text: '词' },
+    { t: 6.9, text: '砸出', key: 'gold', hero: '砸' }, { t: 7.4, text: '来' }
+  ]}
+];
+/* ------------------------------------------ */
+
+const $ = s => document.querySelector(s);
+const clamp = (v,a=0,b=1)=>v<a?a:v>b?b:v;
+const prog = (t,a,d=1)=>clamp((t-a)/d);
+const eOut = p=>1-Math.pow(1-p,3);
+const bump = (t,a,d)=>t>=a&&t<a+d?Math.sin(prog(t,a,d)*Math.PI):0;
+const fmt = t=>`00:${t.toFixed(1).padStart(4,'0')}`;
+
+const stage = $('#stage'), lineEl = $('#line'), hero = $('#hero'), heroChar = $('#heroChar');
+const heroKey = $('#heroKey'), kicker = $('#kicker'), tag = $('#tag'), stageName = $('#stageName');
+const scoreEl = $('#score'), comboEl = $('#combo'), heartsEl = $('#hearts'), foot = $('#foot');
+const ticksEl = $('#ticks'), toast = $('#toast'), toastText = $('#toastText'), marquee = $('#marquee');
+const walker = $('#walker'), cursor = $('#cursor'), audio = $('#audio'), seek = $('#seek'), timeEl = $('#time');
+const playBtn = $('#playBtn'), loopBtn = $('#loopBtn'), freezeBtn = $('#freezeBtn'), frame = $('#frame');
+let currentLine = -1, currentWord = -1, heroRef = null, playing = false, raf = 0, loop = true;
+let useAudio = false, virtualT = 0.4, lastNow = 0, freeze = false;
+
+function fit(){ const w=frame.clientWidth; if(w) stage.style.transform=`scale(${w/1920})`; }
+new ResizeObserver(fit).observe(frame); addEventListener('resize',fit);
+
+function lineAt(t){ let li=-1; TIMELINE.forEach((l,i)=>{ if(t>=l.start) li=i; }); return li; }
+function wordAt(line,t){ let wi=-1; line.words.forEach((w,i)=>{ if(t>=w.t) wi=i; }); return wi; }
+
+function buildLine(li){
+  const line=TIMELINE[li];
+  stage.className='stage '+(line.tone==='night'?'night':line.tone==='gold'?'gold':'');
+  stageName.textContent=String(li+1).padStart(2,'0')+' / '+line.name;
+  kicker.textContent='L'+(li+1)+' / '+String(TIMELINE.length).padStart(2,'0');
+  tag.textContent=line.tag;
+  tag.className='card-tag '+(line.tone==='gold'?'gold':line.tone==='night'?'rose':'');
+  lineEl.innerHTML='';
+  ticksEl.innerHTML='';
+  line.words.forEach(w=>{
+    const el=document.createElement('span');
+    el.className='word'+(w.key==='gold'?' gold':'');
+    el.textContent=w.text;
+    w.el=el; lineEl.appendChild(el);
+    const tick=document.createElement('span'); tick.className='tick'; ticksEl.appendChild(tick);
+  });
+  foot.textContent='CHARS 0 / '+line.words.length;
+  hero.style.opacity='0'; heroRef=null; currentWord=-1;
+}
+
+function setHero(line,wi){
+  const w=line.words[wi];
+  if(!w || !w.hero) return;
+  heroRef=w;
+  heroChar.textContent=w.hero;
+  hero.className='hero'+(w.key==='gold'?' gold':'');
+  heroKey.textContent='KEY / '+w.hero;
+  hero.style.opacity='1';
+}
+
+function draw(t){
+  const li=lineAt(t);
+  if(li<0){ lineEl.innerHTML=''; hero.style.opacity='0'; return; }
+  if(li!==currentLine){ buildLine(li); currentLine=li; }
+  const line=TIMELINE[li];
+  const wi=wordAt(line,t);
+
+  line.words.forEach((w,i)=>{
+    const on=t>=w.t;
+    w.el.classList.toggle('show',on);
+    w.el.classList.toggle('now',i===wi);
+    w.el.classList.toggle('key',!!w.key);
+    w.el.classList.toggle('gold',w.key==='gold');
+    if(on && i===wi){
+      const q=eOut(prog(t,w.t,.12));
+      w.el.style.transform=`translateY(${(1-q)*8}px) scale(${1.4-.4*q})`;
+    } else {
+      w.el.style.transform='';
+    }
+  });
+
+  if(wi>=0){
+    const w=line.words[wi];
+    if(w.hero && heroRef!==w) setHero(line,wi);
+    const q=eOut(prog(t,w.t,.12));
+    heroChar.style.transform=`rotate(-3deg) scale(${1.25-.25*q})`;
+  }
+
+  const shown=wi>=0?wi+1:0;
+  [...ticksEl.children].forEach((x,i)=>x.classList.toggle('on',i<shown));
+  foot.textContent='CHARS '+shown+' / '+line.words.length;
+  const frac=line.words.length?shown/line.words.length:0;
+  scoreEl.textContent=String(Math.round((li*1000)+frac*900)).padStart(6,'0');
+  comboEl.textContent='×'+(li+1);
+  const hearts=2+Math.floor(frac*4);
+  heartsEl.innerHTML='';
+  for(let i=0;i<7;i++){ const h=document.createElement('span'); h.className='heart'+(i<hearts?' on':''); heartsEl.appendChild(h); }
+
+  const hop=wi>=0?bump(t,line.words[wi].t,.3)*26:0;
+  walker.style.transform=`translateY(${-hop+Math.sin(t*7)*3}px) scaleY(${1-hop/430})`;
+  marquee.style.transform=`translateY(-50%) translateX(${-(t*140%1600)}px)`;
+
+  let toastOn=false, toastTxt='';
+  if(t>=line.start&&t<line.start+.9){ toastOn=true; toastTxt=line.name; }
+  if(wi>=0 && line.words[wi].key && t-line.words[wi].t<.45){ toastOn=true; toastTxt='KEY'; }
+  toast.style.opacity=toastOn?'1':'0';
+  toastText.textContent=toastTxt;
+
+  if(wi>=0 && line.words[wi].hero){
+    const q=prog(t,line.words[wi].t,.5);
+    cursor.style.opacity=t-line.words[wi].t<.3?'1':'0';
+    cursor.style.left=(850+eOut(q)*180)+'px';
+    cursor.style.top=(740-eOut(q)*120)+'px';
+  } else cursor.style.opacity='0';
+}
+
+function render(t){
+  t=clamp(t,0,DURATION);
+  draw(t);
+  timeEl.textContent=fmt(t)+' / '+fmt(DURATION);
+  seek.value=String(t);
+}
+
+function loopStep(now){
+  if(!playing) return;
+  if(useAudio){
+    if(audio.currentTime>=DURATION-0.01){
+      if(loop){ audio.currentTime=0; } else { playing=false; playBtn.textContent='▶ 播放'; audio.pause(); render(DURATION); return; }
+    }
+    render(audio.currentTime);
+  } else {
+    if(!lastNow) lastNow=now;
+    virtualT+=(now-lastNow)/1000; lastNow=now;
+    if(virtualT>=DURATION){
+      if(loop) virtualT=0; else { virtualT=DURATION; playing=false; playBtn.textContent='▶ 播放'; render(virtualT); return; }
+    }
+    render(virtualT);
+  }
+  raf=requestAnimationFrame(loopStep);
+}
+
+function play(){
+  if(playing) return;
+  if(useAudio){ audio.play().then(()=>{}).catch(()=>{ useAudio=false; }); }
+  else { lastNow=0; }
+  playing=true; playBtn.textContent='⏸ 暂停';
+  cancelAnimationFrame(raf); raf=requestAnimationFrame(loopStep);
+}
+function pause(){
+  playing=false; playBtn.textContent='▶ 播放'; cancelAnimationFrame(raf);
+  if(useAudio) audio.pause();
+  render(useAudio?audio.currentTime:virtualT);
+}
+
+playBtn.addEventListener('click',()=>playing?pause():play());
+loopBtn.addEventListener('click',()=>{ loop=!loop; loopBtn.textContent=loop?'LOOP ON':'LOOP OFF'; loopBtn.classList.toggle('on',loop); });
+freezeBtn.addEventListener('click',()=>{ freeze=!freeze; if(freeze){ pause(); freezeBtn.classList.add('on'); } else freezeBtn.classList.remove('on'); });
+seek.addEventListener('input',()=>{ const t=parseFloat(seek.value); if(useAudio) audio.currentTime=t; else virtualT=t; render(t); });
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){ e.preventDefault(); playing?pause():play(); }
+  if(e.code==='ArrowLeft'){ const t=Math.max(0,(useAudio?audio.currentTime:virtualT)-1); if(useAudio) audio.currentTime=t; else virtualT=t; render(t); }
+  if(e.code==='ArrowRight'){ const t=Math.min(DURATION,(useAudio?audio.currentTime:virtualT)+1); if(useAudio) audio.currentTime=t; else virtualT=t; render(t); }
+});
+
+const q=new URLSearchParams(location.search);
+const startParam=q.has('t')?parseFloat(q.get('t')):null;
+const start=startParam==null?0.4:clamp(startParam,0,DURATION);
+const audioSrc=q.get('audio');
+if(audioSrc){
+  useAudio=true; audio.src=audioSrc;
+  audio.addEventListener('error',()=>{ useAudio=false; });
+  audio.addEventListener('loadedmetadata',()=>{ if(useAudio){ audio.currentTime=start; if(!playing) render(start); } });
+}
+buildLine(0); fit();
+virtualT=start; render(start);
+window.__ready=true;
+window.__seek=t=>{ if(useAudio) audio.currentTime=clamp(t,0,DURATION); else virtualT=clamp(t,0,DURATION); render(t); };
+window.__play=play; window.__pause=pause;
+</script>
+</body>
+</html>
