@@ -618,6 +618,63 @@
     },
   });
 
+  // ======================= Swiss poster kinetic typography =======================
+  P.kit.register('swiss', {
+    runtime: 'swiss',
+    theme: { bg: '#F1F0EB', fg: '#111111', ink: '#111111', paper: '#F1F0EB', accent: '#E5381F', muted: '#8C8B86', fonts: { display: '"Inter Tight", "Noto Sans SC", sans-serif', serif: '"Inter Tight", "Noto Sans SC", sans-serif', sans: '"Inter Tight", "Noto Sans SC", sans-serif', script: '"Inter Tight", "Noto Sans SC", sans-serif', mono: '"Inter Tight", "Noto Sans SC", sans-serif' } },
+    make(F, opt) {
+      const X = P.swiss(F, opt), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), A = X.colors.accent;
+      const S = { lead: 0.62, push: 0.006, ink: X.colors.ink, paper: X.colors.paper, colors: [A, X.colors.ink, '#5A5955'], raw: X };
+      const GR = ['paper', 'ink', 'paper', 'accent'];
+      // the ground follows the variant (paper / black / paper with column guides / accent), so scenes alternate the way Swiss posters do
+      S.bg = (layer, o = {}) => { const v = o.variant ?? 0; return X.bg(layer, { variant: v === 2 ? 1 : 0, ground: o.ground ?? GR[v % 4] }); };
+      const quick = (n) => ({ dur: 0.45, stagger: Math.min(0.03, 0.17 / Math.max(1, n - 1)) });
+      // big word: grotesk letters rising out of the line mask (variant 1 = accent colour)
+      S.word = (layer, o) => X.type(layer, { text: o.text, at: o.at, until: o.until, x: o.x ?? W / 2, y: o.y ?? H * 0.45, size: o.size ?? (PT ? 190 : 240), align: 'center', maxW: o.maxW ?? W * 0.9, color: o.variant ? 'acc' : 'ink', kind: o.kind ?? 'slam', sfx: o.sfx, rise: false, ...quick([...String(o.text)].length) });
+      S.line = (layer, o) => X.line(layer, { text: o.text, at: o.at, until: o.until, x: o.x ?? W / 2, y: o.y ?? H * 0.68, size: Math.min(56, o.size ?? 46), maxW: o.maxW ?? W * 0.84, align: o.align ?? 'center', kind: o.kind ?? 'label', sfx: o.sfx === 'pulse' ? undefined : o.sfx, per: 0.025 });
+      // card: a flat card with a hairline edge, revealed upward from its bottom edge
+      S.card = (layer, o) => {
+        const a0 = o.at - 0.55, until = o.until ?? 1e9, c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;background:var(--sw-card);box-shadow:inset 0 0 0 ${f1(u * 2)}px var(--sw-line);overflow:hidden;display:none;z-index:${o.z ?? 10}`, layer);
+        F.add((t) => { const on = t >= a0 && t < until; set(c, { display: on ? '' : 'none' }); if (!on) return; const q = seg(t, a0, o.at, E.expoOut), qo = until < 1e8 ? seg(t, until - 0.3, until, E.quartIn) : 0; set(c, { clipPath: q < 1 ? `inset(${f1((1 - q) * 100)}% 0 0 0)` : qo ? `inset(0 0 ${f1(qo * 100)}% 0)` : '' }); });
+        if (o.sfx !== false) F.sfx(a0 + 0.05, 'slide', 0.3);
+        return { el: c, w: o.w, h: o.h };
+      };
+      S.shot = (layer, o) => { const r = X.shot(layer, { src: o.src, x: o.x, y: o.y, w: o.w, h: o.h, fit: o.fit === 'contain' ? 'contain' : 'cover', at: o.at, until: o.until, sfx: o.sfx }); return { el: r.el, w: o.w, h: o.h, img: r.img, box: r.box }; };
+      // signature move: a thick accent bar slides under the word and an arrow lands at its end
+      S.accent = (layer, o) => {
+        const s = F.px(o.size ?? 240), y = Math.min(H * (PT ? 0.76 : 0.88), o.y + s * 0.62), x0 = W * 0.08, w = W * 0.84;
+        X.rule(layer, { x: x0, y, w: w - F.px(150), h: 16, at: o.at, until: o.until, color: 'acc' });
+        X.arrow(layer, { x: x0 + w - F.px(60), y: y + F.px(8), size: 120, at: o.at + 0.15, until: o.until, color: 'acc' });
+        return {};
+      };
+      S.wipe = (o) => { X.wipe({ at: o.cover, kind: ['whip', 'bands', 'dot'][(o.index ?? 0) % 3] }); return { show: o.cover, hide: o.cover }; };
+      S.end = (layer, o) => X.end(layer, { at: o.at, title: o.title, sub: o.tagline, url: o.url });
+      // ---- Telling information (Swiss): steps are a numbered list .1 .2 .3; contrast is two columns split by a rule with an arrow; numbers are flat bars; a spot on the UI is an accent outline with the rest dimmed ----
+      S.steps = (layer, o) => {
+        const { items, T, until, C: R } = o, n = items.length, size = Math.max(40, Math.min(PT ? 64 : 72, R.h / u / n / 1.6));
+        return X.list(layer, { items: items.map((it, j) => ({ text: it.text, note: it.note, hot: it.hot, at: T[j] })), x: R.x, y: R.y + Math.max(0, (R.h - n * F.px(size * 1.6)) / 2), w: R.w, size, gap: size * 1.6, until });
+      };
+      S.versus = (layer, o) => {
+        const { cols, T, at2, until, C: R } = o;
+        return X.versus(layer, { cols: cols.map((c, j) => ({ title: c.title, titleSize: PT ? 96 : 120, pointSize: PT ? 42 : 46, points: (c.points || []).map(ptText), ats: (c.points || []).map((_, r) => at2(j, r)), hot: c.hot, at: T[j] })), x: R.x, y: R.y, w: R.w, h: R.h, until, stack: R.w < R.h * 1.2, dimOld: false, arrow: cols.length === 2 });
+      };
+      S.figures = (layer, o) => { const { data, ats, until, C: R } = o; return X.bars(layer, { data: data.map((d, j) => [d[0], d[1], { at: ats[j], hot: (o.hot || []).includes(j) }]), unit: o.unit, decimals: o.decimals, x: R.x, y: R.y, w: R.w, h: R.h, until }); };
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until, sw = F.px(5), clip = el('div', `left:${f1(o.box.x)}px;top:${f1(o.box.y)}px;width:${f1(o.box.w)}px;height:${f1(o.box.h)}px;overflow:hidden;pointer-events:none;z-index:25`, layer);
+        const dim = el('div', `left:${f1(rg.x - o.box.x)}px;top:${f1(rg.y - o.box.y)}px;width:${f1(rg.w)}px;height:${f1(rg.h)}px;box-shadow:0 0 0 ${f1(W * 2)}px rgba(17,17,17,.42);opacity:0`, clip); dim.dataset.motion = 'skip';
+        const ring = el('div', `left:${f1(rg.x - sw)}px;top:${f1(rg.y - sw)}px;width:${f1(rg.w + 2 * sw)}px;height:${f1(rg.h + 2 * sw)}px;box-shadow:inset 0 0 0 ${f1(sw)}px var(--sw-acc);display:none;z-index:26`, layer);
+        F.add((t) => { set(dim, { opacity: String(Math.min(seg(t, a - 0.3, a), b < 1e8 ? 1 - seg(t, b - 0.25, b) : 1)) }); const on = t >= a - 0.35 && t < b; set(ring, { display: on ? '' : 'none' }); if (on) { const q = seg(t, a - 0.35, a, E.expoOut); set(ring, { clipPath: q < 1 ? `inset(0 ${f1((1 - q) * 100)}% 0 0)` : '' }); } });
+        F.sfx(a - 0.2, 'mark', 0.35);
+        return { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: X.colors.ink, accent: A, colors: [A, X.colors.ink, '#5A5955'], font: X.body, display: X.font, weight: 500, line: F.px(3), outline: null, radius: 0, mark: A, cutSfx: 'snap', flashAt: 'corner',
+        flashBg: (col) => `background:${col}`,
+        // a giant cropped index numeral behind each cut, and the grid
+        flashDecor: (bg, col, i, R) => { el('div', `inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);background-size:${f1(F.px(54))}px ${f1(F.px(54))}px`, bg); const g = el('div', `right:${f1(-R.w * 0.04)}px;top:${f1(-R.h * 0.22)}px;font:500 ${f1(R.h * 1.05)}px/1 ${X.font};letter-spacing:-0.06em;color:rgba(255,255,255,.16)`, bg); g.textContent = String(i + 1); } });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -1483,6 +1540,12 @@
   KITS.bauhaus.tint = (c) => {   // constructivism: a dark enough brand colour replaces red (the main colour); a too-light one (yellow, light green) becomes the accent, red and black stay
     const r = rgbOf(c), L = r ? (0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]) / 255 : 0.5;
     return L < 0.55 ? { kit: { colors: { red: c } }, theme: { accent: c }, color: c } : { kit: { colors: { yellow: c } }, color: c };
+  };
+  KITS.swiss.tint = (c, o = {}) => {   // swiss: the most vivid mid-tone of brand / accent becomes the one accent (tamed to a poster-ink brightness); a very dark brand colour replaces black (text and the dark ground)
+    const cand = [o.brand, o.accent].filter((x) => x && colorful(x)), score = (x) => { const [, sat, l] = hslOf(x); return sat * (1 - Math.abs(l - 0.5) * 2); };
+    const best = cand.sort((a, b) => score(b) - score(a))[0] ?? c, acc = tame(best, { s: [0.45, 1], l: [0.38, 0.56] });
+    const deep = cand.find((x) => hslOf(x)[2] < 0.22 && hslOf(x)[1] > 0.3);
+    return { theme: { accent: acc, ...(deep ? { ink: deep, fg: deep } : {}) }, kit: { accent: acc, ...(deep ? { colors: { ink: deep } } : {}) }, color: acc };
   };
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged

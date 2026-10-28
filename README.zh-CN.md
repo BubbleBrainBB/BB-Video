@@ -9,7 +9,7 @@
 
 | 技能 | 做什么 |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，22 种画面风格 |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，23 种画面风格 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -37,6 +37,7 @@
 | `dossier` 剪报解说 | 财经 / 时事解说的纸面世界：灰色新闻纸剪报（大标题加荧光笔、半调黑白照片、按事实写的真实短讯），用虚构报头重排的真实原文文件——镜头从整页推到被引用的那一行，红 / 蓝译文条、小标签落在原句上；纸张飞入、墨刷转场、封面式大字标题卡、数据标注、顶部章节条和描边字幕 |
 | `manga` 日漫 · 漫画分镜 | 会动的黑白漫画页：网点、分格和格间距、斜格和出血格、速度线和集中线、画进画面里的拟声词（ドン / ゴゴゴ）和对话框；镜头按阅读顺序一格格读，关键格推进、打击时震屏，翻页或斩切换页，高潮用整页大图；角色全部原创、用代码画 |
 | `map` 地图动画 | 用真实地理数据画的印刷感地图：纸色陆地、沿海岸刻线的水面、公园、街道纹理、按制图规范排的地名；线路一笔笔画出，电车 / 列车沿线开、说到哪站停哪站，车站依次弹出，区域像墨一样晕开，标注卡钉在地点上，年份计数器和定位小地球；镜头转地球、一路推到街道、在地点之间飞行、俯仰着跟车走 |
+| `swiss` 瑞士风动态排版 | 瑞士国际主义海报动起来：网格上巨大的无衬线字、被画面边缘裁切，只有黑色加一种从品牌取来的强调色；字母一个个升起，数字按位滚动到位，海报拉远成一面不同配色的海报墙，一个词铺成满屏图案；信息也用排版讲：编号列表、打勾卡片网格、巨型数字、条形图、新旧对比，真实截图像海报元素一样加标注 |
 
 能做什么：
 
@@ -49,7 +50,7 @@
 <!-- gallery:start -->
 ## 样例
 
-每种风格一支样片，都是用这个技能做的（GIF 是 7 秒的片段；带声音的完整 mp4 在 [samples 发布页](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)）。旁白是中文；四支网站宣传片只有音乐。
+每种风格一支样片，都是用这个技能做的（GIF 是 7 秒的片段；带声音的完整 mp4 在 [samples 发布页](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)）。旁白是中文；四支网站宣传片和 swiss 样片只有音乐。
 
 <table>
 <tr>
@@ -188,6 +189,12 @@
 <b><code>map</code></b> · 《波士顿地铁》：从 1897 年波士顿公园底下的一段隧道，讲到今天的四色线网<br>
 <sub>地图数据来自 MassDOT / MBTA、美国人口普查局 TIGER/Line、Natural Earth</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4">完整视频</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4"><img src="examples/swiss/preview.gif" width="100%" alt="swiss"></a><br>
+<b><code>swiss</code></b> · 《智能指数 v5》：Artificial Analysis 在 2026 年 10 月 27 日发布的 AI 基准——九项评测、榜单、开放权重差距、每个任务的成本<br>
+<sub>数字和图表来自 artificialanalysis.ai</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4">完整视频</a>
 </td>
 </tr>
 </table>

@@ -338,7 +338,7 @@
       let t = text ?? el.textContent;
       // Strip tags only when it is really shown as html (code shown literally on screen, like "<Section>", stays as is)
       if (/<\/?[a-z][^>]*>/i.test(t) && el.children.length && !el.textContent.includes('<')) { const d = document.createElement('div'); d.innerHTML = t; t = d.textContent; }
-      this.texts.push({ el, kind, text: t, raw: text, win: [a, b], overlap: !!o.overlap, noFact: !!o.noFact, chrome: !!o.chrome });   // noFact: decorative layout text (VS, numbering), no fact check; chrome: small UI furniture (a HUD chip, a source tag) — meant to be small, so it alone never counts as "text nobody can read"
+      this.texts.push({ el, kind, text: t, raw: text, win: [a, b], overlap: !!o.overlap, noFact: !!o.noFact, chrome: !!o.chrome, bleed: !!o.bleed });   // noFact: decorative layout text (VS, numbering), no fact check; chrome: small UI furniture (a HUD chip, a source tag) — meant to be small, so it alone never counts as "text nobody can read"; bleed: poster type deliberately cropped by the frame edge (swiss), not reported as clipped or too near the edge
     }
     // Register a "line" (ring edge, thin bar, arrow shaft): fn() returns { pts: [[x, y]…] (frame px, the line's centreline), w: line width px } or null;
     //   the check warns when a line crosses visible text (large solid backgrounds are not registered — text on a colour block is intended; the contrast check handles that)
@@ -821,6 +821,7 @@
     // Dark ground: warm light leak, screen blend (brightens); light ground (o.light): screen is invisible on white, so use a faint brand-colour band with multiply instead
     const c = o.color && /^#[0-9a-f]{6}$/i.test(o.color) ? [1, 3, 5].map((i) => parseInt(o.color.slice(i, i + 2), 16)).join(',') : '255,170,90';
     const e = el('div', `left:-40%;top:0;width:40%;height:100%;background:linear-gradient(90deg,rgba(${c},0),rgba(${c},${o.light ? 0.28 : 0.55}),rgba(${o.light ? c : '255,230,180'},0));mix-blend-mode:${o.light ? 'multiply' : 'screen'};z-index:${o.z ?? 700};opacity:0;pointer-events:none`, F.stage);
+    e.dataset.motion = 'skip';   // a band of light sweeping the frame, not an object moving: the motion sheet doesn't measure it ("too fast" misfired on every leak)
     F.add((t) => { const q = seg(t, at, at + d); set(e, { opacity: String(Math.sin(Math.PI * q) * 0.9), transform: `translateX(${f1(q * F.W * 1.5)}px)` }); });
   }
 
@@ -904,6 +905,7 @@
       set(logo, { clipPath: o.logo.src ? 'none' : `inset(0 ${(100 - 100 * lq).toFixed(1)}% 0 0)`, opacity: o.logo.src ? String(lq) : '1', transform: `${o.logo.src ? 'translateX(-50%) ' : ''}scale(${(1 + pl).toFixed(4)})` });
       if (tag) set(tag, { opacity: String(seg(t, o.at + 1.0, o.at + 1.4)), letterSpacing: `${lerp(tagLS + 0.12, tagLS, seg(t, o.at + 1.0, o.at + 2.0, E.expoOut)).toFixed(3)}em` });
       if (url) set(url, { opacity: String(seg(t, o.at + 1.6, o.at + 2.0)), transform: `translateY(${f1((1 - seg(t, o.at + 1.6, o.at + 2.2, E.expoOut)) * F.px(20))}px)` });
+      if (cta) set(cta, { opacity: t >= o.at + 2.2 ? '1' : '0' });   // its words wait masked below their line until +2.2: keep the line hidden till then, or the stiff-motion check sees it "switched on" with the card
       ctaW.forEach((w, i) => { const q = seg(t, o.at + 2.2 + i * 0.08, o.at + 3.0 + i * 0.08, E.expoOut); set(w, { transform: `translateY(${((1 - q) * 115).toFixed(2)}%)` }); });
     });
     return L;
@@ -1121,7 +1123,7 @@
       const frame = { x: 0, y: 0, w: F.W, h: F.H };
       for (const { x, b } of live) {
         const inside = inter(b, frame) / Math.max(1, b.w * b.h);
-        const cut = inside > 0.02 && inside < 0.97;
+        const cut = !x.bleed && inside > 0.02 && inside < 0.97;
         x._cut = cut ? (x._cut ?? t) : undefined;
         const k = 'out|' + x.text;
         if (cut && t - x._cut >= 0.35 && !seen.has(k)) { seen.add(k); add('warn', x._cut, M('切边', 'clipped'), M(`"${x.text.slice(0, 24)}" 被画面边缘切掉了 ${Math.round((1 - inside) * 100)}%（持续 ${(t - x._cut).toFixed(1)} 秒）。镜头推近时用 cam.focus 的 fit 选项保住整块区域`, `"${x.text.slice(0, 24)}" is ${Math.round((1 - inside) * 100)}% cut off by the frame edge (for ${(t - x._cut).toFixed(1)} s). When the camera pushes in, use cam.focus's fit option to keep the whole area in frame`)); }
@@ -1203,7 +1205,7 @@
     }
     hit.remove();
     // Landscape: headlines at least about 10% from the top edge (hugging the top looks cramped; user feedback)
-    if (!F.portrait) for (const x of F.texts.filter((x) => ['headline', 'slam', 'endcard', 'logo'].includes(x.kind))) {
+    if (!F.portrait) for (const x of F.texts.filter((x) => ['headline', 'slam', 'endcard', 'logo'].includes(x.kind) && !x.bleed)) {
       const k = (x.win[0] + Math.min(x.win[1], F.duration)) / 2; F.render(Math.min(k, F.duration - 0.05));
       if (!vis(x.el)) continue;
       const b = shown(x.el); if (!b) continue;

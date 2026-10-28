@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 22 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 23 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -37,6 +37,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `dossier` | finance / news commentary made of paper: newspaper clippings with a highlighted headline and halftone photos, real source documents under an invented masthead with the camera pushing into the quoted line and a translation bar or tag landing on it, sheets flying in, ink-brush wipes, thumbnail title cards, data callouts, a chapter bar and outlined captions |
 | `manga` | a black-and-white manga page that moves (日漫): screentone, panels with gutters, slanted and bleeding frames, speed and focus lines, drawn sound effects (ドン / ゴゴゴ) and balloons; the camera reads panel by panel, punches in and shakes on the hits, pages turn or get slashed open, a full-page splash for the climax; original code-drawn characters |
 | `map` | an animated map from real geodata (地图动画): paper land, engraved water lines along the coast, parks, street texture, cartographic labels; routes draw on stroke by stroke, a tram or train travels a line and stops on the word, stations pop in, areas spread like ink, callout cards pinned to places, a year counter and a locator globe; the camera turns the globe, dives to the street, flies between places and tilts to follow a train |
+| `swiss` | Swiss poster kinetic typography (瑞士风动态排版): giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
 
 What it covers:
 
@@ -49,7 +50,7 @@ What it covers:
 <!-- gallery:start -->
 ## Examples
 
-One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s with sound are on the [samples release](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)). Narration is in Chinese; the four website promos are music-only.
+One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s with sound are on the [samples release](https://github.com/BubbleBrainBB/BB-Video/releases/tag/samples)). Narration is in Chinese; the four website promos and the swiss sample are music-only.
 
 <table>
 <tr>
@@ -188,6 +189,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>map</code></b> · The Boston subway (波士顿地铁): from the 1897 tunnel under Boston Common to today's four-colour network<br>
 <sub>Map drawn from MassDOT / MBTA data, U.S. Census TIGER/Line and Natural Earth</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/map.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4"><img src="examples/swiss/preview.gif" width="100%" alt="swiss"></a><br>
+<b><code>swiss</code></b> · Artificial Analysis Intelligence Index v5 (智能指数 v5): the AI benchmark launched on October 27, 2026 — nine evaluations, the leaderboard, the open-weights gap, cost per task<br>
+<sub>Figures and charts from artificialanalysis.ai</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/swiss.mp4">Full video</a>
 </td>
 </tr>
 </table>

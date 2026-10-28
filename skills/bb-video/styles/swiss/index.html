@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Grotesk: Inter Tight (OFL) for Latin, Noto Sans SC (思源黑体, OFL) for Chinese; list the Latin font first (in Chinese fonts ’ “ ” are full-width) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#111}#stage{position:relative;overflow:hidden}</style>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/swiss.js"></script>
+</head><body><div id="stage"></div><script>
+// Swiss poster kinetic typography: how to write it is in the skill's styles/swiss/STYLE.md. Every time is F.beat(n); every word on screen is in brief.md.
+// The accent comes from the product: const { theme, kit } = PROMO.kit.brand('swiss', { brand: '#…', accent: '#…' }) → compose({ theme }), PROMO.swiss(F, kit).
+PROMO.compose({
+  bpm: 120, offset: 0.5, duration: 13.5, grain: false,
+  theme: { bg: '#F1F0EB', fg: '#111111', ink: '#111111', paper: '#F1F0EB', accent: '#E5381F', muted: '#8C8B86', fonts: { display: '"Inter Tight", "Noto Sans SC", sans-serif', serif: '"Inter Tight", "Noto Sans SC", sans-serif', sans: '"Inter Tight", "Noto Sans SC", sans-serif', script: '"Inter Tight", "Noto Sans SC", sans-serif', mono: '"Inter Tight", "Noto Sans SC", sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), X = PROMO.swiss(F), W = F.W, H = F.H, PT = F.portrait;
+    const c1 = b(9), c2 = b(16);
+    F.section(0, 1, { name: 'hook' }); F.section(c1, 2, { name: 'build' }); F.section(c2, 1, { name: 'resolve' });
+    // 1. the poster assembles: giant type cropped by the frame edge, meta labels, an arrow; then it pulls out into a wall of its colour variants
+    const A = X.scene(0, c1, { ground: 'paper' });
+    X.meta(A, { text: '2026', x: W * 0.06, y: H * 0.1, at: b(1), until: c1, fact: false });
+    X.type(A, { text: '标语\n第二行', x: W * 0.05, y: H * 0.52, size: PT ? 230 : 300, at: b(2), until: c1, bleed: true });   // every piece of text must be findable in brief.md
+    X.arrow(A, { x: W * 0.86, y: H * 0.2, size: 170, at: b(3), until: c1 });
+    X.meta(A, { text: '.1', x: W * 0.94, y: H * 0.9, size: 64, align: 'right', at: b(3), until: c1, fact: false });
+    X.wall({ source: A, at: b(5), until: c1, to: 0.3 });
+    X.wipe({ at: c1, kind: 'whip', onto: 'ink' });   // onto = the next scene's ground (the slab changes colour if it would match)
+    // 2. information told typographically: a numbered list beside a giant numeral
+    const B = X.scene(c1, c2, { ground: 'ink', variant: 1 });
+    X.stat(B, { value: '42', label: '一句说明', x: W * 0.06, y: H * (PT ? 0.28 : 0.42), align: 'left', at: b(10), until: c2 });
+    X.list(B, { items: ['第一点', '第二点', { text: '第三点', hot: true }], x: PT ? W * 0.06 : W * 0.5, y: H * (PT ? 0.48 : 0.24), w: PT ? W * 0.88 : W * 0.44, size: 60, at: b(11.5), every: F.B, until: c2 });
+    X.wipe({ at: c2, kind: 'bands', onto: 'paper' });
+    // 3. end card
+    const E2 = X.scene(c2, 99, { ground: 'paper' });
+    X.end(E2, { at: b(17), title: '标题', sub: '一句话', url: 'example.com' });
+  },
+});
+</script></body></html>
