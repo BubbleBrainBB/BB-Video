@@ -246,6 +246,8 @@ Clipping-file commentary (`dossier`) likewise: hand-written only (`PROMO.dossier
 
 Manga / motion comic (`manga`) likewise: hand-written only (`PROMO.manga(F, opt)`, `styles/manga/STYLE.md`), starters `styles/manga/index.html` (on the beat) and `explain.html` (narrated); the chapter tags and anime-style outlined captions come from the runtime (`compose({ chapters: false })`).
 
+Dark motivational short (`lumen`) likewise: hand-written only (`PROMO.lumen(F, opt)`, `styles/lumen/STYLE.md`), starters `styles/lumen/index.html` (on the beat) and `explain.html` (narrated, second person: the usual way to use it); facts are told in light by `L.meter / L.bars / L.timeline / L.compare / L.xray` and a clock in the frame, which register for the information check.
+
 Animated map (`map`) likewise: hand-written only (`await PROMO.map(F, opt)`, `styles/map/STYLE.md`), starters `styles/map/index.html` (places on the beat) and `explain.html` (narrated; the coarse world only — a film about a place builds its own geodata with `scripts/geodata.mjs`).
 
 ## Adding a style

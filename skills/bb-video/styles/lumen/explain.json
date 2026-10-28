@@ -1,0 +1,7 @@
+{
+  "lead_in": 3.2,
+  "voice": { "zh": "zh-CN-YunjianNeural", "en": "en-US-AndrewNeural" },
+  "rate": "-12%",
+  "pitch": "-4Hz",
+  "voice_fx": "doc"
+}

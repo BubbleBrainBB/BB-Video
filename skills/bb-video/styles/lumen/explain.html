@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · lumen</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/500.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/lumen.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · dark cinematic motivational short, narrated. Read styles/lumen/STYLE.md first.
+// Hand-written PROMO.compose timed from the narration (T.start / T.end / T.word): a cover in the lead-in, then per line a lit shot where the
+// one character acts the line with eyes and brows, slow push-ins that hold on the face; facts told in light (a clock rolling, a gauge, an
+// x-ray, bars); a title card at the open and the close. Every on-screen line and number must be traceable to brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 72, offset: 0, grain: false, chapters: false, tail: 1.6,
+  theme: { bg: '#000', fg: '#efeae2', ink: '#efeae2', muted: '#9a958c', accent: '#ffb648', paper: '#0c0d12', fonts: { display: '"Noto Sans SC", sans-serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, L = PROMO.lumen(F), PR = L.prop;
+    // the one protagonist of the film, called by name everywhere (styles/CHARACTERS.md)
+    L.cast({ you: { topColor: '#c8963e' } });
+
+    // the cover (thumbnail) in the lead-in: the face in the phone's light, the big title beside it
+    const t1 = s('l1');
+    L.cover({ a: 0, b: t1, title: M('标题', 'TITLE'), sub: 'SUBTITLE', face: 'empty', set: (S) => S.add(PR.room({ floor: 330 })) });
+    F.section(0, 0, { name: 'night' });
+
+    // l1 · a dark bedroom from above, lit only by the phone; the clock creeps on (replace with the film's own scenes)
+    { const S = L.shot(t1, e('l1') + 0.3, { dip: 0.6 });
+      S.cam({ x: 0, y: 0, h: 900 }, { x: 0, y: -40, h: 760 });
+      S.add([PR.floor(), ...PR.bedTop({ x: 60, y: 0, w: 980, h: 520, cover: 0.5 }), PR.alarm({ x: 650, y: -330, time: L.roll(t1, e('l1'), '23:30', '00:10') })]);
+      const A = S.actor('you', { x: -120, y: 0, rot: -90, pose: 'lie', face: 'trance', hold: 'phone', shadow: null });
+      A.act(t1, e('l1') + 0.3, 'scroll'); }
+
+    // … one block per line: L.shot + props + S.actor(…) with A.face / A.pose / A.act on the words that carry them;
+    //   information in light where the line states a fact: L.meter / L.bars / L.compare / L.xray / L.stat, a source tag with L.cite.
+    //   Music sections by name: night → weight → still → rise → dawn (F.section(at, energy, { name })).
+
+    // the closing title card
+    const end = e(T.lines[T.lines.length - 1].id);
+    L.title(end + 0.2, F.duration, M('标题', 'TITLE'), { sub: 'SUBTITLE' });
+  },
+});
+</script></body></html>

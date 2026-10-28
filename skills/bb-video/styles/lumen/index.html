@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · lumen</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/500.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/lumen.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · dark cinematic motivational short, on the beat (no voice). Read styles/lumen/STYLE.md first.
+// One of each piece, timed by beats (F.beat(n)): the cover, a lit scene where the character acts, a clock racing, a gauge, the decision, dawn,
+// the closing title card. A promo for a wellbeing / focus / sleep product: the product is the decision, every word and number from brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 72, offset: 0, duration: 25, grain: false,
+  theme: { bg: '#000', fg: '#efeae2', ink: '#efeae2', muted: '#9a958c', accent: '#ffb648', paper: '#0c0d12', fonts: { display: '"Noto Sans SC", sans-serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), L = PROMO.lumen(F), PR = L.prop, P = L.P;
+    L.cast({ you: { topColor: '#c8963e' } });
+    F.section(0, 0, { name: 'night' });
+    L.cover({ a: 0, b: b(4), title: M('标题', 'TITLE'), sub: 'SUBTITLE', face: 'empty', set: (S) => S.add(PR.room({ floor: 330 })), act: (A) => { A.act(0.3, b(4), 'scroll', { every: 1.0 }); A.face(b(2), 'tired', 0.8); } });
+    // in bed from above, scrolling; the clock races
+    { const S = L.shot(b(4), b(12), { dip: 0.5 }); S.add([PR.floor(), ...PR.bedTop({ x: 100, y: 0, w: 1000, h: 520, cover: 0.75 }), PR.alarm({ x: -525, y: -420, size: 0.9, time: L.roll(b(6), b(10), '23:30', '01:47') })]);
+      const r = F.portrait ? 90 : 0; S.cam({ x: -120, y: -60, h: 1000, r }, { x: -260, y: -20, h: 640, r });
+      const A = S.actor('you', { x: -120, y: 0, rot: -90, pose: 'lie', face: 'trance', hold: 'phone' }); A.act(b(4), b(12), 'scroll'); A.face(b(10), 'shock', 0.2); A.face(b(11), 'empty', 0.8); }
+    // the cost at a desk, a gauge in light
+    F.section(b(12), 2, { name: 'weight', hit: true });
+    { const S = L.shot(b(12), b(20), { ambient: [24, 26, 34], fog: 0.4 }); S.add([PR.room({ floor: 330 }), PR.chair({ x: 0, floor: 330 }), PR.desk({ x: 0, floor: 330 }), PR.laptop({ x: 250, y: 80 })]);
+      S.cam({ x: P(60, -20), y: -60, h: P(820, 920) }, { x: P(60, -30), y: -80, h: P(620, 760) });
+      const A = S.actor('you', { x: -40, feet: 330, pose: 'desk', face: 'tired', order: 58, cut: 80 }); A.act(b(13), b(16), 'type'); A.face(b(15), 'exhausted', 0.6); A.act(b(16), b(17.5), 'yawn'); A.pose(b(17.5), 'slump', 0.9); A.face(b(17.5), 'asleep', 0.6); F.sfx(b(18.4), 'thud', 0.6); }
+    L.meter(b(13), b(19), { kind: 'battery', label: M('标签', 'Label'), from: 80, to: 12, max: 100, unit: '%', warn: 20, x: P(0.75, 0.5), y: P(0.35, 0.25) });
+    // the decision, then dawn at the window and the closing card
+    F.section(b(20), 3, { name: 'dawn', hit: true });
+    { const S = L.shot(b(20), F.duration, { dip: 0.6, ambient: [36, 34, 40] }); S.add([PR.room({ floor: 330, wall: '#5a5660' }), PR.window({ x: -260, y: -600, w: 520, h: 560, dawn: (t) => 0.6 + 0.4 * PROMO.seg(t, b(20), F.duration), floor: 330, dir: [0.15, 1] })]);
+      S.cam({ x: 0, y: -260, h: P(1000, 1100) }, { x: 0, y: -300, h: P(820, 920) });
+      const A = S.actor('you', { x: 0, feet: 390, s: 1.15, pose: 'window' }); A.act(b(21), b(23), 'breathe'); A.pose(b(22.5), { ...L.POSES.window, aR: 30, eR: 120 }, 0.9); F.sfx(b(22.5), 'glow', 0.5); }
+    L.title(b(24), F.duration, M('标题', 'TITLE'), { sub: 'SUBTITLE' });
+  },
+});
+</script></body></html>

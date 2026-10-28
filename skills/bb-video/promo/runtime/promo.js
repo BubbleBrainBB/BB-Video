@@ -356,6 +356,8 @@
     // How long the picture may hold completely still before the frame check calls it frozen (default 0.6 s). A style whose medium
     //   holds still between moves (pixel art steps in whole cells at 2–4 fps) raises it; the dead-air check (≥ 1.2 s) still applies
     stillMax(sec) { this._stillMax = Math.max(this._stillMax ?? 0.6, sec); }
+    // The cover frame (out/cover.png, the thumbnail) chosen by a style component (e.g. lumen's L.cover); compose's own cover option wins
+    coverAt(t) { this._coverAt = t; }
     // Default motion-blur sub-frames for the final render (promo default 6). A style whose camera only pushes slowly (archive photos, a newsreel)
     //   sets 1: every frame is rendered once, which matters when the page is heavy (film damage). Spans registered with F.blur still get theirs
     blurBase(n) { this._blurBase = n; }
@@ -1317,7 +1319,7 @@
         };
         window.__audioPlan = () => ({ bpm: F.bpm, offset: F.offset, duration: F.duration, music: o.music || {}, sections: F.sections, sfx: F.sfxList, moments: moments(), hush: F.hushes || [] });
         window.__texts = () => [...new Set([...F.texts.filter((x) => x.kind !== 'caption' && !x.noFact).map((x) => x.text), ...(F.facts || [])].filter(Boolean))];
-        window.__coverAt = o.cover ?? null; // which frame (seconds) to use as the cover; frame 0 if unset
+        window.__coverAt = o.cover ?? F._coverAt ?? null; // which frame (seconds) to use as the cover; frame 0 if unset
         window.__textWins = () => [...F.texts.map((x) => ({ text: x.text, kind: x.kind, a: x.win[0], b: x.win[1] })), ...(F.factWins || [])]; // for the review report and the dead-air check
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
