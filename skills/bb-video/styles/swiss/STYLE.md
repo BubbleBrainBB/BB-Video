@@ -4,7 +4,7 @@
 
 A frame is a Swiss International Typographic Style poster in motion. Huge grotesk type is the picture: words fill the frame, are set tight, and are cropped by its edge. The ground is off-white grid paper, with black and **one** accent colour taken from the product's brand. Micro meta labels sit in the corners (index numerals `.1 .2`, a date, a section name), with big arrows → and hairline rules on a grid. Type is never switched on: letters rise one by one out of their line, sentences rise word by word, digits roll in strips. Information is told typographically: numbered lists, check-chip card grids, giant numerals, flat bar charts, old / new side by side, and real screenshots placed as poster elements with accent marks. Between scenes the ground flips (paper → black → accent), whips, drops bands or opens a dot.
 
-Runtime: `runtime/swiss.js` (`PROMO.swiss(F, opt)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style swiss`, promo `node scripts/new.mjs <dir> --style swiss` (add `--quick` for the quick version). Starter page: `styles/swiss/index.html`. Sample film: a launch-day film about a benchmark (Artificial Analysis Intelligence Index v5), in the README gallery.
+Runtime: `runtime/swiss.js` (`PROMO.swiss(F, opt)`). New project: explainer `node explainer/scripts/new.mjs <dir> --style swiss`, promo `node scripts/new.mjs <dir> --style swiss` (add `--quick` for the quick version). Starter page: `styles/swiss/index.html`.
 
 The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick version's big-type format (`templates/formats/kinetic.html`).
 
@@ -13,7 +13,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
 - Orbit rings and the extruded glyph turn slowly (`spin` ≤ 30°/s); the pattern wall drifts, it never strobes.
 
 ## 1. When to use
-- **Launches, announcements and numbers**: benchmark and report releases, product launches with a few strong facts, annual results, "what's new in v5".
+- **Launches, announcements and numbers**: benchmark and report releases, product launches with a few strong facts, annual results, "what's new in 3.0".
 - **Lists and structure**: what something is made of (numbered lists), feature sets (chip grids), rankings and prices (bars), before / after (old / new).
 - Design, editorial, developer and data products; brands with one strong colour.
 - Less suited: warm, hand-made products (cut-out, origami); stories with named people (this style has no characters, `../CHARACTERS.md`); content that needs lots of photos for mood.
@@ -38,7 +38,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
   - `X.meta`: wiped in from the left.
   - `X.stat`: digits roll in strips.
 - Long Latin words may be hyphenated across lines (`'Intelli-\ngence'`), Swiss-poster fashion. `bleed: true` lets poster type run off the frame edge on purpose (the edge / top checks skip it) — only when the cropped part isn't the information: never crop a number, a version or a name.
-- `mark: 'v5'` sets substrings in the accent; `colors: [...]` colours whole lines.
+- `mark: '2.0'` sets substrings in the accent; `colors: [...]` colours whole lines.
 
 ## 5. Motion
 - Letters rise with a cubic ease-out, staggered 20–45 ms; the rise time grows with the type size so no letter travels more than ~5.5% of the frame per frame.
@@ -74,7 +74,7 @@ The id is `swiss`, not `kinetic`: `kinetic` is already the name of the quick ver
 
 ## 8. Signature moves (pick per film)
 - **The poster assembles, then pulls out into a wall of itself** (`X.wall`): at `at` a still copy of the scene is tiled around it in the other grounds (black / accent / paper) and the camera pulls out. Best right after the hook poster lands.
-- **Giant numeral cards on hard cuts**: one fact per card — `X.stat` + the benchmark / feature name + one line — each card on a new ground, cut on the beat. This is the burst.
+- **Giant numeral cards on hard cuts**: one fact per card — `X.stat` + the feature / item name + one line — each card on a new ground, cut on the beat. This is the burst.
 - **Text-pattern wall** (`X.pattern`): a phrase repeated in rows drifting in opposite directions, grey, flipping to the accent row by row on a beat.
 - **Extruded glyph** (`X.extrude`): a numeral or letter extruded and turning in 3D, inside dotted orbit rings (`X.orbits`), for the drop (the leader's score, the version number).
 - **Nested frames** (`X.frames`): rounded frames push in around one punchy line in a black pill.

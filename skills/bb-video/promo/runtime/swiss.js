@@ -51,7 +51,7 @@
   const contrast = (a, b) => { const p = relL(a), q = relL(b); return (Math.max(p, q) + 0.05) / (Math.min(p, q) + 0.05); };
   // size after fonts load; hidden ancestors (a scene not on screen at prep time) are shown for the moment of measuring — a display:none element measures 0
   const measure = (e) => { const hid = []; for (let n = e; n && n !== document.body; n = n.parentElement) if (n.style.display === 'none') { hid.push(n); n.style.display = ''; } e._w = e.offsetWidth; e._h = e.offsetHeight; for (const n of hid) n.style.display = 'none'; };
-  // a number inside a string ('$13.04', '58', '46%', '35k', '1,000') → its parts, for counting and rolling
+  // a number inside a string ('$9.99', '42', '46%', '35k', '1,000') → its parts, for counting and rolling
   const numParts = (s) => { const m = /^(.*?)(-?[\d,]*\.?\d+)(.*)$/.exec(String(s)); if (!m) return null; const raw = m[2], dec = raw.includes('.') ? raw.split('.')[1].length : 0; return { pre: m[1], num: Number(raw.replace(/,/g, '')), dec, comma: raw.includes(','), post: m[3] }; };
   const fmt = (p, v) => { let s = v.toFixed(p.dec); if (p.comma) s = s.replace(/\B(?=(\d{3})+(?!\d))/g, ','); return p.pre + s + p.post; };
 
@@ -122,7 +122,7 @@
         const mask = el('div', `position:relative;height:${f1(LH)}px;white-space:pre;font:${weight} ${f1(size)}px/${f1(LH)}px ${X.font};letter-spacing:${track}em;color:${C((o.colors && o.colors[li]) ?? o.color, 'ink')};text-align:${align};${li < lines.length - 1 ? `margin-bottom:${f1(size * lead - LH)}px;` : ''}`, wrap);
         const inner = el('span', 'position:relative;display:inline-block', mask);
         const bits = by === 'line' ? [ln] : by === 'word' ? ln.split(/(\s+)/).filter((x) => x) : [...ln];
-        // mark: substrings set in the accent colour ('v5' in "Index v5")
+        // mark: substrings set in the accent colour ('2.0' in "Studio 2.0")
         const hot = new Set(); for (const m of [].concat(o.mark ?? [])) { let i = ln.indexOf(m); while (m && i >= 0) { for (let k = i; k < i + m.length; k++) hot.add(k); i = ln.indexOf(m, i + m.length); } }
         let pos = 0;
         for (const b of bits) { const s = el('span', `position:relative;display:inline-block;white-space:pre${hot.has(pos) ? `;color:${C(o.markColor, 'acc')}` : ''}`, inner); s.textContent = b; pos += b.length; if (b.trim()) parts.push({ s, li }); }
