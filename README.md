@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 25 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 26 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -40,6 +40,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `swiss` | Swiss poster kinetic typography: giant grotesk type cropped by the frame edge on a grid, black plus one accent taken from the brand; letters rise one by one, digits roll into place, the poster pulls out into a wall of its colour variants, a word repeats into a full-screen pattern; the information is typography too: numbered lists, check-chip grids, giant numerals, bar charts, old / new comparisons, real screenshots annotated like poster elements |
 | `lumen` | a dark motivational animated short: a code-drawn room nearly all black, lit by one motivated light — a phone screen on a face, a red alarm clock, a desk lamp, moonlight through blinds, dawn at a window — with rim light, a giant shadow on the wall, haze and grain; one original protagonist (a soft square head, a cowlick that shows the mood) acts everything with eyes and brows; slow push-ins that hold on the face, a low second-person voice, white thumbnail-style title cards; facts told in light: a clock racing, gauges, the night as a line, an x-ray of the head |
 | `blueprint` | a blueprint engineering drawing: cyanotype paper with a grid, white line work drafted in construction lines first, dimensions, leaders with numbered balloons, hatched sections, a parts list, a title block and one red pencil; mechanisms really work — gear trains mesh and turn at the right ratios, an escapement locks and releases, springs wind down, cams and levers move — in slow motion or time-lapse shown on the sheet; each subject arrives on a new sheet, and the camera pushes into a detail while the rest of the drawing falls back |
+| `collage` | a paper-collage news explainer: one take across a table covered in torn paper — halftone photos with credits, faded poster layers, red rubber stamps, a typewriter quote with a highlighter sweep, tape and push pins; the camera floats, pushes in and travels with depth of field; numbers and history are told with paper props — a paper-doll grid that turns red, a red thread pinned along a timeline, cut-paper bars on notebook paper, a line chart on graph paper with pins riding the lines, a big character printed on a certificate; a fixed frame with channel, date and a source line |
 
 What it covers:
 
@@ -211,6 +212,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>blueprint</code></b> · What happens inside a mechanical watch: mainspring, going train, escapement, balance, motion work — drawn and running at the right ratios<br>
 <sub>A generic, illustrative movement · facts from Wikipedia</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/blueprint.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/collage.mp4"><img src="examples/collage/preview.gif" width="100%" alt="collage"></a><br>
+<b><code>collage</code></b> · Gold, from $35 to $5,318: the 1934 peg, Bretton Woods, Nixon closing the gold window, central banks buying, and 2026's record and sell-off<br>
+<sub>Photos via Wikimedia Commons: NARA, Oliver F. Atkins (public domain), Stevebidmead (CC0) · prices: COMEX, World Gold Council, Reuters</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/collage.mp4">Full video</a>
 </td>
 </tr>
 </table>

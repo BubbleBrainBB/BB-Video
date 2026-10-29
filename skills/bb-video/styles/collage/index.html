@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · collage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/700-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/special-elite@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/collage.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · paper-collage, on the beat (promo). Read styles/collage/STYLE.md first.
+// The product told as clippings on one table: its real screenshot printed and taped down, the claims on torn strips, the numbers rolled
+// on paper, one stamp for the one thing that matters; the camera floats and travels across the table in one take. Every word on paper
+// must be in brief.md (no filler copy on posters or cards).
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0.4, duration: 24, grain: false,
+  theme: { bg: '#e7dfc9', fg: '#1d1b18', ink: '#1d1b18', muted: '#6b665c', accent: '#b3282d', paper: '#f2ede1', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), C = PROMO.collage(F, { channel: '__TITLE__' }), L = C.L;
+    C.bed({ x: -600, y: -400, w: 6400, h: 1800, words: ['__TITLE__'], seed: 7 });
+
+    // ---- hook (beats 0–8): the name printed big, a strip with the one-line promise ----
+    const name = C.big('__TITLE__', { ...L({ x: 200, y: 260, size: 220 }, { x: 40, y: 300, size: 140 }), at: b(2) });
+    const line = C.label(M('一句话说清它做什么', 'One line on what it does'), { ...L({ x: 220, y: 560, size: 56 }, { x: 40, y: 560, size: 44 }), at: b(4) });
+    C.cam(0, { on: name, pad: 2 });
+    C.move(b(1), b(5), C.group(name, line).view(1.2), E.sine);
+    F.section(0, 1, { name: 'hook' });
+
+    // ---- build (beats 8–16): the real screenshot printed and taped, a number rolled, a highlight on its words ----
+    //   (put the screenshot in assets/ and use C.piece + an <img>, or kit.js's S.shot; never halftone a UI)
+    const n = C.number({ ...L({ x: 2000, y: 260, size: 200 }, { x: 1800, y: 300, size: 130 }), from: 0, to: 100, unit: '%', sub: M('一个真实的数字（写进 brief.md）', 'A real number (in brief.md)'), at: b(10), color: 'ink' });
+    C.move(b(8), b(10), n.view(1.4));
+    F.section(b(8), 2, { name: 'build' });
+
+    // ---- the one thing that matters (beats 16–24): a stamp, then the url on a ticket ----
+    const st = C.stamp(M('就是它', 'THIS'), { ...L({ x: 2050, y: 620 }, { x: 1850, y: 640 }), at: b(17) });
+    const url = C.label('example.com', { ...L({ x: 2700, y: 420, size: 60 }, { x: 1860, y: 900, size: 46 }), font: 'type', at: b(21) });
+    C.move(b(19), b(21), C.group(n, st, url).view(1.15));
+    F.section(b(16), 3, { name: 'drop', hit: true });
+  },
+});
+</script></body></html>

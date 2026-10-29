@@ -785,6 +785,123 @@
     },
   });
 
+  // ======================= Paper-collage explainer =======================
+  P.kit.register('collage', {
+    runtime: 'collage',
+    theme: { bg: '#e7dfc9', fg: '#1d1b18', ink: '#1d1b18', paper: '#f2ede1', accent: '#b3282d', muted: '#6b665c', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif', script: '"Noto Serif SC", serif', mono: '"Courier Prime", monospace' } },
+    make(F, opt) {
+      const C = P.collage(F, { ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, g = C.g(1), C2 = C.colors, d = (v) => v / g, fz = (sz) => F.px(sz) / g;   // d: frame px → table units; fz: a kit font size (1080p design px) → table units
+      const S = { lead: 0.35, push: 0.006, ink: C2.ink, paper: C2.paper, colors: [C2.red, C2.blue, C2.green, C2.ink], raw: C };
+      const BEDS = ['news', 'ledger', 'graph', 'news'];
+      // background: the paper table with a few faded torn blocks and dot panels round the edges (no words: words on paper must be real copy); variant changes the ground
+      S.bg = (layer, o = {}) => {
+        const v = (o.variant ?? 0) % 4, ground = v === 1 ? '#e8d5cb' : C2.table;
+        layer.style.backgroundColor = ground; layer.style.backgroundImage = v === 2 ? `linear-gradient(rgba(90,130,120,.16) 1px, transparent 1px),linear-gradient(90deg, rgba(90,130,120,.16) 1px, transparent 1px),url(${C.tex('table')})` : `url(${C.tex('table')})`; layer.style.backgroundSize = v === 2 ? `${g * 60}px ${g * 60}px,${g * 60}px ${g * 60}px,${g * 240}px` : `${g * 240}px`;
+        const r = window.EV.rng(31 + v * 17), n = PT ? 6 : 8;
+        for (let i = 0; i < n; i++) { const edge = i % 4, pw = 220 + r() * 300, ph = 260 + r() * 300, fx = d(W), fy = 1000; const x = edge === 0 ? -pw * 0.55 : edge === 1 ? fx - pw * 0.45 : r() * fx - pw / 2, y = edge === 2 ? -ph * 0.6 : edge === 3 ? fy - ph * 0.4 : r() * fy - ph / 2; C.poster({ layer, x, y, w: pw, h: ph, rot: (r() - 0.5) * 12, dots: r() < 0.5 ? { x: r() * 0.4, y: r() * 0.4 } : null, seed: 400 + v * 31 + i, at: 0, enter: 'none', wash: 0.5 }); }
+        return { el: layer };
+      };
+      // big word: a heavy serif printed onto the table (pressed in with a little ink spread)
+      S.word = (layer, o) => { const size = Math.min(fz(o.size ?? (PT ? 150 : 200)), d(o.maxW ?? W * 0.86) / Math.max(1, estUnits(o.text)) / 1.02), w = estUnits(o.text) * size * 1.02;
+        return C.big(o.text, { layer, x: d(o.x ?? W / 2) - w / 2, y: d(o.y ?? H * 0.42) - size * 0.56, size, at: o.at - 0.1, until: o.until, color: (o.variant ?? 0) % 2 ? C2.ink : C2.red, rot: 0 }); };
+      // a sentence: typed on a torn strip of white paper (wraps; the strip grows to fit)
+      const strip = (layer, o, size) => {
+        const maxW = d(o.maxW ?? W * (PT ? 0.86 : 0.72)), wu = estUnits(o.text) * size * 1.06, rows = Math.max(1, Math.ceil(wu / (maxW - 90))), w = Math.min(maxW, wu + 90), h = rows * size * 1.5 + 50;
+        const cx = d(o.x ?? W / 2), x = o.align === 'left' ? cx : cx - w / 2, y = d(o.y ?? H * 0.68) - h / 2;
+        const pc = C.piece({ layer, x, y, w, h, paper: 'white', torn: 'lr', at: o.at - S.lead, until: o.until, enter: 'slap', rot: (o.rot ?? -1), depth: 'top' });
+        const box = el('div', `inset:0;padding:0 ${f1(g * 40)}px;display:flex;align-items:center;justify-content:${o.align === 'left' ? 'flex-start' : 'center'}`, pc.face), e = document.createElement('div'); box.appendChild(e);
+        e.style.cssText = `font:700 ${f1(g * size)}px/1.5 ${C.fonts.serif};color:${C2.ink};text-align:${o.align === 'left' ? 'left' : 'center'}`; e.textContent = o.text; C.textOf(pc, e, o.kind ?? 'label', o.text);
+        return pc;
+      };
+      S.line = (layer, o) => strip(layer, o, fz(Math.min(56, o.size ?? 46)));
+      // card: a torn white sheet taped down; content goes in the returned element (frame px from its top-left)
+      S.card = (layer, o) => {
+        const pc = C.piece({ layer, x: d(o.x - o.w / 2), y: d(o.y - o.h / 2), w: d(o.w), h: d(o.h), paper: 'white', torn: 'tb', tape: ['tl', 'tr'], at: o.at - S.lead, until: o.until, enter: 'drop', rot: 0, z: o.z });
+        const c = el('div', 'inset:0', pc.face);
+        return { el: c, w: o.w, h: o.h };
+      };
+      // screenshot: printed as it is (never halftoned) on photo paper with a white border, taped at the top
+      S.shot = (layer, o) => {
+        const fit = o.fit === 'contain', bw = fit ? 0 : 14;
+        const pc = C.piece({ layer, x: d(o.x - o.w / 2) - bw, y: d(o.y - o.h / 2) - bw, w: d(o.w) + bw * 2, h: d(o.h) + bw * 2, paper: fit ? null : 'white', torn: '', tape: fit ? [] : ['t'], at: o.at - S.lead, until: o.until, enter: 'drop', rot: 0, z: o.z ?? 9, shadow: !fit });
+        const box = el('div', `left:${f1(g * bw)}px;top:${f1(g * bw)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden`, pc.face);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      };
+      // signature move: a red rubber-stamp ring pressed round the spot (worn ink, at an angle)
+      S.accent = (layer, o) => {
+        const r = d(F.px(o.size ?? 200)) * 0.95, at = o.at + 0.05;
+        const pc = C.piece({ layer, x: d(o.x) - r * 1.25, y: d(o.y) - r * 0.75, w: r * 2.5, h: r * 1.5, paper: null, torn: '', at, until: o.until, enter: 'none', rot: -6, depth: 'top' });
+        const ring = el('div', `inset:0;border:${f1(g * 9)}px solid ${C2.red};border-radius:50%;opacity:.85;mix-blend-mode:multiply`, pc.face);
+        F.add((t) => { const q = E.quartOut(seg(t, at, at + 0.14)); set(ring, { transform: `scale(${(1.35 - 0.35 * q).toFixed(3)})`, opacity: (0.85 * Math.min(1, q * 2.5)).toFixed(3) }); });
+        F.sfx(at + 0.1, 'stamp', 0.6);
+        return {};
+      };
+      // transition: a big torn sheet of paper slides across the frame and covers it; the next scene is under it when it slides off
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none', 90);
+        const at = o.cover, dur = 0.8, sheet = el('div', `top:${f1(-H * 0.1)}px;left:0;width:${f1(W * 1.25)}px;height:${f1(H * 1.2)}px;background-color:${C2.paper};background-image:url(${C.tex('white')});background-size:${f1(g * 240)}px;filter:drop-shadow(${f1(g * -12)}px 0 ${f1(g * 14)}px rgba(50,32,14,.35));display:none`, wl);
+        sheet.style.clipPath = `polygon(${Array.from({ length: 41 }, (_, i) => `${(3 + 3 * Math.sin(i * 1.7) + 2 * Math.sin(i * 4.1)).toFixed(2)}% ${(i * 2.5).toFixed(1)}%`).join(',')},100% 100%,100% 0%)`;
+        sheet.dataset.motion = 'skip';
+        F.add((t) => { const on = t >= at - dur / 2 && t < at + dur / 2; set(sheet, { display: on ? '' : 'none' }); if (on) set(sheet, { transform: `translateX(${f1(W * 1.05 - seg(t, at - dur / 2, at + dur / 2, E.cubicInOut) * W * 2.4)}px) rotate(-2deg)` }); });
+        F.sfx(at - dur / 2, 'slide', 0.5, { dur }); F.transition(at - dur / 2, at + dur / 2); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the name printed big, the line on a torn strip, the url typed on a ticket, a stamp
+      S.end = (layer, o) => {
+        const cy = H * (PT ? 0.36 : 0.38), size = Math.min(fz(PT ? 130 : 170), d(W * 0.84) / Math.max(1, estUnits(o.title)) / 1.02), w = estUnits(o.title) * size * 1.02;
+        C.big(o.title, { layer, x: d(W / 2) - w / 2, y: d(cy) - size * 0.56, size, at: o.at + 0.5, color: C2.ink, rot: 0, kind: 'logo', fact: false });
+        if (o.tagline) strip(layer, { text: o.tagline, at: o.at + 1.2, x: W / 2, y: cy + size * g * 0.95, kind: 'endcard' }, fz(PT ? 40 : 46));
+        if (o.url) { const us = fz(48), uw = estUnits(o.url) * us + 60, pc = C.piece({ layer, x: d(W / 2) - uw / 2, y: d(cy) + size * 1.7, w: uw, h: us * 1.9, paper: 'white', torn: 'lr', at: o.at + 1.7, enter: 'slap', rot: 1.5, depth: 'top' }); const e = el('div', `left:0;right:0;top:${f1(g * us * 0.35)}px;text-align:center;font:700 ${f1(g * us)}px/1.2 ${C.fonts.type};color:${C2.ink}`, pc.face); e.textContent = o.url; C.textOf(pc, e, 'endcard', o.url, { fact: false }); }
+        F.sfx(o.at + 2.1, 'stamp', 0.45);
+      };
+      // ---- Telling information (collage): steps are tickets pinned along a red thread; contrast is two torn sheets, the winner ringed; numbers are paper strips on notebook paper; a spot on the UI is a lens with a red ring ----
+      S.steps = (layer, o) => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h, sz = Math.max(fz(30), Math.min(fz(PT ? 40 : 44), d(row ? R.w / k : R.w) / 7));
+        const pos = items.map((_, j) => lanePos(R, k, j, row)).map((p2) => [d(p2.x), d(p2.y)]);
+        const thr = document.createElementNS(NS, 'svg'); thr.setAttribute('viewBox', `0 0 ${d(W)} 1000`); thr.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;overflow:visible;z-index:2;pointer-events:none`; layer.appendChild(thr);
+        return items.map((it, j) => {
+          const [x, y] = pos[j], t0 = T[j];
+          if (j) { const [px, py] = pos[j - 1], ln = document.createElementNS(NS, 'path'); ln.setAttribute('d', `M${px},${py} Q${(px + x) / 2},${(py + y) / 2 + 30} ${x},${y}`); ln.setAttribute('stroke', C2.red); ln.setAttribute('stroke-width', 3.5); ln.setAttribute('fill', 'none'); thr.appendChild(ln); const L2 = Math.hypot(x - px, y - py) * 1.1; ln.setAttribute('stroke-dasharray', L2); F.add((t) => { ln.setAttribute('stroke-dashoffset', (L2 * (1 - seg(t, t0 - 0.4, t0, E.sine))).toFixed(1)); set(thr, { display: t < (until ?? 1e9) ? '' : 'none' }); }); F.sfx(t0 - 0.4, 'string', 0.3, { dur: 0.4 }); }
+          const tk = C.piece({ layer, x: x - 46, y: y - 46, w: 92, h: 92, paper: it.hot ? 'red' : 'white', torn: 'tb', at: t0 - 0.15, until, enter: 'slap', rot: j % 2 ? 4 : -4, depth: 'top' });
+          const num = el('div', `left:0;right:0;top:${f1(g * 14)}px;text-align:center;font:400 ${f1(g * 54)}px/1.1 ${C.fonts.old};color:${it.hot ? '#f4efe2' : C2.ink}`, tk.face); num.textContent = String(j + 1); C.textOf(tk, num, 'label', String(j + 1), { fact: false });
+          const lw = row ? d(R.w / k) * 0.92 : d(R.w) - 140, lx = row ? x - lw / 2 : x + 70, ly = row ? y + 70 : y - sz * 0.75;
+          const lb = C.piece({ layer, x: lx, y: ly, w: lw, h: sz * 1.5 + (it.note ? sz * 1.1 : 0) + 20, paper: null, torn: '', at: t0 + 0.15, until, enter: 'fade', rot: 0 });
+          const e = el('div', `left:0;right:0;top:${f1(g * 8)}px;font:700 ${f1(g * sz)}px/1.3 ${C.fonts.serif};color:${C2.ink};text-align:${row ? 'center' : 'left'}`, lb.face); e.textContent = it.text; C.textOf(lb, e, 'label', it.text);
+          if (it.note) { const nn = el('div', `left:0;right:0;top:${f1(g * (sz * 1.45 + 8))}px;font:500 ${f1(g * sz * 0.62)}px/1.3 ${C.fonts.sans};color:#5a554c;text-align:${row ? 'center' : 'left'}`, lb.face); nn.textContent = it.note; C.textOf(lb, nn, 'label', it.note); }
+          return { x: x * g, y: y * g };
+        });
+      };
+      S.versus = (layer, o) => {
+        const { cols, T, at2, until, C: R } = o, k = cols.length, stack = R.w < R.h * 1.1, gap = 30;
+        const cw = d(stack ? R.w : (R.w - gap * (k - 1)) / k), ch = d(stack ? (R.h - gap * (k - 1)) / k : R.h), x0 = d(R.x), y0 = d(R.y);
+        return cols.map((c, j) => {
+          const x = stack ? x0 : x0 + j * (cw + d(gap)), y = stack ? y0 + j * (ch + d(gap)) : y0;
+          const pc = C.piece({ layer, x, y, w: cw, h: ch, paper: j % 2 ? 'news' : 'white', torn: 'all', tape: ['t'], at: T[j] - 0.3, until, enter: 'drop', rot: j % 2 ? 1.5 : -1.5 });
+          const ts = fz(PT ? 50 : 58), tt = el('div', `left:${f1(g * 30)}px;right:${f1(g * 30)}px;top:${f1(g * 28)}px;font:900 ${f1(g * ts)}px/1.2 ${C.fonts.serif};color:${C2.ink}`, pc.face), tsp = document.createElement('span'); tsp.textContent = c.title; tt.appendChild(tsp); C.textOf(pc, tt, 'label', c.title);
+          (c.points || []).forEach((pt, r) => { const pa = at2(j, r), e = el('div', `left:${f1(g * 34)}px;right:${f1(g * 30)}px;top:${f1(g * (ts * 1.6 + 40 + r * fz(PT ? 54 : 60)))}px;font:500 ${f1(g * fz(PT ? 34 : 38))}px/1.35 ${C.fonts.sans};color:#2f2b26`, pc.face); e.textContent = '— ' + ptText(pt); C.textOf(pc, e, 'label', ptText(pt), { at: pa }); F.add((t) => set(e, { opacity: seg(t, pa, pa + 0.3).toFixed(3) })); F.sfx(pa, 'key', 0.25); });
+          if (c.hot) C.ring(C.target(pc, tsp), { at: T[j] + 0.6, until, pad: 0.12 });
+          return { x: (x + cw / 2) * g, y: (y + ch / 2) * g };
+        });
+      };
+      S.figures = (layer, o) => {
+        const { data, ats, until, C: R } = o, k = data.length, bw = d(R.w) - 230 - 260, rh = Math.min(110, d(R.h) / (k + 0.6));
+        const pc = C.bars({ layer, x: d(R.x), y: d(R.y), w: d(R.w), h: rh * k + 80, barW: Math.max(120, bw), rowH: rh, rot: -1, at: ats[0] - 0.4, until, enter: 'drop', torn: 'tb', unit: o.unit ?? '', labelSize: Math.min(44, rh * 0.42), valueSize: Math.min(40, rh * 0.38),
+          rows: data.map((row, j) => ({ label: String(row[0]), value: +row[1], text: `${o.prefix ?? ''}${(+row[1]).toFixed(o.decimals ?? 0)}${o.unit ?? ''}`, color: (o.hot || []).includes(j) ? 'red' : 'green', at: ats[j] })) });
+        return data.map((_, j) => ({ x: R.x + R.w * 0.5, y: (pc.y + 70 + j * rh) * g }));
+      };
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(10))}px ${C2.paper}, 0 0 0 ${f1(F.px(16))}px ${C2.red}, ${f1(F.px(6))}px ${f1(F.px(10))}px ${f1(F.px(18))}px rgba(50,32,14,.45)`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30 }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.ink, accent: C2.red, colors: [C2.red, C2.blue, C2.green, '#d9c58e'], font: C.fonts.serif, display: C.fonts.serif, weight: 900, line: F.px(3), outline: null, radius: 0, mark: C2.mark, cutSfx: 'slap', flashAt: 'corner',
+        flashBg: (col) => `background-color:${col};background-image:url(${C.tex('table')});background-blend-mode:multiply;background-size:${f1(g * 240)}px` });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -1658,6 +1775,7 @@
     return { theme: { accent: acc, ...(deep ? { ink: deep, fg: deep } : {}) }, kit: { accent: acc, ...(deep ? { colors: { ink: deep } } : {}) }, color: acc };
   };
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
+  KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged
   KITS.op.tint = (c) => {   // op: the brand colour is the stripe colour, the black/white ground stays; it must be saturated enough to "dazzle"

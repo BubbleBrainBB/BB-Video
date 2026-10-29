@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · collage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/700-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/special-elite@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/collage.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · paper-collage explainer (narrated). Hand-written PROMO.compose: every move is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md — every word printed on paper (labels, posters, quotes, numbers) is traced there — then the
+// treatment (styles/collage/STYLE.md). Lay the pieces out on one table, then write the camera: one take, C.move from piece to piece.
+// Chapters: give lines a "chapter" in script.json (the chrome shows it top left). Photos: licence-clean only (scripts/footage.mjs), credited on the source line.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 92, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#e7dfc9', fg: '#1d1b18', ink: '#1d1b18', muted: '#6b665c', accent: '#b3282d', paper: '#f2ede1', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    // an invented channel name (never a real outlet's)
+    const C = PROMO.collage(F, { channel: M('拼贴社', 'Collage Desk') });
+    const L = C.L;   // C.L(landscape, portrait): a value for each aspect
+
+    // the background bed: torn coloured paper, dot panels and a few big words — only real words from brief.md
+    C.bed({ x: -400, y: -300, w: 4200, h: 1700, words: [M('关键词', 'KEYWORD')], seed: 11 });
+
+    // l1 · the opener: a halftone photo with its caption, a big printed character, a stamp
+    const p1 = C.photo('coins', { x: 300, y: 160, w: 760, h: 520, caption: { zh: M('标题', 'Title'), en: 'ENGLISH LINE · 2026' }, rot: -3, tape: ['tl', 'tr'] });
+    C.big(M('字', 'A'), { x: 1100, y: 180, size: 320, at: w('l1', M('字', 'A')) });
+    C.cam(0, { on: p1, pad: 1.6 });
+    C.move(s('l1'), e('l1'), { on: p1, pad: 1.25 });
+    C.dateline(0, '2026.10 · ' + M('地点', 'Place'));
+
+    // … one block per line: lay the next piece out further along the table and move the camera to it as the line starts.
+    //   numbers: C.number / C.bars / C.chart · shares: C.dolls · history: C.timeline · ranks: C.ladder / C.podium · who: C.card
+    //   quotes: C.type (types on, then a highlighter) · a turn: C.title(a, b, { text: ['两字'] }) · the key word: C.stamp
+
+    // the end: the source card
+    const z = e('l1') + 0.6;
+    C.end(z, F.duration, { title: M('一句话总结', 'One-line takeaway'), sources: [M('资料来源写在这里（机构 · 日期）', 'Sources here (issuer · date)')] });
+    C.source(0, M('来源：……', 'Source: …'), z);
+
+    F.section(0, 1, { name: 'open' });
+    F.section(z, 1, { name: 'close' });
+  },
+});
+</script></body></html>

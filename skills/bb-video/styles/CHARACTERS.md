@@ -51,7 +51,7 @@ Also:
 | `manga` | Code-drawn manga characters on a jointed rig (`P.char`, `styles/manga/STYLE.md` §10): full figure, bust, face, eye close-up, chibi, silhouette | `R.cast({ … })` + `P.char('Name', …)` | `faceTo: other` / `facing` when placed; two panels side by side facing each other (VS) | `punch` / `dash` / `fall` poses, `P.fist`, `C.hit` (knocked back), shake and flash on the hit | yes |
 | `lumen` | One minimal original protagonist on a front-view rig, lit by the scene's light (`S.actor`, `styles/lumen/STYLE.md` §9): expressions (eyes, brows, cowlick), poses in bed / at a desk / at a window, acts (scroll, walk, jolt, sigh…) | `L.cast({ … })` + `S.actor('Name', …)` | `turn` ±0.6 or `flip` toward the other | `jolt`, `tremble`, `slump`, being dragged up (`move` from lying to sitting); no fight | yes |
 | `cutout` | Anonymous paper figures (`C.figure`) — "users", "the community" | — | — | — | — |
-| `pop`, `riso`, `origami`, `op`, `ascii`, `launch`, `bauhaus`, `swiss`, `blueprint` | No characters | — | — | — | — |
+| `pop`, `riso`, `origami`, `op`, `ascii`, `launch`, `bauhaus`, `swiss`, `blueprint`, `collage` | No characters | — | — | — | — |
 
 **When the content is a story with named people**, recommend a style that has characters:
 
@@ -67,5 +67,5 @@ Also:
 
 In a style without characters, tell the story with the style's own devices and keep the rules in spirit:
 - **pop**: a dialogue is two speech bubbles from opposite sides of the panel, each with the speaker's name, alternating.
-- **launch / riso / origami / op / ascii / bauhaus / swiss / blueprint**: one name card per person, always in the same colour and position; a confrontation is two cards facing each other (the style's `versus`).
+- **launch / riso / origami / op / ascii / bauhaus / swiss / blueprint / collage**: one name card per person, always in the same colour and position; a confrontation is two cards facing each other (the style's `versus`).
 - Say in the storyboard that the style has no characters.

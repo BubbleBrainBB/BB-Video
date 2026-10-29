@@ -985,7 +985,8 @@
     // Elements clearly rotating about X / Y (cube transitions, flipping text) have projected bounding boxes that can't be measured: skip while rotating
     const tilted = (cs) => { if (!cs.transform.startsWith('matrix3d(')) return false; const m = cs.transform.slice(9, -1).split(',').map(Number); return Math.abs(m[2]) + Math.abs(m[6]) + Math.abs(m[8]) + Math.abs(m[9]) > 0.05; };
     // data-lint-skip="1": a component saying "I can't be measured right now" (e.g. origami half folded, the flat part clipped by clip-path): skip meanwhile
-    const vis = (e) => { for (let n = e; n && n !== F.stage; n = n.parentElement) { if (n.dataset && n.dataset.lintSkip === '1') return false; const cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.15 || tilted(cs)) return false; } return true; };
+    //   data-tilt-ok="1": a camera that only tilts a little (collage's paper table, ≤ ~20°): projected boxes are still measurable, so its text is checked
+    const vis = (e) => { for (let n = e; n && n !== F.stage; n = n.parentElement) { if (n.dataset && n.dataset.lintSkip === '1') return false; const cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.15 || (tilted(cs) && !(n.dataset && n.dataset.tiltOk === '1'))) return false; } return true; };
     const sr = F.stage.getBoundingClientRect();
     const box = (e) => { const r = e.getBoundingClientRect(); return { x: r.left - sr.left, y: r.top - sr.top, w: r.width, h: r.height }; };
     // The area the text actually covers (not the element box): full-width centred text elements have boxes far bigger than the text; zoom in a little and the box "leaves the frame"
