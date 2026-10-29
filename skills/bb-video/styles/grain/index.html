@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · grain</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#f7f3e9}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/grain.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · flat grain illustration, on the beat (promo). Read styles/grain/STYLE.md first.
+// The product told as a little illustrated world on one ground line: the problem as a scene, the product arriving and the scene transforming,
+// one number ticking on a sign, one circular close-up on the detail that matters. Every word on screen must be in brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 100, offset: 0.4, duration: 16, grain: false,
+  theme: { bg: '#f7f3e9', fg: '#1b2b55', ink: '#1b2b55', muted: '#5470b4', accent: '#ef6a5e', paper: '#f7f3e9', fonts: { display: '"Inter", "Noto Sans SC", sans-serif', serif: '"Inter", "Noto Sans SC", sans-serif', sans: '"Inter", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), G = PROMO.grain(F, {}), L = G.L;
+    G.ground({ from: -1800, to: 1800 });
+    G.hill({ x: L(-640, -380), w: 520, h: 140 }); G.sun({ x: L(640, 330), y: -470, r: 90 }); G.tree({ x: L(-330, -260), h: 120, at: b(4), enter: 'pop' });
+    const head = { x: -360, y: -700, w: 720, h: 250 };   // where the name and the line sit (the camera keeps it in frame)
+
+    // ---- hook (beats 0–8): the name, a building rising from the ground line, its windows lighting ----
+    G.text('__TITLE__', { x: 0, y: -620, size: L(100, 84), tone: 'b', weight: 900, at: b(2), enter: 'rise', kind: 'slam' });
+    const shop = G.building({ x: -120, w: 240, h: 280, roof: 'flat', windows: { tone: 'b3' }, at: b(3), enter: 'rise' });
+    shop.windows.forEach((wn, i) => { const bx = G.box(wn, 0); G.rect({ x: bx.x, y: bx.y, w: bx.w, h: bx.h, fill: 'a3', shade: 'glow', at: b(5) + i * 0.08, enter: 'grain', sfx: i === 0 }); });
+    G.text(M('一句话说清它做什么', 'One line on what it does'), { x: 0, y: -530, size: L(40, 36), tone: 'b2', at: b(5), enter: 'rise' });
+    G.cam(0, { on: [shop, head], pad: 1.5 });
+    G.move(b(1), b(6), { on: [shop, head], pad: 1.2 });
+    F.section(0, 1, { name: 'hook' });
+
+    // ---- build (beats 8–16): people arrive in a row, a sign ticks a real number ----
+    const crowd = G.row({ x: 220, y: 0, n: 5, gap: 64, at: b(9), every: 0.15, item: 'figure', props: (i) => ({ h: 110, tone: i % 2 ? 'b' : 'a', pose: i === 2 ? 'wave' : 'stand' }) });
+    const sign = G.sign({ x: -470, y: -400, w: 170, h: 190, title: M('用户', 'USERS'), from: 0, to: 100, at: b(12), show: b(11), sub: M('一个真实的数字', 'a real number') });
+    G.move(b(8), b(11), { on: [shop, crowd, sign], pad: 1.15 });
+    F.section(b(8), 2, { name: 'build' });
+
+    // ---- the one thing that matters (beats 16–24): a circular close-up out of the shop, then the url under the ground line ----
+    const ins = G.inset({ x: L(460, 230), y: -470, r: 140, from: shop, at: b(17), until: b(22), build: (g) => { g.rect({ x: -70, y: -50, w: 140, h: 100, r: 8, fill: 'b', shade: 'top' }); g.circle({ x: 0, y: 0, r: 22, fill: 'a', shade: 'round' }); } });
+    G.move(b(15), b(17.5), { on: [shop, ins, sign], pad: 1.12 });
+    G.text('example.com', { x: 0, y: 70, size: L(52, 46), tone: 'a0', weight: 800, at: b(21), enter: 'rise', kind: 'endcard' });
+    G.move(b(20), b(22), { on: [shop, head, { x: -260, y: 20, w: 520, h: 100 }], pad: 1.15 });
+    F.section(b(16), 3, { name: 'drop', hit: true });
+  },
+});
+</script></body></html>

@@ -902,6 +902,119 @@
     },
   });
 
+  // ======================= Flat grain illustration =======================
+  P.kit.register('grain', {
+    runtime: 'grain',
+    theme: { bg: '#f7f3e9', fg: '#1b2b55', ink: '#1b2b55', paper: '#f7f3e9', accent: '#ef6a5e', muted: '#5470b4', fonts: { display: '"Inter", "Noto Sans SC", sans-serif', serif: '"Inter", "Noto Sans SC", sans-serif', sans: '"Inter", "Noto Sans SC", sans-serif', script: '"Inter", "Noto Sans SC", sans-serif', mono: '"Inter", monospace' } },
+    make(F, opt) {
+      const G = P.grain(F, { ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = G.colors, gy = H * (PT ? 0.74 : 0.8);
+      const S = { lead: 0.45, push: 0.006, ink: C2.b0, paper: C2.paper, colors: [C2.a, C2.b, C2.a2, C2.b2], raw: G };
+      const night = new Set();
+      const inkOn = (layer) => (night.has(layer) ? 'paper' : 'b0');
+      // background: paper (variant: paper / blush / night / pale sky) with a ground line low in the frame, a hill and a sun or moon at the edges (no words)
+      S.bg = (layer, o = {}) => G.into(layer, () => {
+        const v = (o.variant ?? 0) % 4, ground = v === 1 ? C2.a3 : v === 2 ? C2.b0 : v === 3 ? C2.b3 : C2.paper; layer.style.background = ground; if (v === 2) night.add(layer);
+        G.line({ pts: [[0, gy], [W, gy]], stroke: v === 2 ? 'a2' : 'a', w: 3 * u, cap: 'butt' });
+        G.hill({ x: W * (v % 2 ? 0.86 : 0.14), y: gy, w: 460 * u, h: 120 * u, tone: v === 2 ? 'b' : 'a2' });
+        G.circle({ x: W * (v % 2 ? 0.07 : 0.93), y: H * (PT ? 0.05 : 0.09), r: 52 * u, fill: v === 2 ? 'paper' : 'a2', shade: 'fade', z: -4 });
+        return { el: layer };
+      });
+      // big word: heavy grotesk standing on a coral bar that stipples in under it
+      S.word = (layer, o) => G.into(layer, () => {
+        const sz = Math.min(F.px(o.size ?? (PT ? 150 : 190)), (o.maxW ?? W * 0.86) / Math.max(1, estUnits(o.text)) / 1.02), x = o.x ?? W / 2, y = o.y ?? H * 0.42, tw = estUnits(o.text) * sz;
+        G.rect({ x: x - tw * 0.52, y: y + sz * 0.58, w: tw * 1.04, h: Math.max(6 * u, sz * 0.09), fill: (o.variant ?? 0) % 2 ? 'b' : 'a', at: o.at, until: o.until, enter: 'wipe', dir: 'right', inDur: 0.5, sfx: false });
+        return G.text(o.text, { x, y, size: sz, tone: inkOn(layer), weight: 900, at: o.at, until: o.until, enter: 'rise', kind: o.kind ?? 'slam', sfx: o.sfx === false ? undefined : 'rise' });
+      });
+      // a sentence: medium weight, wraps inside maxW
+      S.line = (layer, o) => G.into(layer, () => { const sz = F.px(Math.min(56, o.size ?? 46)), mw = o.maxW ?? W * (PT ? 0.86 : 0.72), x = o.x ?? W / 2, al = o.align ?? 'center'; return G.text(o.text, { x: al === 'left' ? x : x, y: o.y ?? H * 0.66, size: sz, tone: inkOn(layer), weight: 700, at: o.at, until: o.until, enter: 'rise', align: al, wrap: estUnits(o.text) * sz > mw ? mw : null, kind: o.kind ?? 'label' }); });
+      // card: a pale panel lit from the top with grain (no outline); content goes in the returned element
+      S.card = (layer, o) => G.into(layer, () => {
+        G.rect({ x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h, r: 10 * u, fill: night.has(layer) ? 'b' : 'white', shade: [{ c: night.has(layer) ? 'b2' : 'a3', d: [0.7, 0], dir: 90, s: [0, 0.55] }], at: o.at - S.lead, until: o.until, enter: 'rise', z: o.z ?? 2 });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;z-index:3`, layer); win(F, c, o.at - 0.1, o.until ?? 1e9);
+        return { el: c, w: o.w, h: o.h };
+      });
+      // screenshot: unaltered, in a navy frame that rises from the ground line; the picture wipes up inside it
+      S.shot = (layer, o) => G.into(layer, () => {
+        const fit = o.fit === 'contain', bw = fit ? 0 : 12 * u;
+        if (!fit) G.rect({ x: o.x - o.w / 2 - bw, y: o.y - o.h / 2 - bw, w: o.w + bw * 2, h: o.h + bw * 2, r: 8 * u, fill: 'b', shade: 'top', amount: 0.4, at: o.at - S.lead, until: o.until, enter: 'rise', z: o.z ?? 2 });
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:3;border-radius:${f1(4 * u)}px`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        const a = o.at - S.lead + 0.1, until = o.until ?? 1e9;
+        F.add((t) => { const on = t >= a && t < until; set(box, { display: on ? '' : 'none' }); if (on) set(box, { clipPath: `inset(${f1((1 - E.cubicInOut(seg(t, a, a + 0.5))) * 100)}% 0 0 0)`, opacity: String(Math.min(1, 1 - seg(t, until - 0.25, until))) }); });
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      });
+      // signature move: a circular close-up ring pops round the spot, a stipple halo behind it
+      S.accent = (layer, o) => G.into(layer, () => {
+        const r = F.px(o.size ?? 200) * 0.6, until = o.until ?? o.at + 1.8;
+        G.glow({ x: o.x, y: o.y, r: r * 1.5, tone: night.has(layer) ? 'b2' : 'a3', d: 0.8, core: 0.3, at: o.at, until, z: -1, sfx: false });
+        G.circle({ x: o.x, y: o.y, r, fill: null, stroke: 'a', w: 8 * u, at: o.at, until, enter: 'pop', z: 6, sfx: false });
+        F.sfx(o.at - 0.2, 'pop', 0.5);
+        return {};
+      });
+      // transition: an iris — a coral disc opens from low in the frame (a sun rising) and covers it, then stipples away onto the next scene
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none', 90);
+        const at = o.cover, d = 0.75, R = Math.hypot(W, H) * 0.62, cx = W * ((o.index ?? 0) % 2 ? 0.7 : 0.3), cy = H * 0.85;
+        G.into(wl, () => { const c = G.circle({ x: cx, y: cy, r: 1, fill: (o.index ?? 0) % 2 ? 'b' : 'a', shade: 'glow', at: at - d, until: at + d * 0.8, enter: 'none', exit: 'grain', sfx: false, lintOk: true }); c.outDur = d * 0.8; c.to(at - d, { r: R }, d, E.cubicInOut); });
+        F.sfx(at - d, 'iris', 0.5, { dur: d }); F.transition(at - d, at + d * 0.8); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the name big over the ground line, the line under it, the url on a navy sign with a coral strip
+      S.end = (layer, o) => G.into(layer, () => {
+        const cy = H * (PT ? 0.36 : 0.36), sz = Math.min(F.px(PT ? 120 : 160), (W * 0.84) / Math.max(1, estUnits(o.title)) / 1.02);
+        G.line({ pts: [[0, gy], [W, gy]], stroke: 'a', w: 3 * u, cap: 'butt' });
+        G.text(o.title, { x: W / 2, y: cy, size: sz, tone: inkOn(layer), weight: 900, at: o.at + 0.5, enter: 'rise', kind: 'logo', noFact: true });
+        if (o.tagline) G.text(o.tagline, { x: W / 2, y: cy + sz * 0.95, size: F.px(PT ? 40 : 44), tone: night.has(layer) ? 'b3' : 'b', weight: 700, at: o.at + 1.2, enter: 'rise', kind: 'endcard', wrap: estUnits(o.tagline) * F.px(44) > W * 0.84 ? W * 0.84 : null });
+        if (o.url) { const us = F.px(PT ? 44 : 46), uw = estUnits(o.url) * us + 60 * u, sy = cy + sz * 0.95 + F.px(150); G.group({ x: W / 2 - uw / 2, y: sy - us, at: o.at + 1.7, enter: 'rise' }).add((g) => { g.rect({ x: 0, y: 0, w: uw, h: us * 2, fill: 'b', shade: 'top', amount: 0.4 }); g.rect({ x: 0, y: 0, w: uw, h: us * 0.3, fill: 'a' }); g.rect({ x: uw / 2 - 4 * u, y: us * 2, w: 8 * u, h: Math.max(0, gy - sy - us), fill: 'b' }); }); G.text(o.url, { x: W / 2, y: sy + us * 0.08, size: us, tone: 'paper', weight: 800, at: o.at + 1.9, enter: 'grain', kind: 'endcard' }); }
+        F.sfx(o.at + 2.1, 'chime', 0.45);
+      });
+      // ---- Telling information (grain): steps are little buildings rising along a road, each with its number on a sign; contrast is a day scene and a night scene side by side; numbers are columns rising from the ground line; a spot on the UI is a circular close-up ----
+      S.steps = (layer, o) => G.into(layer, () => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h;
+        const pos = items.map((_, j) => lanePos(R, k, j, row));
+        return items.map((it, j) => {
+          const p2 = pos[j], t0 = T[j], bw = Math.min(row ? R.w / k * 0.4 : 120 * u, 150 * u), bh = bw * 1.1, base = row ? p2.y + bh * 0.4 : p2.y + bh * 0.5, bx = row ? p2.x - bw / 2 : R.x + 10 * u;
+          if (j) { const q = pos[j - 1]; G.line({ pts: row ? [[q.x + bw * 0.6, base], [p2.x - bw * 0.6, base]] : [[bx + bw / 2, q.y + bh * 0.5 + 6 * u], [bx + bw / 2, base - bh - 6 * u]], stroke: 'a2', w: 5 * u, dash: [10 * u, 10 * u], at: t0 - 0.2, until, enter: 'draw', sfx: false }); }
+          G.building({ x: bx, y: base, w: bw, h: bh, tone: it.hot ? 'a' : j % 2 ? 'a2' : 'b2', roofTone: 'b', roof: j % 2 ? 'gable' : 'flat', windows: { cols: 2, rows: 1 }, door: false, at: t0 - 0.1, until, enter: 'rise', sfx: j === 0 });
+          G.text(String(j + 1), { x: bx + bw / 2, y: base - bh * 0.45, size: bw * 0.42, tone: 'paper', weight: 900, at: t0, until, enter: 'grain', noFact: true });
+          const ts = F.px(Math.min(PT ? 40 : 42, row ? 40 : 44)), tx = row ? p2.x : bx + bw + 30 * u, ty = row ? base + ts * 1.1 : base - bh * 0.55;
+          G.text(it.text, { x: tx, y: ty, size: ts, tone: inkOn(layer), weight: 800, at: t0 + 0.15, until, enter: 'rise', align: row ? 'center' : 'left', wrap: row ? R.w / k * 0.92 : null });
+          if (it.note) G.text(it.note, { x: tx, y: ty + ts * 1.25, size: ts * 0.62, tone: 'b2', weight: 600, at: t0 + 0.3, until, enter: 'grain', align: row ? 'center' : 'left', wrap: row ? R.w / k * 0.92 : null });
+          return { x: row ? p2.x : bx + bw / 2, y: base - bh / 2 };
+        });
+      });
+      S.versus = (layer, o) => G.into(layer, () => {
+        const { cols, T, at2, until, C: R } = o, k = cols.length, stack = R.w < R.h * 1.1, gap = 24 * u;
+        const cw = stack ? R.w : (R.w - gap * (k - 1)) / k, ch = stack ? (R.h - gap * (k - 1)) / k : R.h;
+        return cols.map((c, j) => {
+          const x = stack ? R.x : R.x + j * (cw + gap), y = stack ? R.y + j * (ch + gap) : R.y, dark = j % 2 === 1;
+          G.rect({ x, y, w: cw, h: ch, r: 10 * u, fill: dark ? 'b' : 'a3', shade: [{ c: dark ? 'b2' : 'white', d: [0, 0.8], dir: 90, s: [0.5, 1] }], at: T[j] - 0.35, until, enter: 'rise', z: 1 });
+          if (c.hot) G.glow({ x: x + cw * 0.82, y: y + ch * 0.2, r: Math.min(cw, ch) * 0.3, tone: dark ? 'a2' : 'a', d: 0.9, core: 0.3, at: T[j] + 0.4, until, z: 2, sfx: false });
+          const ts = F.px(PT ? 50 : 56);
+          G.text(c.title, { x: x + 34 * u, y: y + 30 * u + ts * 0.6, size: ts, tone: dark ? 'paper' : 'b0', weight: 900, at: T[j], until, enter: 'rise', align: 'left' });
+          (c.points || []).forEach((pt, r) => G.text('— ' + ptText(pt), { x: x + 36 * u, y: y + ts * 1.6 + 60 * u + r * F.px(PT ? 54 : 60), size: F.px(PT ? 34 : 38), tone: dark ? 'b3' : 'b', weight: 600, at: at2(j, r), until, enter: 'grain', align: 'left', fact: ptText(pt), wrap: cw - 70 * u }));
+          return { x: x + cw / 2, y: y + ch / 2 };
+        });
+      });
+      S.figures = (layer, o) => G.into(layer, () => {
+        const { data, ats, until, C: R } = o, k = data.length, onGround = gy > R.y + R.h * 0.5 && gy < R.y + R.h + F.px(60), base = onGround ? gy : R.y + R.h * 0.86, hot = o.hot || [];   // columns stand on the scene's ground line when it runs through the area
+        const b = G.bars({ x: R.x + R.w * 0.08, y: base, w: R.w * 0.84, h: (base - R.y) * 0.78, gap: 0.5, valueSize: F.px(PT ? 40 : 44), labelSize: F.px(PT ? 30 : 32), unit: o.unit ?? '', prefix: o.prefix ?? '', decimals: o.decimals, until, items: data.map((d, j) => ({ label: String(d[0]), value: +d[1], hot: hot.includes(j), tone: hot.includes(j) ? 'a' : j % 2 ? 'b2' : 'b', at: ats[j] })) });
+        if (!onGround) G.line({ pts: [[R.x, base], [R.x + R.w, base]], stroke: 'a', w: 3 * u, cap: 'butt', at: ats[0] - 0.6, until, enter: 'draw', sfx: false });
+        return b.items.map((it) => { const bx = G.box(it.col, 1e9); return { x: bx.x + bx.w / 2, y: bx.y }; });
+      });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(9))}px ${C2.b2}, 0 0 0 ${f1(F.px(15))}px ${C2.a3}`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30 }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.b0, accent: C2.a, colors: [C2.a, C2.b, C2.a2, C2.b2], font: G.fonts.sans, display: G.fonts.sans, weight: 900, line: F.px(3), outline: null, radius: 0, mark: C2.a, cutSfx: 'pop', flashAt: 'corner',
+        flashBg: (col) => `background-color:${col}`,
+        flashDecor: (bg, col, i, R) => { const c = document.createElement('canvas'); c.width = Math.round(R.w); c.height = Math.round(R.h); c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'; bg.appendChild(c); const x = c.getContext('2d'), r = Math.max(R.w, R.h) * 0.6; G.stipple(x, [0, 0, R.w, R.h], { c: mix(col, '#ffffff', 0.35), d: [0.85, 0], dir: 'radial', s: [0, 1], at: [i % 2 ? 0.8 : 0.2, 0.25], r }); } });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -1776,6 +1889,7 @@
   };
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
+  KITS.grain.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.5, 0.64] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // grain: a vivid brand colour becomes the warm spot colour (its tints and shade follow), pulled to a printable lightness; grey / black brands keep coral and navy
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged
   KITS.op.tint = (c) => {   // op: the brand colour is the stripe colour, the black/white ground stays; it must be saturated enough to "dazzle"

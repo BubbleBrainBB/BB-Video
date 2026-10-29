@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · grain</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#f7f3e9}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/grain.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · flat grain illustration, narrated. Hand-written PROMO.compose: every change is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every year, sign and readout on screen is traced there), then the treatment (styles/grain/STYLE.md).
+// One stage per chapter: the scene grows and transforms in place as the lines go by; a new chapter opens through an iris.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#f7f3e9', fg: '#1b2b55', ink: '#1b2b55', muted: '#5470b4', accent: '#ef6a5e', paper: '#f7f3e9', fonts: { display: '"Inter", "Noto Sans SC", sans-serif', serif: '"Inter", "Noto Sans SC", sans-serif', sans: '"Inter", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const G = PROMO.grain(F, { palette: 'coral' });
+    const L = G.L;   // G.L(landscape, portrait)
+    G.ruler({ from: 1800, to: 2030 });   // the timeline ruler; G.year(at, year) ticks it over
+
+    // ---- stage 1 (x around 0): the ground line, a hill, a building that rises, a figure ----
+    G.ground({ from: -1400, to: 1400 });
+    G.hill({ x: -520, w: 520, h: 150 });
+    const house = G.building({ x: -140, w: 200, h: 240, roof: 'gable', at: s('l1') + 0.6, enter: 'rise' });
+    G.figure({ x: 160, h: 130, at: s('l1') + 1.2, enter: 'grain' });
+    G.year(s('l1'), 1800);
+    G.cam(0, { on: house, pad: 3 });
+    G.move(s('l1'), e('l1'), { on: house, pad: 2.2 });
+
+    // … one block per line: let the scene grow (G.building / G.row / node.to), open a G.inset on a detail, tick a G.gauge / G.sign / G.clock,
+    //   raise G.bars from the ground line; swap an old thing for its successor in place with G.swap; a new chapter: build it far away and G.iris to it.
+
+    const z = e('l1') + 0.4;
+    G.text(M('一句话总结', 'One-line takeaway'), { x: 0, y: -520, size: 54, tone: 'b', at: z, enter: 'grain', kind: 'headline' });
+    F.section(0, 1, { name: 'open' });
+    F.section(z, 1, { name: 'close' });
+    F.coverAt(e('l1') - 0.3);
+  },
+});
+</script></body></html>

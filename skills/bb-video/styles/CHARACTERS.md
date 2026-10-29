@@ -51,6 +51,7 @@ Also:
 | `manga` | Code-drawn manga characters on a jointed rig (`P.char`, `styles/manga/STYLE.md` §10): full figure, bust, face, eye close-up, chibi, silhouette | `R.cast({ … })` + `P.char('Name', …)` | `faceTo: other` / `facing` when placed; two panels side by side facing each other (VS) | `punch` / `dash` / `fall` poses, `P.fist`, `C.hit` (knocked back), shake and flash on the hit | yes |
 | `lumen` | One minimal original protagonist on a front-view rig, lit by the scene's light (`S.actor`, `styles/lumen/STYLE.md` §9): expressions (eyes, brows, cowlick), poses in bed / at a desk / at a window, acts (scroll, walk, jolt, sigh…) | `L.cast({ … })` + `S.actor('Name', …)` | `turn` ±0.6 or `flip` toward the other | `jolt`, `tremble`, `slump`, being dragged up (`move` from lying to sitting); no fight | yes |
 | `cutout` | Anonymous paper figures (`C.figure`) — "users", "the community" | — | — | — | — |
+| `grain` | Anonymous flat figures (`G.figure`: round head, block body, stick limbs; stand / walk / sit / point / work / read …) — roles like "a worker", "a reader" | — | `face: 'left' \| 'right'` | — | — |
 | `pop`, `riso`, `origami`, `op`, `ascii`, `launch`, `bauhaus`, `swiss`, `blueprint`, `collage` | No characters | — | — | — | — |
 
 **When the content is a story with named people**, recommend a style that has characters:
