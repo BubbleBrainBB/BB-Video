@@ -52,6 +52,7 @@ Also:
 | `lumen` | One minimal original protagonist on a front-view rig, lit by the scene's light (`S.actor`, `styles/lumen/STYLE.md` §9): expressions (eyes, brows, cowlick), poses in bed / at a desk / at a window, acts (scroll, walk, jolt, sigh…) | `L.cast({ … })` + `S.actor('Name', …)` | `turn` ±0.6 or `flip` toward the other | `jolt`, `tremble`, `slump`, being dragged up (`move` from lying to sitting); no fight | yes |
 | `cutout` | Anonymous paper figures (`C.figure`) — "users", "the community" | — | — | — | — |
 | `grain` | Anonymous flat figures (`G.figure`: round head, block body, stick limbs; stand / walk / sit / point / work / read …) — roles like "a worker", "a reader" | — | `face: 'left' \| 'right'` | — | — |
+| `storybook` | The project's own cast of original cute characters on one rig (`B.char`, `styles/storybook/STYLE.md` §10): bean / round / blob / gem / star / capsule / pillar bodies, a sprout / antenna / cap / cilia on top, a letter badge, dot or ^ ^ eyes, blush; acts (hop, jump, squash, cheer, point, chomp, shiver…), clones (`B.split` / `B.merge`). Creatures and objects only — never people, never another brand's mascot | `B.cast({ … })` + `B.char('Name', …)` | `c.look(at, ±1)` toward the other; walking turns the gaze | `shake`, `shiver`, `ko` face; one swallowing another (`B.merge`); no fight | yes |
 | `pop`, `riso`, `origami`, `op`, `ascii`, `launch`, `bauhaus`, `swiss`, `blueprint`, `collage` | No characters | — | — | — | — |
 
 **When the content is a story with named people**, recommend a style that has characters:

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · storybook</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkaimono-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkaimono-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#e9e6df}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/storybook.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · hand-drawn storybook mascot, narrated. Hand-written PROMO.compose: every change is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every label, card, screen line and number on screen is traced there), then the treatment (styles/storybook/STYLE.md).
+// The telling: the cast acts the invisible process out with tangible props, stage by stage along one ground line; the hero splits into clones that
+// each carry a task card, each clone acts its task on its own little stage, they regroup and merge, the results pop out as props.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 100, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#e9e6df', fg: '#2b2521', ink: '#2b2521', muted: '#a19a8e', accent: '#2f8d89', paper: '#e9e6df', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif', mono: '"LXGW WenKai Mono", monospace' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const B = PROMO.storybook(F, { palette: 'teal' });
+    const L = B.L;   // B.L(landscape, portrait)
+
+    // ---- the cast: define it once (STYLE.md §10); every character is original, told apart by body, top and colour ----
+    B.cast({ Hero: { kind: 'bean', tone: 'a', top: 'sprout' } });
+    B.ground({ from: -1500, to: 6000 });
+
+    // ---- stage 1 (x ≈ 0): the hero drops onto its stage, a tag says what it is about to do ----
+    B.stage({ x: 0, w: 900 });
+    const hero = B.char('Hero', { x: 0, at: s('l1'), enter: 'drop' });
+    hero.say(M('一件要做的事', 'the task'), s('l1') + 0.6, e('l1') + 1, { prompt: true });
+    hero.face(s('l1') + 1.4, 'happy', e('l1'));   // w('l1', '词') = when a word is spoken
+    B.cam(0, { on: hero, pad: 3 });
+    B.move(s('l1'), e('l1'), { on: hero, pad: 2.2 });
+
+    // … one block per line: split the hero into clones that carry task cards (B.split), let each act its task out with a prop on its own stage
+    //   further along the ground line (B.cabinet / B.easel / B.monitor / B.button / B.blocks / B.cards…), travel the camera there (B.move),
+    //   tag the result with a ✓ line (c.say(text, at, until, { sub, subAt })), then bring the clones back and merge them (B.merge).
+
+    const z = e('l1') + 0.4;
+    B.title(M('一句话总结', 'One-line takeaway'), { x: 0, y: -460, size: 60, at: z, kind: 'headline' });
+    F.section(0, 1, { name: 'open' });
+    F.section(z, 1, { name: 'close' });
+    F.coverAt(e('l1') - 0.3);
+  },
+});
+</script></body></html>

@@ -1015,6 +1015,124 @@
     },
   });
 
+  // ======================= Hand-drawn storybook mascot =======================
+  P.kit.register('storybook', {
+    runtime: 'storybook',
+    theme: { bg: '#e9e6df', fg: '#2b2521', ink: '#2b2521', paper: '#e9e6df', accent: '#2f8d89', muted: '#a19a8e', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif', script: '"LXGW WenKai", serif', mono: '"LXGW WenKai Mono", monospace' } },
+    make(F, opt) {
+      // flat mode: every scene layer gets its own canvas; positions below are in frame px, the runtime takes world units (px / u)
+      const B = P.storybook(F, { ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = B.colors, q = (v) => v / u, gy = H * (PT ? 0.72 : 0.8);
+      const S = { lead: 0.45, push: 0.005, ink: C2.ink, paper: C2.paper, colors: [C2.a, C2.b, C2.a2, C2.wood], raw: B };
+      B.cast({ Kit: { kind: 'bean', tone: 'a', top: 'sprout' } });
+      // background: the paper, a ground line low in the frame and a little stage on it (variant: the stage's tone and its dashed line)
+      S.bg = (layer, o = {}) => B.into(layer, () => {
+        const v = (o.variant ?? 0) % 3; layer.style.background = B.paperCss();
+        B.ground({ from: -200, to: q(W) + 200, y: q(gy) }).p.y = q(gy);
+        B.stage({ x: q(W / 2), y: q(gy), w: q(W * (PT ? 0.8 : 0.72)), tone: v === 1 ? 'cream' : 'beige', dash: v === 2 ? 'b' : 'a', at: o.at });
+        return { el: layer };
+      });
+      // big word: hand-lettered, written on left to right, an ink underline drawn under it
+      S.word = (layer, o) => B.into(layer, () => {
+        const sz = Math.min(F.px(o.size ?? (PT ? 140 : 170)), (o.maxW ?? W * 0.86) / Math.max(1, estUnits(o.text)) / 1.02), x = o.x ?? W / 2, y = o.y ?? H * 0.42, tw = estUnits(o.text) * sz;
+        B.line({ pts: [[q(x - tw * 0.48), q(y + sz * 0.62)], [q(x + tw * 0.48), q(y + sz * 0.6)]], stroke: (o.variant ?? 0) % 2 ? 'b' : 'a', lw: Math.max(5, q(sz) * 0.07), at: o.at + 0.2, until: o.until, enter: 'draw', inDur: 0.5, sfx: false });
+        return B.title(o.text, { x: q(x), y: q(y), size: q(sz), weight: 700, at: o.at, until: o.until, enter: 'write', kind: o.kind ?? 'slam', sfx: o.sfx !== false });
+      });
+      // a sentence: hand-lettered, wraps inside maxW
+      S.line = (layer, o) => B.into(layer, () => { const sz = F.px(Math.min(58, o.size ?? 48)), mw = o.maxW ?? W * (PT ? 0.86 : 0.72), x = o.x ?? W / 2; return B.title(o.text, { x: q(x), y: q((o.y ?? H * 0.66)), size: q(sz), weight: 700, at: o.at, until: o.until, enter: 'write', align: o.align ?? 'center', wrap: estUnits(o.text) * sz > mw ? q(mw) : null, kind: o.kind ?? 'label' }); });
+      // card: a cream sheet with an ink outline and pencil hatching; content goes in the returned element
+      S.card = (layer, o) => B.into(layer, () => {
+        B.rect({ x: q(o.x - o.w / 2), y: q(o.y - o.h / 2), w: q(o.w), h: q(o.h), r: 8, fill: 'cream', hatch: 0.45, at: o.at - S.lead, until: o.until, enter: 'pop', pivot: 'center', z: o.z ?? 2 });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;z-index:3`, layer); win(F, c, o.at - 0.1, o.until ?? 1e9);
+        return { el: c, w: o.w, h: o.h };
+      });
+      // screenshot: unaltered, inside a hand-drawn monitor frame on a stand; the picture wipes down inside it
+      S.shot = (layer, o) => B.into(layer, () => {
+        const fit = o.fit === 'contain', bw = fit ? 0 : 16 * u;
+        if (!fit) { B.rect({ x: q(o.x - o.w / 2 - bw), y: q(o.y - o.h / 2 - bw), w: q(o.w + bw * 2), h: q(o.h + bw * 2), r: 10, fill: 'cream', hatch: 0.5, at: o.at - S.lead, until: o.until, enter: 'pop', pivot: 'center', z: o.z ?? 2 }); }
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:3;border-radius:${f1(5 * u)}px`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        const a = o.at - S.lead + 0.15, until = o.until ?? 1e9;
+        F.add((t) => { const on = t >= a && t < until; set(box, { display: on ? '' : 'none' }); if (on) set(box, { clipPath: `inset(0 0 ${f1((1 - E.cubicInOut(seg(t, a, a + 0.5))) * 100)}% 0)`, opacity: String(Math.min(1, 1 - seg(t, until - 0.25, until))) }); });
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      });
+      // signature move: an ink ring drawn round the spot, excitement ticks beside it
+      S.accent = (layer, o) => B.into(layer, () => {
+        const r = q(F.px(o.size ?? 200) * 0.6), until = o.until ?? o.at + 1.8;
+        B.ellipse({ x: q(o.x), y: q(o.y), rx: r * 1.15, ry: r, fill: null, stroke: 'red', lw: 7, at: o.at, until, enter: 'draw', inDur: 0.45, z: 6, sfx: false });
+        B.ticks(o.at + 0.35, q(o.x), q(o.y), { r: r * 1.3 });
+        F.sfx(o.at, 'draw', 0.4);
+        return {};
+      });
+      // transition: a sheet of paper slides across and covers the frame, then slides on out (a page of the storybook turning)
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none', 90);
+        const at = o.cover, d = 0.6, dir = (o.index ?? 0) % 2 ? -1 : 1, pw = q(W) * 1.3;
+        B.into(wl, () => { const sh = B.rect({ x: (t) => q(W / 2) - pw / 2 + dir * (t < at ? (1 - E.cubicInOut(seg(t, at - d, at))) * -q(W) * 1.4 : E.cubicInOut(seg(t, at, at + d)) * q(W) * 1.4), y: -40, w: pw, h: q(H) + 80, r: 10, fill: 'cream', hatch: 0.4, at: at - d, until: at + d, enter: 'none', exit: 'none', sfx: false, lintOk: true }); return sh; });
+        F.sfx(at - d, 'paper', 0.5, { dur: d * 2 }); F.transition(at - d, at + d); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the mascot drops onto its stage and cheers, the name above it, the line under it, the url on a signpost
+      S.end = (layer, o) => B.into(layer, () => {
+        const cy = H * (PT ? 0.3 : 0.3), sz = Math.min(F.px(PT ? 120 : 150), (W * 0.84) / Math.max(1, estUnits(o.title)) / 1.02);
+        layer.style.background = B.paperCss();
+        B.ground({ from: -200, to: q(W) + 200 }).p.y = q(gy); B.stage({ x: q(W / 2), y: q(gy), w: q(W * 0.6) });
+        const m = B.char('Kit', { x: q(W / 2) - (o.url ? 120 : 0), y: q(gy), at: o.at + 0.3, enter: 'drop', scale: 1.2 }); m.act(o.at + 2.2, 'cheer'); m.face(o.at + 1.2, 'happy');
+        B.title(o.title, { x: q(W / 2), y: q(cy), size: q(sz), weight: 700, at: o.at + 0.5, enter: 'write', kind: 'logo', noFact: true });
+        if (o.tagline) B.title(o.tagline, { x: q(W / 2), y: q(cy + sz * 0.95), size: q(F.px(PT ? 40 : 44)), weight: 700, at: o.at + 1.2, enter: 'write', kind: 'endcard', wrap: estUnits(o.tagline) * F.px(44) > W * 0.84 ? q(W * 0.84) : null });
+        if (o.url) B.sign({ x: q(W / 2) + 160, y: q(gy), title: false, text: o.url, size: 32, h: 150, at: o.at + 1.7, enter: 'rise' });
+        F.sfx(o.at + 2.1, 'ding', 0.45);
+      });
+      // ---- Telling information (storybook): steps are clones of the mascot on little stages, each holding its numbered card; contrast is cream boards side by side, a ✓ sticker on the winner; numbers are columns of stacked blocks; a spot on the UI is a magnifier with an ink ring ----
+      S.steps = (layer, o) => B.into(layer, () => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h;
+        const pos = items.map((_, j) => lanePos(R, k, j, row));
+        return items.map((it, j) => {
+          const p2 = pos[j], t0 = T[j], cs = Math.min(row ? R.w / k * 0.42 : R.h / k * 0.6, 170 * u) / u / 150, base = row ? p2.y + 80 * u : p2.y + 60 * u, cx = row ? p2.x : R.x + 90 * u;
+          B.stage({ x: q(cx), y: q(base), w: 150 * cs * 1.8, d: 26, at: t0 - 0.3, until, enter: 'fade' });
+          const c = B.char('Kit', { x: q(cx), y: q(base), at: t0 - 0.15, until, enter: 'drop', scale: cs, sfx: j === 0 }); c.carry(t0 + 0.35, String(j + 1)); c.face(t0 + 0.9, 'happy', t0 + 2);
+          const ts = F.px(Math.min(PT ? 42 : 44, row ? 42 : 46)), tx = row ? cx : cx + 120 * u, ty = row ? base + 64 * u + ts * 0.6 : base - 70 * u;
+          B.title(it.text, { x: q(tx), y: q(ty), size: q(ts), weight: 700, at: t0 + 0.15, until, enter: 'write', align: row ? 'center' : 'left', wrap: row ? q(R.w / k * 0.92) : null, kind: 'label' });
+          if (it.note) B.title(it.note, { x: q(tx), y: q(ty + ts * 1.2), size: q(ts * 0.66), weight: 400, tone: 'grey', at: t0 + 0.3, until, enter: 'write', align: row ? 'center' : 'left', wrap: row ? q(R.w / k * 0.92) : null, kind: 'label' });
+          return { x: cx, y: base - 80 * u };
+        });
+      });
+      S.versus = (layer, o) => B.into(layer, () => {
+        const { cols, T, at2, until, C: R } = o, k = cols.length, stack = R.w < R.h * 1.1, gap = 30 * u;
+        const cw = stack ? R.w : (R.w - gap * (k - 1)) / k, ch = stack ? (R.h - gap * (k - 1)) / k : R.h;
+        return cols.map((c, j) => {
+          const x = stack ? R.x : R.x + j * (cw + gap), y = stack ? R.y + j * (ch + gap) : R.y;
+          B.rect({ x: q(x), y: q(y), w: q(cw), h: q(ch), r: 8, fill: c.hot ? 'white' : 'cream', hatch: 0.45, rot: j % 2 ? 1 : -1, pivot: 'center', at: T[j] - 0.35, until, enter: 'pop', z: 1 });
+          if (c.hot) { const g = B.group({ x: q(x + cw - 40 * u), y: q(y + 36 * u), at: T[j] + 0.5, until, enter: 'pop', pivot: 'center', z: 3 }); g.circle({ r: 30, fill: 'green', hatch: 0.5, lw: 3.4 }); g.path({ d: 'M-12 0 L-3 10 L13 -10', fill: null, stroke: 'white', lw: 6 }); F.sfx(T[j] + 0.5, 'ding', 0.35); }
+          const ts = F.px(PT ? 48 : 54);
+          B.title(c.title, { x: q(x + 34 * u), y: q(y + 30 * u + ts * 0.6), size: q(ts), weight: 700, at: T[j], until, enter: 'write', align: 'left', kind: 'label' });
+          (c.points || []).forEach((pt, r) => B.title('› ' + ptText(pt), { x: q(x + 36 * u), y: q(y + ts * 1.6 + 60 * u + r * F.px(PT ? 56 : 62)), size: q(F.px(PT ? 34 : 38)), weight: 400, at: at2(j, r), until, enter: 'write', align: 'left', fact: ptText(pt), wrap: q(cw - 80 * u), kind: 'label' }));
+          return { x: x + cw / 2, y: y + ch / 2 };
+        });
+      });
+      S.figures = (layer, o) => B.into(layer, () => {
+        const { data, ats, until, C: R } = o, k = data.length, hot = o.hot || [], base = R.y + R.h * 0.84, max = Math.max(...data.map((d) => +d[1])) || 1, slot = R.w / k, bw = Math.min(slot * 0.56, 150 * u), bh = 46 * u;
+        B.line({ pts: [[q(R.x), q(base)], [q(R.x + R.w), q(base)]], stroke: 'grey', lw: 2.4, at: ats[0] - 0.6, until, enter: 'draw', sfx: false });
+        return data.map((d, j) => {
+          const cx = R.x + slot * (j + 0.5), hgt = Math.max(bh, ((+d[1]) / max) * (base - R.y) * 0.7), n = Math.max(1, Math.round(hgt / bh)), isHot = hot.includes(j);
+          for (let b = 0; b < n; b++) B.rect({ x: q(cx - bw / 2), y: q(base - (b + 1) * (hgt / n)), w: q(bw), h: q(hgt / n) - 3, r: 4, fill: isHot ? 'a' : b % 2 ? 'beige' : 'cream', hatch: 0.6, at: ats[j] + b * 0.05, until, enter: 'drop', dropH: 140, inDur: 0.45, sfx: b === 0 });
+          B.title(`${o.prefix ?? ''}${d[1]}${o.unit ?? ''}`, { x: q(cx), y: q(base - hgt - 40 * u), size: q(F.px(PT ? 42 : 46)), weight: 700, tone: isHot ? 'a0' : 'ink', at: ats[j] + n * 0.05 + 0.5, until, enter: 'pop', kind: 'label' });
+          B.title(String(d[0]), { x: q(cx), y: q(base + 40 * u), size: q(F.px(PT ? 30 : 32)), weight: 400, at: ats[j], until, enter: 'write', font: 'mono', kind: 'label' });
+          return { x: cx, y: base - hgt };
+        });
+      });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(7))}px ${C2.ink}, 0 0 0 ${f1(F.px(13))}px ${C2.cream}`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30 }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.ink, accent: C2.a, colors: [C2.a, C2.b, C2.a2, C2.wood], font: B.fonts.hand, display: B.fonts.hand, weight: 700, line: F.px(4), outline: C2.ink, radius: F.px(8), mark: C2.red, cutSfx: 'pop', flashAt: 'corner',
+        flashBg: (col) => `background-color:${col}`,
+        flashDecor: (bg, col, i, R) => { const c = document.createElement('canvas'); c.width = Math.round(R.w); c.height = Math.round(R.h); c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;opacity:.5'; bg.appendChild(c); const x = c.getContext('2d'); x.strokeStyle = mix(col, '#000000', 0.35); x.lineCap = 'round'; let sd = 7 + i * 13; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647); for (let k = 0; k < R.w * R.h / 900; k++) { const px = r() * R.w, py = r() * R.h, l = 6 + r() * 14; x.globalAlpha = 0.2 + r() * 0.4; x.lineWidth = 1 + r(); x.beginPath(); x.moveTo(px, py); x.lineTo(px + l * 0.5, py - l * 0.86); x.stroke(); } } });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -1889,6 +2007,7 @@
   };
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
+  KITS.storybook.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.38, 0.55] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // storybook: a vivid brand colour becomes the cast's accent (its light and deep tones follow), kept dark enough for ink outlines to read; grey / black brands keep teal
   KITS.grain.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.5, 0.64] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // grain: a vivid brand colour becomes the warm spot colour (its tints and shade follow), pulled to a printable lightness; grey / black brands keep coral and navy
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged

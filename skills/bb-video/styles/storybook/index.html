@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · storybook</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkaimono-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkaimono-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#e9e6df}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/storybook.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · hand-drawn storybook mascot, on the beat (promo). Read styles/storybook/STYLE.md first.
+// The product told as a little play: its own original mascot gets a task, splits into helpers that each carry a card, each acts one feature out
+// with a prop (a cabinet searched, a sheet fixed on the easel, a screen of ✓ lines, cards flipping to ✓), they merge back and the name lands.
+// Every word on screen must be in brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 104, offset: 0.4, duration: 16, grain: false,
+  theme: { bg: '#e9e6df', fg: '#2b2521', ink: '#2b2521', muted: '#a19a8e', accent: '#2f8d89', paper: '#e9e6df', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif', mono: '"LXGW WenKai Mono", monospace' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), B = PROMO.storybook(F, {}), L = B.L;
+    B.cast({ Mascot: { kind: 'bean', tone: 'a', top: 'sprout' } });
+    B.ground({ from: -2000, to: 4000 });
+    B.stage({ x: 0, w: L(1100, 760) });
+
+    // ---- hook (beats 0–8): the mascot drops in, a task tag, it splits into three helpers with cards ----
+    const m = B.char('Mascot', { x: 0, at: b(1), enter: 'drop' });
+    m.say(M('一句话说清它做什么', 'One line on what it does'), b(2), b(7), { prompt: true });
+    const [h1, h2] = B.split(b(4), m, [{ x: L(-300, -230), card: M('功能一', 'feature 1') }, { x: L(300, 230), card: M('功能二', 'feature 2') }]);
+    B.cam(0, { on: m, pad: 3.2 });
+    B.move(b(1), b(5), { on: [m, h1, h2], pad: 1.4 });
+    F.section(0, 1, { name: 'hook' });
+
+    // ---- build (beats 8–16): each helper acts its feature out with a prop; ✓ results ----
+    const scr = B.monitor({ x: L(-420, -250), y: 0, w: 300, h: 210, at: b(8), lines: [{ text: M('一个真实的结果', 'a real result'), ok: true, at: b(10) }] });
+    h1.go(b(8.5), L(-180, -120)); h1.say(M('功能一', 'feature 1'), b(9), b(15), { sub: M('完成', 'done'), subAt: b(11) });
+    const row = B.cards({ x: L(560, 330), y: 0, n: 5, at: b(9), ok: 5, flipAt: b(11) });
+    h2.act(b(12), 'cheer');
+    B.move(b(8), b(11), { on: [scr, h1, h2, ...row], pad: 1.2 });
+    F.section(b(8), 2, { name: 'build' });
+
+    // ---- the turn (beats 16–24): they merge back into one, the name lands above it, the url on a sign ----
+    B.merge(b(16), [h1, h2], m);
+    B.title('__TITLE__', { x: 0, y: -420, size: L(96, 84), at: b(18), enter: 'write', kind: 'slam' });
+    B.sign({ x: L(330, 260), text: 'example.com', title: false, at: b(20), enter: 'rise' });
+    m.act(b(21.5), 'cheer');
+    B.move(b(15), b(18), { on: [m, { x: -400, y: -480, w: 800, h: 120 }], pad: 1.2 });
+    F.section(b(16), 3, { name: 'drop', hit: true });
+  },
+});
+</script></body></html>

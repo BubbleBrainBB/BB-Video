@@ -24,9 +24,9 @@ const lib = path.join(proj, 'lib');
 // Refreshing the runtime: when no style is given, infer the original style from the files already in the project's lib/
 const detected = Object.keys(STYLES).find((k) => fs.existsSync(path.join(lib, `${k}.js`)));
 const style = opt('style', args.includes('--update-lib') && detected ? detected : 'whiteboard');
-// The promo-born styles (launch, origami, pop, op, cutout, ascii, shadow, bauhaus, pixel, chat, toy3d, newsreel, filmroom, mystery, isometric, trailer, dossier, manga, map, swiss, lumen, blueprint, collage, grain) make explainers too: the project is created by promo/scripts/new.mjs in its
+// The promo-born styles (launch, origami, pop, op, cutout, ascii, shadow, bauhaus, pixel, chat, toy3d, newsreel, filmroom, mystery, isometric, trailer, dossier, manga, map, swiss, lumen, blueprint, collage, grain, storybook) make explainers too: the project is created by promo/scripts/new.mjs in its
 // narration-paced mode (voiceover + captions + the style's common verbs), with the same script.json / tts.py workflow
-const PROMO_STYLES = ['launch', 'origami', 'pop', 'op', 'cutout', 'ascii', 'shadow', 'bauhaus', 'pixel', 'chat', 'toy3d', 'newsreel', 'filmroom', 'mystery', 'isometric', 'trailer', 'dossier', 'manga', 'map', 'swiss', 'lumen', 'blueprint', 'collage', 'grain'];
+const PROMO_STYLES = ['launch', 'origami', 'pop', 'op', 'cutout', 'ascii', 'shadow', 'bauhaus', 'pixel', 'chat', 'toy3d', 'newsreel', 'filmroom', 'mystery', 'isometric', 'trailer', 'dossier', 'manga', 'map', 'swiss', 'lumen', 'blueprint', 'collage', 'grain', 'storybook'];
 if (PROMO_STYLES.includes(opt('style'))) {
   const { spawnSync } = await import('node:child_process');
   const pass = ['--style', opt('style'), '--explain', '--lang', opt('lang', 'zh-CN'), ...(opt('voice') ? ['--voice', opt('voice')] : []), ...(opt('title') ? ['--title', opt('title')] : []), ...(args.includes('--update-lib') ? ['--update-lib'] : []), ...(args.includes('--quick') ? ['--quick'] : [])];
