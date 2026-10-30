@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · tapestry</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/700.css">
+<style>html,body{margin:0;background:#e2cfa3}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/tapestry.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · Bayeux-Tapestry embroidered scroll, narrated. Hand-written PROMO.compose: every change is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every caption, date and number stitched on the cloth is traced there), then the treatment (styles/tapestry/STYLE.md).
+// The telling: one long cloth scrolls past; each part of the story is a scene on it (figures acting it out, a tree between scenes), an act opens
+// under a branch arch, a stitched caption says what happens here, the next scene is drafted in pencil ahead and stitches itself on as the cloth arrives.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 84, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#e2cfa3', fg: '#2c3040', ink: '#2c3040', muted: '#6a87aa', accent: '#b0503a', paper: '#e2cfa3', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", serif', mono: '"LXGW WenKai", monospace' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const B = PROMO.tapestry(F, { palette: 'bayeux' });
+    const L = B.L;   // B.L(landscape, portrait)
+
+    // ---- the cast: define it once (STYLE.md §10); people are generic tapestry figures, told apart by clothes and headwear, named by the caption ----
+    B.cast({ Teller: { tunic: 'red', cloak: 'blue', hair: 'brown', beard: 'short' } });
+
+    // ---- the cloth: where the middle of the frame is on the cloth over time (it never stops; about 150–250 units a second) ----
+    B.scroll([[0, 0], [e('l1') + 1, 900]]);
+
+    // ---- scene 1 (x ≈ 0–900): an act opens under the arch, a figure stitches on and acts the line out ----
+    B.act({ x: 0, n: M('第一幕', 'ACT I'), title: M('标题', 'Title'), sub: M('年代 · 地点', 'dates · place'), at: 0.3 });
+    const a = B.figure('Teller', { x: 640, at: s('l1') });
+    a.pose(s('l1') + 2, 'point');   // w('l1', '词') = when a word is spoken
+    B.caption(M('这里，一件事发生了', 'HERE, SOMETHING HAPPENS'), { x: 420, at: s('l1') + 0.8, sub: M('年份', 'year') });
+    B.tree({ x: 900, at: s('l1') + 1.5 });
+
+    // … one scene per line further along the cloth (x += 900–1400): figures with props (B.book / B.roll / B.slab / B.table / B.desk / B.gear …),
+    //   a caption, a tree between scenes; B.push on a detail where the threads should read; B.margin(x, { text: '年份' }) puts a date in the lower border.
+
+    F.section(0, 1, { name: 'open' });
+    F.section(e('l1') - 1, 1, { name: 'close' });
+    F.coverAt(e('l1') - 0.3);
+  },
+});
+</script></body></html>

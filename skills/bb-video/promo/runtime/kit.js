@@ -1133,6 +1133,124 @@
     },
   });
 
+  // ======================= Bayeux-Tapestry embroidered scroll =======================
+  P.kit.register('tapestry', {
+    runtime: 'tapestry',
+    theme: { bg: '#e2cfa3', fg: '#2c3040', ink: '#2c3040', paper: '#e2cfa3', accent: '#b0503a', muted: '#6a87aa', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", serif', script: '"LXGW WenKai", serif', mono: '"LXGW WenKai", monospace' } },
+    pace: { lead: 0.5, hold: 0.4 },
+    make(F, opt) {
+      // flat mode: every scene layer gets its own canvas; positions below are in frame px, the runtime takes world units (px / u)
+      const B = P.tapestry(F, { sketch: 0.6, speed: 1.6, ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = B.colors, q = (v) => v / u, gy = H * (PT ? 0.74 : 0.8);
+      const S = { lead: 0.5, push: 0.004, ink: C2.ink, paper: C2.linen, colors: [C2.red, C2.navy, C2.ochre, C2.green], raw: B };
+      B.cast({ Kit: { tunic: 'red', cloak: 'blue', hair: 'brown', beard: 'short' } });
+      const wools = ['red', 'green', 'ochre', 'blue', 'olive', 'navy'];
+      // background: the linen with the upper border along the top, the green ground line low in the frame (variant 1: the hem stripes at the bottom too; 2: the ground only)
+      S.bg = (layer, o = {}) => B.into(layer, () => {
+        const v = (o.variant ?? 0) % 3; layer.style.background = B.linenCss();
+        B.cloth({ top: v === 2 ? null : q(H * 0.02), ground: q(gy), hem: v === 1 ? q(H) - 30 : null });
+        return { el: layer };
+      });
+      // big word: stitched letters with a red initial, a dotted rule stitched under them
+      S.word = (layer, o) => B.into(layer, () => {
+        const sz = Math.min(F.px(o.size ?? (PT ? 130 : 160)), (o.maxW ?? W * 0.86) / Math.max(1, estUnits(o.text)) / 1.08), x = o.x ?? W / 2, y = o.y ?? H * 0.42, tw = estUnits(o.text) * sz, n = Math.max(3, Math.round(tw / u / 40));
+        const g = B.group({ at: o.at + 0.3, until: o.until, enter: 'stitch', sfx: false }); for (let i = 0; i < n; i++) g.dot({ x: q(x - tw * 0.45) + (i * q(tw * 0.9)) / Math.max(1, n - 1), y: q(y + sz * 0.68), r: 3, edge: i % 2 ? 'red' : 'ochre' });
+        return B.text(o.text, { x: q(x), y: q(y), size: q(sz), align: 'center', at: o.at, until: o.until, kind: o.kind ?? 'slam', initial: (o.variant ?? 0) % 2 ? null : 'red' });
+      });
+      // a sentence: stitched, wraps inside maxW
+      S.line = (layer, o) => B.into(layer, () => { const sz = F.px(Math.min(58, o.size ?? 48)), mw = o.maxW ?? W * (PT ? 0.86 : 0.72), x = o.x ?? W / 2, al = o.align ?? 'center', wr = estUnits(o.text) * sz * 1.06 > mw ? q(mw) : null; return B.text(o.text, { x: q(al === 'center' && wr ? x : x), y: q(o.y ?? H * 0.66), size: q(sz), align: al, wrap: wr, at: o.at, until: o.until, kind: o.kind ?? 'label', per: 0.03 }); });
+      // card: a cream panel laid in wool, edged in stem stitch; content goes in the returned element
+      S.card = (layer, o) => B.into(layer, () => {
+        B.rect({ x: q(o.x - o.w / 2), y: q(o.y - o.h / 2), w: q(o.w), h: q(o.h), r: 10, fill: 'cream', dir: 0, at: o.at - S.lead, until: o.until, enter: 'lay', inDur: 0.5, z: o.z ?? 2, sketch: 0.3 });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;z-index:3`, layer); win(F, c, o.at - 0.1, o.until ?? 1e9);
+        return { el: c, w: o.w, h: o.h };
+      });
+      // screenshot: unaltered, inside a frame laid in brown wool; the picture is revealed downward inside it
+      S.shot = (layer, o) => B.into(layer, () => {
+        const fit = o.fit === 'contain', bw = fit ? 0 : 18 * u;
+        if (!fit) B.rect({ x: q(o.x - o.w / 2 - bw), y: q(o.y - o.h / 2 - bw), w: q(o.w + bw * 2), h: q(o.h + bw * 2), r: 6, fill: 'brown', dir: 90, at: o.at - S.lead, until: o.until, enter: 'stitch', inDur: 0.55, z: o.z ?? 2, sketch: 0.3 });
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:3;border-radius:${f1(3 * u)}px`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        const a = o.at - S.lead + 0.2, until = o.until ?? 1e9;
+        F.add((t) => { const on = t >= a && t < until; set(box, { display: on ? '' : 'none' }); if (on) set(box, { clipPath: `inset(0 0 ${f1((1 - E.cubicInOut(seg(t, a, a + 0.5))) * 100)}% 0)`, opacity: String(Math.min(1, 1 - seg(t, until - 0.25, until))) }); });
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      });
+      // signature move: a ring stitched round the spot in red wool, the needle running it
+      S.accent = (layer, o) => B.into(layer, () => {
+        const r = q(F.px(o.size ?? 200) * 0.6), until = o.until ?? o.at + 1.8;
+        B.line({ x: q(o.x), y: q(o.y), d: `M${f1(r * 1.15)} 0 A${f1(r * 1.15)} ${f1(r)} 0 1 1 ${f1(-r * 1.15)} 0 A${f1(r * 1.15)} ${f1(r)} 0 1 1 ${f1(r * 1.15)} 0`, w: 10, fill: 'red', at: o.at, until, enter: 'grow', inDur: 0.5, z: 6, sfx: false, sketch: 0.2 });
+        F.sfx(o.at, 'stitch', 0.4);
+        return {};
+      });
+      // transition: the cloth is wound on: a fresh stretch of linen slides in from the right with a stitched border on its leading edge, then on out
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none', 90);
+        const at = o.cover, d = 0.6, sheet = el('div', `left:0;top:0;width:${W}px;height:${H}px;display:none;background:${B.linenCss()};box-shadow:${f1(-24 * u)}px 0 ${f1(30 * u)}px rgba(60,40,20,.35)`, wl);
+        const edge = el('div', `left:0;top:0;width:${f1(22 * u)}px;height:100%;background:repeating-linear-gradient(180deg, ${C2.red} 0 ${f1(26 * u)}px, ${C2.ochre} ${f1(26 * u)}px ${f1(52 * u)}px, ${C2.green} ${f1(52 * u)}px ${f1(78 * u)}px, ${C2.navy} ${f1(78 * u)}px ${f1(104 * u)}px);border-right:${f1(4 * u)}px solid ${C2.ink}`, sheet);
+        sheet.dataset.motion = 'skip'; edge.dataset.motion = 'skip';
+        F.add((t) => { const on = t >= at - d && t < at + d; set(sheet, { display: on ? '' : 'none' }); if (on) { const x = t < at ? (1 - E.cubicInOut(seg(t, at - d, at))) * W : -E.cubicInOut(seg(t, at, at + d)) * W * 1.1; set(sheet, { transform: `translateX(${f1(x)}px)` }); } });
+        F.sfx(at - d, 'stitch', 0.4, { dur: d * 2 }); F.transition(at - d, at + d); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the name under the branch arch, the tagline and the url stitched under it
+      S.end = (layer, o) => B.into(layer, () => {
+        layer.style.background = B.linenCss(); B.cloth({ top: q(H * 0.02), ground: q(gy) });
+        const w = q(W * (PT ? 0.86 : 0.62)), top = -q(gy - H * (PT ? 0.24 : 0.2));
+        B.act({ x: q(W / 2), y: q(gy), w, top, title: o.title, sub: o.tagline, at: o.at + 0.1, titleAt: 1.0, inDur: 1.8, size: q(Math.min(F.px(PT ? 110 : 130), (w * u * 0.8) / Math.max(1, estUnits(o.title)))), kind: 'logo', noFact: true, subKind: 'endcard', subSize: q(F.px(PT ? 46 : 48)), titleY: -q(gy - H * (PT ? 0.42 : 0.44)) });
+        if (o.url) B.text(o.url, { x: q(W / 2), y: q(gy - F.px(70)), size: q(F.px(PT ? 42 : 46)), align: 'center', tone: 'red', at: o.at + 2.2, kind: 'endcard', per: 0.035 });
+      });
+      // ---- Telling information (tapestry): steps are scenes along the cloth, each a stitched roundel with its number and a caption, trees between them; contrast is two panels of the cloth divided by a tree, a red stitched mark on the winner; numbers are columns of laid wool rising from the ground line; a spot on the UI is a stitched ring ----
+      S.steps = (layer, o) => B.into(layer, () => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h;
+        const pos = items.map((_, j) => lanePos(R, k, j, row));
+        return items.map((it, j) => {
+          const p2 = pos[j], t0 = T[j], rr = Math.min(row ? R.w / k * 0.2 : R.h / k * 0.3, 70 * u), cx = row ? p2.x : R.x + rr + 10 * u, cy = row ? p2.y - rr * 0.6 : p2.y;
+          B.circle({ x: q(cx), y: q(cy), r: q(rr), fill: wools[j % wools.length], dir: 90, at: t0 - 0.35, until, enter: j % 2 ? 'lay' : 'stitch', inDur: 0.55, sketch: 0.3, sfx: j === 0 });
+          B.text(String(j + 1), { x: q(cx), y: q(cy), size: q(rr * 1.05), align: 'center', tone: 'cream', at: t0, until, noFact: true, kind: 'label' });
+          if (row && j < k - 1) B.tree({ x: q((p2.x + pos[j + 1].x) / 2), y: q(cy + rr + 10 * u), h: q(Math.min(rr * 3.2, R.h * 0.9)), at: t0 + 0.2, until, branches: 2, leaf: q(rr * 0.42), sketch: 0.3 });
+          const ts = F.px(Math.min(PT ? 42 : 44, row ? 42 : 46)), tx = row ? cx : cx + rr + 30 * u, ty = row ? cy + rr + ts * 1.2 : cy - (it.note ? ts * 0.4 : 0);
+          B.text(it.text, { x: q(tx), y: q(ty), size: q(ts), align: row ? 'center' : 'left', wrap: row ? q(R.w / k * 0.92) : null, at: t0 + 0.15, until, kind: 'label', per: 0.03 });
+          if (it.note) B.text(it.note, { x: q(tx), y: q(ty + ts * 1.2), size: q(ts * 0.68), tone: 'navy', align: row ? 'center' : 'left', wrap: row ? q(R.w / k * 0.92) : null, at: t0 + 0.4, until, kind: 'label', per: 0.03 });
+          return { x: cx, y: cy };
+        });
+      });
+      S.versus = (layer, o) => B.into(layer, () => {
+        const { cols, T, at2, until, C: R } = o, k = cols.length, stack = R.w < R.h * 1.1, gap = (stack ? 60 : 170) * u;
+        const cw = stack ? R.w : (R.w - gap * (k - 1)) / k, ch = stack ? (R.h - gap * (k - 1)) / k : R.h;
+        return cols.map((c, j) => {
+          const x = stack ? R.x : R.x + j * (cw + gap), y = stack ? R.y + j * (ch + gap) : R.y;
+          if (j && !stack) B.tree({ x: q(x - gap / 2), y: q(Math.min(gy, y + ch)), h: q(Math.min(gy, y + ch) - y) * 0.95, at: T[j] - 0.6, until, branches: 3, leaf: 24, sketch: 0.3 });
+          if (j && stack) B.line({ pts: [[q(R.x + 30 * u), q(y - gap / 2)], [q(R.x + R.w - 30 * u), q(y - gap / 2)]], w: 9, fill: 'olive', at: T[j] - 0.5, until, enter: 'grow', inDur: 0.5, sketch: 0.3 });
+          const ts = F.px(PT ? 48 : 54);
+          B.text(c.title, { x: q(x + 20 * u), y: q(y + 20 * u + ts * 0.6), size: q(ts), align: 'left', at: T[j], until, kind: 'label', initial: c.hot ? 'red' : null });
+          if (c.hot) { B.line({ x: q(x + cw - 70 * u), y: q(y + 40 * u), pts: [[-22, 0], [-6, 18], [26, -22]], w: 10, fill: 'red', at: T[j] + 0.5, until, enter: 'grow', inDur: 0.4, sketch: 0.2 }); F.sfx(T[j] + 0.5, 'knot', 0.35); }
+          (c.points || []).forEach((pt, r) => B.text('· ' + ptText(pt), { x: q(x + 24 * u), y: q(y + ts * 1.6 + 60 * u + r * F.px(PT ? 56 : 62)), size: q(F.px(PT ? 34 : 38)), tone: 'navy', align: 'left', at: at2(j, r), until, fact: ptText(pt), wrap: q(cw - 50 * u), kind: 'label', per: 0.03 }));
+          return { x: x + cw / 2, y: y + ch / 2 };
+        });
+      });
+      S.figures = (layer, o) => B.into(layer, () => {
+        const { data, ats, until, C: R } = o, k = data.length, hot = o.hot || [], onGround = gy > R.y + R.h * 0.5 && gy < R.y + R.h + F.px(80), base = onGround ? gy - 4 * u : R.y + R.h * 0.8, max = Math.max(...data.map((d) => +d[1])) || 1, slot = R.w / k, bw = Math.min(slot * 0.42, 130 * u);   // columns stand on the background's ground line when it runs through the area
+        if (!onGround) B.line({ pts: [[q(R.x), q(base) + 6], [q(R.x + R.w), q(base) + 6]], w: 12, fill: 'olive', at: ats[0] - 0.6, until, enter: 'grow', inDur: 0.5, sfx: false, sketch: 0.3 });
+        return data.map((d, j) => {
+          const cx = R.x + slot * (j + 0.5), hgt = Math.max(30 * u, ((+d[1]) / max) * (base - R.y) * 0.66), isHot = hot.includes(j);
+          B.rect({ x: q(cx - bw / 2), y: q(base - hgt), w: q(bw), h: q(hgt), fill: isHot ? 'red' : wools[(j + 1) % wools.length], dir: 90, at: ats[j], until, enter: 'lay', inDur: 0.6, sketch: 0.3, sfx: j === 0 });
+          B.text(`${o.prefix ?? ''}${d[1]}${o.unit ?? ''}`, { x: q(cx), y: q(base - hgt - 40 * u), size: q(F.px(PT ? 42 : 46)), align: 'center', tone: isHot ? 'red' : 'ink', at: ats[j] + 0.5, until, kind: 'label' });
+          B.text(String(d[0]), { x: q(cx), y: q(base + 54 * u), size: q(F.px(PT ? 30 : 32)), align: 'center', tone: 'navy', at: ats[j], until, kind: 'label', per: 0.03 });
+          return { x: cx, y: base - hgt };
+        });
+      });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(7))}px ${C2.ink}, 0 0 0 ${f1(F.px(14))}px ${C2.ochre}, 0 0 0 ${f1(F.px(18))}px ${C2.ink}`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30 }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.ink, accent: C2.red, colors: [C2.red, C2.navy, C2.ochre, C2.green], font: B.fonts.text, display: B.fonts.text, weight: 700, line: F.px(4), outline: C2.ink, radius: F.px(6), mark: C2.red, cutSfx: 'stitch', flashAt: 'corner',
+        flashBg: (col) => `background-color:${col}`,
+        flashDecor: (bg, col, i, R) => { const c = document.createElement('canvas'); c.width = Math.round(R.w); c.height = Math.round(R.h); c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;opacity:.45'; bg.appendChild(c); const x = c.getContext('2d'); x.strokeStyle = mix(col, '#000000', 0.3); x.lineWidth = Math.max(1, F.px(2)); for (let k = 0; k < R.h; k += F.px(4)) { x.globalAlpha = 0.35 + ((k * 7 + i * 13) % 10) / 30; x.beginPath(); x.moveTo(0, k); x.lineTo(R.w, k); x.stroke(); } } });
+      return S;
+    },
+  });
+
   // ======================= Shadow puppetry =======================
   P.kit.register('shadow', {
     runtime: 'shadow',
@@ -2008,6 +2126,7 @@
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
   KITS.storybook.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.38, 0.55] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // storybook: a vivid brand colour becomes the cast's accent (its light and deep tones follow), kept dark enough for ink outlines to read; grey / black brands keep teal
+  KITS.tapestry.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.3, 0.55], l: [0.36, 0.52] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // tapestry: a vivid brand colour becomes the accent wool (the red: initials, the hero's tunic, marks), pulled to a dyed-wool saturation; grey / black brands keep terracotta
   KITS.grain.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.5, 0.64] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // grain: a vivid brand colour becomes the warm spot colour (its tints and shade follow), pulled to a printable lightness; grey / black brands keep coral and navy
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card
   KITS.pixel.tint = (c) => ({ kit: { colors: { a: c } }, theme: { accent: c }, color: c });   // pixel: the brand colour is accent a (flag, the hot level, the hot VS side, the dialog name tag); the rest of the palette is unchanged

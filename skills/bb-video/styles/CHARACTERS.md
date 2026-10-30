@@ -53,6 +53,7 @@ Also:
 | `cutout` | Anonymous paper figures (`C.figure`) — "users", "the community" | — | — | — | — |
 | `grain` | Anonymous flat figures (`G.figure`: round head, block body, stick limbs; stand / walk / sit / point / work / read …) — roles like "a worker", "a reader" | — | `face: 'left' \| 'right'` | — | — |
 | `storybook` | The project's own cast of original cute characters on one rig (`B.char`, `styles/storybook/STYLE.md` §10): bean / round / blob / gem / star / capsule / pillar bodies, a sprout / antenna / cap / cilia on top, a letter badge, dot or ^ ^ eyes, blush; acts (hop, jump, squash, cheer, point, chomp, shiver…), clones (`B.split` / `B.merge`). Creatures and objects only — never people, never another brand's mascot | `B.cast({ … })` + `B.char('Name', …)` | `c.look(at, ±1)` toward the other; walking turns the gaze | `shake`, `shiver`, `ko` face; one swallowing another (`B.merge`); no fight | yes |
+| `tapestry` | Flat side-on Bayeux figures on one rig (`B.figure`, `styles/tapestry/STYLE.md` §10): tunic or robe, cloak, cross-gartered hose, hair / beard / headwear (cap, helmet, crown, hood, veil, tall hat, brim); poses (point, raise, present, hold, carry, read…) and working loops (write, work, pull, carve, pound); historical people are generic figures named by the caption, never a likeness | `B.cast({ … })` + `B.figure('Name', …)` | `face: 'left'` when created, `c.turn(at)` later | big gestures (`c.pose`), `c.nod`, `c.go` (walking); no fall | yes |
 | `pop`, `riso`, `origami`, `op`, `ascii`, `launch`, `bauhaus`, `swiss`, `blueprint`, `collage` | No characters | — | — | — | — |
 
 **When the content is a story with named people**, recommend a style that has characters:
@@ -66,6 +67,7 @@ Also:
 | chat | Stories carried by dialogue and quotes (allusions, "who said what"), anything with many sources |
 | lumen | One person's inner struggle told to "you" (habits, self-improvement); a second person only as a small part |
 | manga | Contests and showdowns (a science idea told as a fight), stories with a twist, young audiences |
+| tapestry | Chronicles: a history in many steps, each step people at work (inventors, makers, voyages, the history of a craft) |
 
 In a style without characters, tell the story with the style's own devices and keep the rules in spirit:
 - **pop**: a dialogue is two speech bubbles from opposite sides of the panel, each with the speaker's name, alternating.

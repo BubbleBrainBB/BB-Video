@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 28 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 29 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -43,6 +43,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `collage` | a paper-collage news explainer: one take across a table covered in torn paper — halftone photos with credits, faded poster layers, red rubber stamps, a typewriter quote with a highlighter sweep, tape and push pins; the camera floats, pushes in and travels with depth of field; numbers and history are told with paper props — a paper-doll grid that turns red, a red thread pinned along a timeline, cut-paper bars on notebook paper, a line chart on graph paper with pins riding the lines, a big character printed on a certificate; a fixed frame with channel, date and a source line |
 | `grain` | a flat vector illustration with grain shading: warm off-white paper, two spot colours (coral and navy by default) and their tints, no outlines; volume and light are stipple grain that never boils; round-head figures on a thin ground line, buildings, streets and rooms that transform from era to era; very little text — a timeline ruler whose year ticks over, signs and readouts; information drawn into the picture: circular close-up insets, a small navy diagram card, dial needles and clock wedges that move, counters that roll, rows of repeated things, columns rising from the ground line, a spotlight that dims the rest; the camera pushes, travels and opens an iris onto the next scene |
 | `storybook` | a hand-drawn storybook with its own mascots: warm grey paper with fibres, ink outlines with a slight hand wobble, coloured-pencil hatching with a soft rim; each project defines its own cast of original cute characters (bean, round, blob, gem, star, capsule or pillar bodies, a sprout or antenna on top) that squash, stretch, blink and hop, acting an invisible process out with tangible props on little stages along one ground line — filing cabinets, an easel sheet, a monitor, a big button, stacking blocks, signposts, paper planes, cards flipping to ✓; small dark monospace tags float above them with a ✓ result line; one character splits into clones that each carry a task card, then they merge back into one; the camera travels from stage to stage |
+| `tapestry` | a Bayeux-Tapestry embroidered scroll: undyed linen with a visible weave, everything stitched in a few wool colours — stem-stitch outlines, laid-and-couched fills, bare linen for faces and hands; upper and lower borders of birds and beasts between diagonal bars; stylised trees divide the scenes; flat side-on figures with big gestures; act titles under a branch arch and running captions stitched in Chinese; figures and objects stitch themselves on thread by thread while one long cloth scrolls past, pushing in until single threads show |
 
 What it covers:
 
@@ -234,6 +235,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>storybook</code></b> · How the body beats a cold: a rhinovirus copies itself in the cells of the nose, the cells raise the alarm, white cells arrive, one T cell becomes thousands, memory cells stay — and why the next cold still comes<br>
 <sub>General health information, not medical advice · original characters drawn in code · sources: CDC, NHS, Jacobs et al. 2013, Foxman et al. 2015, Eccles 2005, Barclay et al. 1989</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/storybook.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/tapestry.mp4"><img src="examples/tapestry/preview.gif" width="100%" alt="tapestry"></a><br>
+<b><code>tapestry</code></b> · How the book came to be: clay tablets, papyrus scrolls, the parchment codex, Cai Lun's paper, the Diamond Sutra, Bi Sheng's movable type, Gutenberg's Bible, the steam press, the first e-book<br>
+<sub>Generic stitched figures · sources: British Museum, The Met, Britannica, Book of the Later Han, Dream Pool Essays, British Library, Library of Congress, Project Gutenberg</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/tapestry.mp4">Full video</a>
 </td>
 <td width="33%" valign="top"></td>
 <td width="33%" valign="top"></td>

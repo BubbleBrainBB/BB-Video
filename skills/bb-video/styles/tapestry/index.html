@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · tapestry</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/700.css">
+<style>html,body{margin:0;background:#e2cfa3}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/tapestry.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · Bayeux-Tapestry embroidered scroll, on the beat (promo). Read styles/tapestry/STYLE.md first.
+// The product told as a chronicle on one cloth: the problem people had (figures acting it out), the turn (the product stitched as a
+// thing in the same idiom), what changes (the next scene), the name under a branch arch. Every word on screen must be in brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 92, offset: 0.4, duration: 16, grain: false,
+  theme: { bg: '#e2cfa3', fg: '#2c3040', ink: '#2c3040', muted: '#6a87aa', accent: '#b0503a', paper: '#e2cfa3', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", serif', mono: '"LXGW WenKai", monospace' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), B = PROMO.tapestry(F, { speed: 1.4, sketch: 0.8 }), L = B.L;
+    B.cast({ Maker: { tunic: 'green', cloak: 'red', hair: 'brown', beard: 'short' }, Helper: { tunic: 'ochre', cloak: 'navy', hat: 'cap', beard: 'none' } });
+    B.scroll([[0, -200], [b(16), 1500], [b(32), 2700]]);
+
+    // ---- hook (beats 0–8): the problem, acted out ----
+    const m = B.figure('Maker', { x: 0, at: b(1) });
+    m.pose(b(4), 'think');
+    B.caption(M('这里，事情很难', 'HERE, IT IS HARD'), { x: -380, at: b(2), sub: M('一句话说清问题', 'the problem in a line') });
+    B.tree({ x: 420, at: b(5) });
+    F.section(0, 1, { name: 'hook' });
+
+    // ---- build (beats 8–20): the product arrives as a stitched thing, the helper uses it ----
+    const h = B.figure('Helper', { x: 900, at: b(8) });
+    B.slab({ x: 1080, y: 0, w: 120, h: 150, marks: 'grid', tone: 'blue', at: b(9) });
+    h.pose(b(11), 'present'); m.go(b(12), 700); m.pose(b(14), 'cheer');
+    B.caption(M('这里，它来帮忙', 'HERE, IT HELPS'), { x: 640, at: b(10), sub: M('功能', 'what it does') });
+    B.push(b(14), b(15.5), { on: h, pad: 1.6 }, { back: b(18) });
+    F.section(b(8), 2, { name: 'build' });
+
+    // ---- drop (beats 20–32): the name under the arch ----
+    B.act({ x: 2700, title: '__TITLE__', sub: 'example.com', at: b(22) });
+    F.section(b(20), 3, { name: 'drop', hit: true });
+  },
+});
+</script></body></html>
