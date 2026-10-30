@@ -249,8 +249,6 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>Wordless · the numbers are computed, 1% a day is an illustration</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/parable.mp4">Full video</a>
 </td>
-<td width="33%" valign="top"></td>
-<td width="33%" valign="top"></td>
 </tr>
 </table>
 <!-- gallery:end -->

@@ -249,8 +249,6 @@
 <sub>无旁白 · 数字均为实算，每天 1% 只是比喻</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/parable.mp4">完整视频</a>
 </td>
-<td width="33%" valign="top"></td>
-<td width="33%" valign="top"></td>
 </tr>
 </table>
 <!-- gallery:end -->
