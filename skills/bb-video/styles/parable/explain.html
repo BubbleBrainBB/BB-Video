@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · parable</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/space-mono@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/parable.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · 3D stick-figure parable, narrated (or subtitled). Read styles/parable/STYLE.md first.
+// The same fixed stage as the wordless version, timed from the narration (T.start / T.end / T.word): each line is carried by what the figures do while it is
+// said; the engine draws the captions low in the frame, so keep the figures and labels above them (P.box). Every on-screen word is traceable to brief.md.
+PROMO.compose({
+  bpm: 100, offset: 0, grain: false, tail: 1.8,
+  theme: { bg: '#000', fg: '#F2F2F0', ink: '#F2F2F0', muted: '#8C8C88', accent: '#E3262B', paper: '#000', fonts: { display: '"Noto Sans SC", sans-serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: async (F) => {
+    const T = F.T, s = T.start, e = T.end;
+    // portrait captions sit low: lift the stage a little by giving the box more room underneath
+    const P = await PROMO.parable(F, { palette: 'void', boxPortrait: { y0: -1.6 } });
+    const a = P.figure('a', { x: -1.1, z: -0.44, face: 'camera', label: '标签 A' });
+    const b = P.figure('b', { x: 1.1, z: -0.44, face: 'camera', label: '标签 B' });
+    F.section(0, 0, { name: 'setup' });
+
+    // l1 · one figure starts on the line's first word, the other doesn't (replace with the film's own contrast)
+    const t1 = s('l1');
+    const wall = P.wall({ x: 1.1, z: 0, cols: 3, rows: 8, times: Array.from({ length: 12 }, (_, i) => t1 + 0.4 + i * 0.5) });
+    b.lay(wall, { stance: 'behind' });
+    a.pose(t1 + 0.3, 'think');
+    F.section(t1, 1, { name: 'divergence' });
+
+    // … one block per line: what each figure does while it is said (lay / inspect / tend / climb / sit / look …), growth on the line's key word (T.word)
+
+    // the closing line, then fade
+    const end = e(T.lines[T.lines.length - 1].id);
+    P.title('一句话', end + 0.2, F.duration, { sub: 'ONE LINE' });
+    P.fade(F.duration - 1.4, 1.3);
+    P.cover(end + 0.6);
+    P.run();
+  },
+});
+</script></body></html>

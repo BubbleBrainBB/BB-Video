@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 29 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 30 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -44,6 +44,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `grain` | a flat vector illustration with grain shading: warm off-white paper, two spot colours (coral and navy by default) and their tints, no outlines; volume and light are stipple grain that never boils; round-head figures on a thin ground line, buildings, streets and rooms that transform from era to era; very little text — a timeline ruler whose year ticks over, signs and readouts; information drawn into the picture: circular close-up insets, a small navy diagram card, dial needles and clock wedges that move, counters that roll, rows of repeated things, columns rising from the ground line, a spotlight that dims the rest; the camera pushes, travels and opens an iris onto the next scene |
 | `storybook` | a hand-drawn storybook with its own mascots: warm grey paper with fibres, ink outlines with a slight hand wobble, coloured-pencil hatching with a soft rim; each project defines its own cast of original cute characters (bean, round, blob, gem, star, capsule or pillar bodies, a sprout or antenna on top) that squash, stretch, blink and hop, acting an invisible process out with tangible props on little stages along one ground line — filing cabinets, an easel sheet, a monitor, a big button, stacking blocks, signposts, paper planes, cards flipping to ✓; small dark monospace tags float above them with a ✓ result line; one character splits into clones that each carry a task card, then they merge back into one; the camera travels from stage to stage |
 | `tapestry` | a Bayeux-Tapestry embroidered scroll: undyed linen with a visible weave, everything stitched in a few wool colours — stem-stitch outlines, laid-and-couched fills, bare linen for faces and hands; upper and lower borders of birds and beasts between diagonal bars; stylised trees divide the scenes; flat side-on figures with big gestures; act titles under a branch arch and running captions stitched in Chinese; figures and objects stitch themselves on thread by thread while one long cloth scrolls past, pushing in until single threads show |
+| `parable` | a wordless 3D stick-figure parable: a black void with a glossy floor that mirrors everything, glowing white stick figures with round heads, one fixed wide camera; two figures do the same thing in opposite ways — bricks laid one by one, piles, steps — and the contrast is the whole story; one red object carries the meaning; small monospace labels and counters, a single title at the end; vertical first, 15–45 s, music only by default |
 
 What it covers:
 
@@ -241,6 +242,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>tapestry</code></b> · How the book came to be: clay tablets, papyrus scrolls, the parchment codex, Cai Lun's paper, the Diamond Sutra, Bi Sheng's movable type, Gutenberg's Bible, the steam press, the first e-book<br>
 <sub>Generic stitched figures · sources: British Museum, The Met, Britannica, Book of the Later Han, Dream Pool Essays, British Library, Library of Congress, Project Gutenberg</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/tapestry.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/parable.mp4"><img src="examples/parable/preview.gif" width="100%" alt="parable"></a><br>
+<b><code>parable</code></b> · Compound interest: one figure builds 30 bricks on day one and sleeps for a year; the other adds 1% a day — slow for months, then it passes him (1.01³⁶⁵ ≈ 37.8)<br>
+<sub>Wordless · the numbers are computed, 1% a day is an illustration</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/parable.mp4">Full video</a>
 </td>
 <td width="33%" valign="top"></td>
 <td width="33%" valign="top"></td>
