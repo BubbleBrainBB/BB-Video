@@ -1133,6 +1133,97 @@
     },
   });
 
+  // ======================= Hand-drawn pencil-test animation =======================
+  P.kit.register('pencil', {
+    runtime: 'pencil',
+    theme: { bg: '#eee8db', fg: '#2c2a27', ink: '#2c2a27', paper: '#eee8db', accent: '#d8902e', muted: '#5d5952', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif', script: '"LXGW WenKai", serif' } },
+    make(F, opt) {
+      // flat mode: every scene layer gets its own canvas; positions below are in frame px, the runtime takes world units (px / u)
+      const D = P.pencil(F, { ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = D.colors, q = (v) => v / u;
+      const S = { lead: 0.5, push: 0.005, ink: C2.lead, paper: C2.paper, colors: [C2.lead, C2.accent, C2.blue, C2.soft], raw: D };
+      // background: the sheet of animation paper; variant 0 a pencil horizon low in the frame, 1 blue ruled guides, 2 a blue margin line and an exposure-sheet tick row along the top
+      S.bg = (layer, o = {}) => D.into(layer, () => {
+        const v = (o.variant ?? 0) % 3; layer.style.background = D.paperCss();
+        if (v === 0) D.line({ pts: [[-40, q(H * (PT ? 0.76 : 0.82))], [q(W) + 40, q(H * (PT ? 0.76 : 0.82)) - 6]], lw: 2.2, tone: 'soft', at: o.at, enter: o.at > 0 ? 'draw' : 'none', inDur: 0.8, sfx: false });
+        else if (v === 1) for (let i = 1; i < 6; i++) D.line({ pts: [[q(W * 0.04), q((H * i) / 6)], [q(W * 0.96), q((H * i) / 6) + 3]], kind: 'construct', line: false, construct: true, lw: 2, at: o.at, enter: o.at > 0 ? 'draw' : 'none', inDur: 0.6, sfx: false });
+        else { D.line({ pts: [[q(W * 0.075), -20], [q(W * 0.075) + 4, q(H) + 20]], kind: 'construct', line: false, construct: true, lw: 2.2, at: o.at, enter: o.at > 0 ? 'draw' : 'none', inDur: 0.6, sfx: false }); for (let i = 0; i < 24; i++) D.line({ pts: [[q(W * (0.12 + i * 0.035)), q(H * 0.04)], [q(W * (0.12 + i * 0.035)), q(H * (i % 4 ? 0.055 : 0.07))]], lw: 1.6, tone: 'soft', construct: false, at: o.at, enter: 'none', sfx: false }); }
+        return { el: layer };
+      });
+      // big word: lettered in graphite over two blue guidelines ruled first
+      S.word = (layer, o) => D.into(layer, () => { const sz = Math.min(F.px(o.size ?? (PT ? 140 : 170)), (o.maxW ?? W * 0.86) / Math.max(1, estUnits(o.text)) / 1.02); return D.write(o.text, { x: q(o.x ?? W / 2), y: q(o.y ?? H * 0.42), size: q(sz), at: o.at, until: o.until, kind: o.kind ?? 'slam', tone: (o.variant ?? 0) % 2 ? 'accent' : 'lead', sfx: o.sfx }); });
+      // a sentence: hand-lettered, wraps inside maxW
+      S.line = (layer, o) => D.into(layer, () => { const sz = F.px(Math.min(58, o.size ?? 48)), mw = o.maxW ?? W * (PT ? 0.86 : 0.72); return D.write(o.text, { x: q(o.x ?? W / 2), y: q(o.y ?? H * 0.66), size: q(sz), at: o.at, until: o.until, align: o.align ?? 'center', wrap: estUnits(o.text) * sz > mw ? q(mw) : null, kind: o.kind ?? 'label', guide: false }); });
+      // card: a sheet drawn in pencil (blue construction first), a light graphite smudge along its lower edge
+      S.card = (layer, o) => D.into(layer, () => {
+        D.rect({ x: q(o.x), y: q(o.y + o.h / 2), w: q(o.w), h: q(o.h), lw: 3, smudge: 0.12, at: o.at - S.lead, until: o.until, enter: 'draw', inDur: 0.7, z: o.z ?? 2 });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;z-index:3`, layer); win(F, c, o.at - 0.1, o.until ?? 1e9);
+        return { el: c, w: o.w, h: o.h };
+      });
+      // screenshot: unaltered, taped onto the sheet (two graphite-shaded strips of tape), a pencil frame drawn round it; the picture wipes down
+      S.shot = (layer, o) => D.into(layer, () => {
+        const fit = o.fit === 'contain';
+        if (!fit) { D.rect({ x: q(o.x), y: q(o.y + o.h / 2 + 12 * u), w: q(o.w + 24 * u), h: q(o.h + 24 * u), lw: 2.6, at: o.at - S.lead, until: o.until, enter: 'draw', inDur: 0.6, z: o.z ?? 2 }); for (const sx of [-1, 1]) D.rect({ x: q(o.x + sx * o.w * 0.36), y: q(o.y - o.h / 2 + 16 * u), w: 120, h: 34, rot: sx * 8, lw: 1.6, tone: 'soft', smudge: 0.3, at: o.at + 0.1, until: o.until, enter: 'draw', inDur: 0.3, construct: false, z: 4 }); }
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:3`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        const a = o.at - S.lead + 0.2, until = o.until ?? 1e9;
+        F.add((t) => { const on = t >= a && t < until; set(box, { display: on ? '' : 'none' }); if (on) set(box, { clipPath: `inset(0 0 ${f1((1 - E.cubicInOut(seg(t, a, a + 0.5))) * 100)}% 0)`, opacity: String(Math.min(1, 1 - seg(t, until - 0.25, until))) }); });
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      });
+      // signature move: the spot ringed in a loose double loop of the warm accent, the accent blooming behind it
+      S.accent = (layer, o) => D.into(layer, () => { const r = q(F.px(o.size ?? 200) * 0.6), until = o.until ?? o.at + 1.8; D.ring({ x: q(o.x), y: q(o.y), w: r * 2, h: r * 1.6, on: null, at: o.at, until, tone: 'accent', pad: 10, z: 6 }); return {}; });
+      // transition: the next sheet flips down off the pegs over this one (a pad of animation paper), then this scene is gone underneath
+      let wl = null;
+      S.wipe = (o) => {
+        wl ??= F.layer('pointer-events:none;perspective:2400px', 90);
+        const at = o.cover, d = 0.55, sh = el('div', `left:0;top:0;width:${W}px;height:${H}px;background:${D.paperCss()};transform-origin:50% 0;display:none;box-shadow:0 ${f1(F.px(14))}px ${f1(F.px(30))}px rgba(40,34,28,.25)`, wl); sh.dataset.motion = 'skip';   // the flip is the transition itself (registered with F.transition), not a camera move
+        F.add((t) => { const on = t >= at - d && t < at + d; set(sh, { display: on ? '' : 'none' }); if (!on) return; const qa = t < at ? E.cubicInOut(seg(t, at - d, at)) : 1, qb = t >= at ? seg(t, at, at + d) : 0; set(sh, { transform: `rotateX(${f1((1 - qa) * -88)}deg)`, opacity: String(1 - qb) }); });
+        F.sfx(at - d, 'flip', 0.5, { dur: d }); F.transition(at - d, at + d); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: the name lettered big over its guidelines, the warm accent ringing it, the line under it, the url written small
+      S.end = (layer, o) => D.into(layer, () => {
+        const cy = H * (PT ? 0.38 : 0.4), sz = Math.min(F.px(PT ? 130 : 160), (W * 0.84) / Math.max(1, estUnits(o.title)) / 1.02);
+        layer.style.background = D.paperCss();
+        const tw = estUnits(o.title) * sz;
+        D.write(o.title, { x: q(W / 2), y: q(cy), size: q(sz), at: o.at + 0.3, kind: 'logo', noFact: true });
+        D.ring({ x: q(W / 2), y: q(cy), w: q(tw), h: q(sz * 1.1), at: o.at + 1.5, tone: 'accent', pad: 26, z: 6 });
+        if (o.tagline) D.write(o.tagline, { x: q(W / 2), y: q(cy + sz * 1.05), size: q(F.px(PT ? 42 : 46)), at: o.at + 1.1, kind: 'endcard', guide: false, wrap: estUnits(o.tagline) * F.px(46) > W * 0.84 ? q(W * 0.84) : null });
+        if (o.url) D.write(o.url, { x: q(W / 2), y: q(cy + sz * 1.05 + F.px(90)), size: q(F.px(46)), tone: 'soft', at: o.at + 1.7, kind: 'endcard', guide: false });
+      });
+      // ---- Telling information (pencil): steps are keys on an animator's timing chart; contrast is rough vs clean-up (the side that wins is cleaned up in graphite); numbers are growth marks on a post; a spot on the UI is a lens ringed in pencil ----
+      S.steps = (layer, o) => D.into(layer, () => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h;
+        if (row) { const pos = D.timing({ x: q(R.x + R.w * 0.08), y: q(R.y + R.h * 0.5), w: q(R.w * 0.84), keys: items.map((it) => ({ label: it.text, sub: it.note, hot: it.hot })), T, until, alt: k > 3, size: q(F.px(42)), wrap: q(R.w / k * 0.9) }); return pos.map((p2) => ({ x: p2.x * u, y: p2.y * u })); }
+        // portrait: the timing chart runs down the sheet, labels to the right of each key
+        return items.map((it, j) => { const x = R.x + R.w * 0.14, y = R.y + R.h * (0.5 / k + j / k), t0 = T[j];
+          if (j) D.line({ pts: [[q(x), q(R.y + R.h * (0.5 / k + (j - 1) / k))], [q(x), q(y)]], lw: 3, at: t0 - 0.5, until, enter: 'draw', inDur: 0.45, sfx: false });
+          D.circle({ cx: q(x), cy: q(y), r: 22, lw: 2.6, tone: it.hot ? 'accent' : 'lead', wash: it.hot ? 0.6 : 0, at: t0, until, enter: 'draw', inDur: 0.35, construct: false });
+          D.write(it.text, { x: q(x + 60 * u), y: q(y), size: q(F.px(44)), align: 'left', at: t0 + 0.1, until, kind: 'label', wrap: q(R.w * 0.7), tone: it.hot ? 'accent' : 'lead' });
+          if (it.note) D.write(it.note, { x: q(x + 60 * u), y: q(y + F.px(50)), size: q(F.px(30)), align: 'left', at: t0 + 0.3, until, kind: 'label', tone: 'soft', guide: false, wrap: q(R.w * 0.7) });
+          F.sfx(t0, 'tap', 0.4); return { x, y }; });
+      });
+      S.versus = (layer, o) => D.into(layer, () => {
+        const { cols, T, at2, until, C: R } = o, stack = R.w < R.h * 1.1;
+        const res = D.versus({ x: q(R.x + R.w / 2), y: q(R.y + R.h / 2), w: q(R.w), h: q(R.h), stack, T, until, at2, size: q(F.px(PT ? 48 : 54)), sides: cols.map((c) => ({ title: c.title, points: (c.points || []).map(ptText), hot: c.hot, draw: (g) => g.rect({ w: q(R.w / (stack ? 1 : cols.length)) * 0.82, h: q(R.h / (stack ? cols.length : 1)) * 0.78, ry0: -q(R.h / (stack ? cols.length : 1)) * 0.47, lw: 2.6 }) })) });
+        return res.map((r) => ({ x: r.x * u, y: r.y * u }));
+      });
+      S.figures = (layer, o) => D.into(layer, () => {
+        const { data, ats, until, C: R } = o, hot = o.hot || [];
+        const pos = D.marks({ x: q(R.x + R.w * 0.42), y: q(R.y + R.h * 0.92), h: q(R.h * 0.8), items: data.map((d, j) => ({ label: String(d[0]), value: d[1], hot: hot.includes(j) })), T: ats, at: ats[0] - 0.8, until, unit: o.unit, prefix: o.prefix, size: q(F.px(PT ? 42 : 46)) });
+        return pos.map((p2) => ({ x: p2.x * u, y: p2.y * u }));
+      });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(5))}px ${C2.lead}, 0 0 0 ${f1(F.px(11))}px ${C2.paper}, 0 0 0 ${f1(F.px(14))}px ${mix(C2.blue, C2.paper, 0.3)}`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30, sfxType: 'sketch' }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.lead, accent: C2.accent, colors: [C2.lead, C2.accent, C2.soft, C2.blue], font: D.fonts.hand, display: D.fonts.hand, weight: 700, line: F.px(3), outline: C2.lead, radius: F.px(4), mark: C2.accent, cutSfx: 'flip', flashAt: 'corner',
+        flashBg: (col) => `background-color:${mix(col, C2.paper, 0.55)}`,
+        flashDecor: (bg, col, i, R) => { const c = document.createElement('canvas'); c.width = Math.round(R.w); c.height = Math.round(R.h); c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;opacity:.55'; bg.appendChild(c); const x = c.getContext('2d'); x.strokeStyle = mix(col, '#000000', 0.25); x.lineCap = 'round'; let sd = 11 + i * 17; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647); for (let k = 0; k < R.w * R.h / 700; k++) { const px = r() * R.w, py = r() * R.h, l = 10 + r() * 22; x.globalAlpha = 0.15 + r() * 0.35; x.lineWidth = 0.8 + r(); x.beginPath(); x.moveTo(px, py); x.lineTo(px + l * 0.62, py - l * 0.78); x.stroke(); } } });
+      return S;
+    },
+  });
+
   // ======================= Bayeux-Tapestry embroidered scroll =======================
   P.kit.register('tapestry', {
     runtime: 'tapestry',
@@ -2126,6 +2217,7 @@
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
   KITS.storybook.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.38, 0.55] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // storybook: a vivid brand colour becomes the cast's accent (its light and deep tones follow), kept dark enough for ink outlines to read; grey / black brands keep teal
+  KITS.pencil.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.42, 0.56] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // pencil: a vivid brand colour becomes the one warm accent (the bloom, a ring, the hot key); grey / black brands keep amber
   KITS.tapestry.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.3, 0.55], l: [0.36, 0.52] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // tapestry: a vivid brand colour becomes the accent wool (the red: initials, the hero's tunic, marks), pulled to a dyed-wool saturation; grey / black brands keep terracotta
   KITS.grain.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.5, 0.64] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // grain: a vivid brand colour becomes the warm spot colour (its tints and shade follow), pulled to a printable lightness; grey / black brands keep coral and navy
   KITS.chat.tint = (c) => ({ kit: { accent: c }, theme: { accent: c }, color: c });   // chat: the brand colour is "me"'s bubbles, the send button, highlights and the contact card

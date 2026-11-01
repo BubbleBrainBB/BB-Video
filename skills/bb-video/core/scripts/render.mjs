@@ -417,6 +417,21 @@ function quietGaps(nFrames, fps, from, acts, cuts = [], minLen = 1.5, d = null) 
   }
   return out;
 }
+// The whole picture sawing left and right: the camera and what it follows run on different clocks (a camera on ones over drawings on twos), or a stutter that steps forward and back. Reads as hard flicker, and no single frame looks wrong.
+//   Each frame's sideways shift from the next, from its column profile; a shift against the last real one is a reversal. Measured on 30 sample films: 24 reversals a second on the one that sawed, at most 3 in any other beyond a 0.3 s blip (9)
+async function sawScan(file, fps, from, trans = []) {
+  const Wd = 320, Ht = 8, R = 32, p = spawn('ffmpeg', ['-v', 'error', '-i', file, '-vf', `scale=${Wd}:${Ht}:flags=area,format=gray`, '-f', 'rawvideo', '-']);
+  const chunks = []; p.stdout.on('data', (d) => chunks.push(d));
+  await new Promise((r) => p.on('close', r));
+  const buf = Buffer.concat(chunks), sz = Wd * Ht, n = Math.floor(buf.length / sz), prof = [];
+  for (let i = 0; i < n; i++) { const c = new Float32Array(Wd); for (let y = 0; y < Ht; y++) for (let x = 0; x < Wd; x++) c[x] += buf[i * sz + y * Wd + x] / Ht; prof.push(c); }
+  const shift = (a, b) => { let best = 0, bv = Infinity, zero = 1; for (let s = -R; s <= R; s++) { let v = 0; const x0 = Math.max(0, -s), x1 = Wd - Math.max(0, s); for (let x = x0; x < x1; x++) v += Math.abs(a[x] - b[x + s]); v /= x1 - x0; if (s === 0) zero = v; if (v < bv) { bv = v; best = s; } } return bv < zero * 0.8 ? best : 0; };
+  const flips = []; let last = 0;
+  for (let i = 0; i < n - 1; i++) { const v = shift(prof[i], prof[i + 1]); if (Math.abs(v) < 2) continue; if (last && v > 0 !== last > 0) flips.push(i); last = v; }
+  const win = Math.round(fps), over = (i) => flips.filter((f) => f >= i && f < i + win).length >= Math.round((8 * fps) / 30), hits = [];
+  for (let i = 0; i < n - win; i++) { if (!over(i)) continue; let j = i; while (j < n - win && over(j)) j++; const a = from + i / fps, b = from + (j + win) / fps; if ((j - i) / fps >= 0.5 && !trans.some(([x, y]) => x < b && y > a)) hits.push([a, b]); i = j; }
+  return hits;
+}
 // Final-video check: a frame that differs a lot from both neighbours (a sudden one-frame jump), or a frame that differs from both sides while the sides look alike (a one-frame flash);
 //   without narration also check for long freezes (with narration, a still picture while listening is normal); check both dead air and no new action (with narration, only where no one speaks)
 async function popScan(file, fps, from, cuts, acts, appears = [], voice = false, trans = [], stillMax = 0.6) {   // stillMax: the style's allowed still hold (F.stillMax)
@@ -429,10 +444,12 @@ async function popScan(file, fps, from, cuts, acts, appears = [], voice = false,
   for (let i = 1; i < n - 1; i++) {
     const tA = from + (i + 1) / fps;
     const atCut = cuts.some((c) => Math.abs(c - tA) < 2.5 / fps) || appears.some((c) => tA - c > -1.5 / fps && tA - c < 3.5 / fps) || trans.some(([a, b]) => tA > a - 1.5 / fps && tA < b + 1.5 / fps); // Don't report registered hard cuts, intentional appearances (F.appear), or whole transitions (F.transition)
-    if (!atCut && d[i] > 3 * Math.max(d[i - 1], d[i + 1], 0.3) && d[i] > 4) hits.push(M(`${tA.toFixed(2)}s 画面突然跳变（差异 ${d[i].toFixed(1)}，前后 ${Math.max(d[i - 1], d[i + 1]).toFixed(1)}）`, `${tA.toFixed(2)}s sudden jump (difference ${d[i].toFixed(1)}, around it ${Math.max(d[i - 1], d[i + 1]).toFixed(1)})`));
+    const around = Math.max(d[i - 1], d[i + 1], d[i - 2] ?? 0, d[i + 2] ?? 0);   // two frames either side too: a film on twos changes only every other frame, which is not a jump
+    if (!atCut && d[i] > 3 * Math.max(around, 0.3) && d[i] > 4) hits.push(M(`${tA.toFixed(2)}s 画面突然跳变（差异 ${d[i].toFixed(1)}，前后 ${around.toFixed(1)}）`, `${tA.toFixed(2)}s sudden jump (difference ${d[i].toFixed(1)}, around it ${around.toFixed(1)})`));
     const inTrans = trans.some(([a, b]) => tA > a - 1.5 / fps && tA < b + 1.5 / fps);   // an iris / wipe registered as a transition is meant to change fast
     if (!inTrans && Math.min(d[i - 1], d[i]) > 4 && diff(i - 1, i + 1) < 0.35 * Math.min(d[i - 1], d[i])) hits.push(M(`${(from + i / fps).toFixed(2)}s 闪了一帧（这一帧和前后都不同，前后两帧却很像）`, `${(from + i / fps).toFixed(2)}s one-frame flash (this frame differs from both neighbours, which look alike)`));
   }
+  for (const [a, b] of await sawScan(file, fps, from, trans)) hits.push(M(`${a.toFixed(1)}–${b.toFixed(1)}s 整个画面在来回抽动（一秒里反向很多次），看起来很闪：常见原因是镜头和它跟着的东西不在同一个时钟上（比如画面一拍二、镜头一拍一），让两者走同一个时钟`, `${a.toFixed(1)}–${b.toFixed(1)}s the whole picture saws back and forth (many reversals a second) and reads as flicker: usually the camera and what it follows are on different clocks (say drawings on twos, camera on ones); put them on the same one`));
   if (acts) acts = { ...acts, speech: voice ? speechSpans() : [] };
   const gapWhy = voice ? M('旁白停下来的这一段：', 'narration paused: ') : '';
   if (!voice) {

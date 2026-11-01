@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · pencil</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#eee8db}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/pencil.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · hand-drawn pencil-test animation, narrated. Hand-written PROMO.compose: every change is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every number, year and word drawn on the sheet is traced there), then the treatment (styles/pencil/STYLE.md).
+// The telling: one long sheet; each line gets a drawing that is drawn in (construction first, clean-up over it), and the next line's drawing grows
+// OUT of it (D.morph) — no cuts. Figures are gesture drawings (faceless, seen from behind or in silhouette for real people). Numbers are drawn
+// (D.numeral, D.tally, D.marks), steps and years go on a timing chart (D.timing), a contrast is rough vs clean-up (D.versus). One warm bloom, at the peak.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 90, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#eee8db', fg: '#2c2a27', ink: '#2c2a27', muted: '#5d5952', accent: '#d8902e', paper: '#eee8db', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const D = PROMO.pencil(F, { palette: 'graphite' });
+    const L = D.L;   // D.L(landscape, portrait)
+
+    // ---- line 1: a drawing is drawn in; the camera holds and breathes on it ----
+    const first = D.prop('globe', { x: 0, y: 0, r: 180, at: s('l1') });
+    D.write(M('第一句的关键词', 'Line 1 keyword'), { x: 0, y: -460, size: 64, at: s('l1') + 0.8, until: e('l1') + 0.6 });
+    D.cam(0, { on: first, pad: 2.2 });
+
+    // … one block per line: the next drawing grows out of this one (D.morph(at, from, to)), a figure acts it out (D.figure → f.fig.walk / jump / look …,
+    //   the camera follows: D.follow), a number is drawn (D.numeral / D.tally / D.marks), a timeline is a timing chart (D.timing).
+
+    const z = e('l1') + 0.4;
+    D.write(M('一句话总结', 'One-line takeaway'), { x: 0, y: 160, size: 60, at: z, kind: 'headline' });
+    F.section(0, 1, { name: 'open' });
+    F.section(z, 1, { name: 'close' });
+    F.coverAt(e('l1') - 0.3);
+  },
+});
+</script></body></html>

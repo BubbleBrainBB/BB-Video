@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · pencil</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#eee8db}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/pencil.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · hand-drawn pencil-test animation, on the beat (promo). Read styles/pencil/STYLE.md first.
+// The product told as a pencil test: one gesture figure acts the need out, the camera follows it; a drawing redraws itself into the product's
+// answer (D.morph, never a cut); the key number is drawn, then redrawn into the next; one warm wash blooms at the peak; the name is lettered last.
+// Below: a skeleton with placeholders — replace every word, drawing and beat with the film's own. Every word on screen must be in brief.md.
+const { M, E } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0.3, duration: 18, grain: false,
+  theme: { bg: '#eee8db', fg: '#2c2a27', ink: '#2c2a27', muted: '#5d5952', accent: '#d8902e', paper: '#eee8db', fonts: { display: '"LXGW WenKai", serif', serif: '"LXGW WenKai", serif', sans: '"LXGW WenKai", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), D = PROMO.pencil(F, { palette: 'graphite' }), L = D.L;
+    F.section(0, 1, { name: 'hook' }); F.section(b(12), 2, { name: 'build' }); F.section(b(20), 3, { name: 'drop', hit: true }); F.section(b(26), 1, { name: 'resolve' });
+
+    // ---- hook: a gesture figure is drawn in (construction first), walks across the sheet; the camera follows it ----
+    const ground = D.line({ pts: [[-1400, 0], [2600, 0]], lw: 2.2, tone: 'soft', at: b(0.5), enter: 'draw', inDur: 1.2 });
+    const f = D.figure({ x: -500, height: 420, face: 'right', at: b(1), wear: { top: 'shirt' } });
+    f.fig.walk(b(4), 500, { speed: 1.4 });
+    D.cam(0, { x: -500, y: -260, z: 1 }); D.follow(b(4), b(11), f, { lag: 0.5 });
+    D.write(M('一句钩子', 'The hook line'), { x: 0, y: -620, size: 72, at: b(2), until: b(11) });
+
+    // ---- build: a drawing (the problem) redraws itself into the answer — a morph instead of a cut ----
+    const a1 = D.prop('door', { x: 900, at: b(9), enter: 'draw' });
+    const a2 = D.prop('window', { x: 900, w: 260, h: 260 });
+    D.morph(b(13), a1, a2, { dur: 1.0 });
+    f.fig.look(b(10), a1, { until: b(15) });
+
+    // ---- drop: the key number, drawn; then redrawn into the next; the warm wash blooms once ----
+    const num = D.numeral({ x: 1500, y: -380, size: 260, keys: [[b(17), '8'], [b(20), '24']], at: b(17) });
+    D.move(b(15), b(17), { on: num, pad: 2.2 });
+    D.bloom(b(20.5), { on: num, until: b(26) });
+
+    // ---- resolve: the name, lettered over its blue guidelines ----
+    D.move(b(24), b(26), { x: 1500, y: -300, z: 0.9 });
+    D.write(M('名字', 'Name'), { x: 1500, y: -60, size: 110, at: b(26), kind: 'logo' });
+    F.coverAt(b(22));
+  },
+});
+</script></body></html>

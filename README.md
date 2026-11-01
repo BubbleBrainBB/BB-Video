@@ -45,6 +45,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `storybook` | a hand-drawn storybook with its own mascots: warm grey paper with fibres, ink outlines with a slight hand wobble, coloured-pencil hatching with a soft rim; each project defines its own cast of original cute characters (bean, round, blob, gem, star, capsule or pillar bodies, a sprout or antenna on top) that squash, stretch, blink and hop, acting an invisible process out with tangible props on little stages along one ground line — filing cabinets, an easel sheet, a monitor, a big button, stacking blocks, signposts, paper planes, cards flipping to ✓; small dark monospace tags float above them with a ✓ result line; one character splits into clones that each carry a task card, then they merge back into one; the camera travels from stage to stage |
 | `tapestry` | a Bayeux-Tapestry embroidered scroll: undyed linen with a visible weave, everything stitched in a few wool colours — stem-stitch outlines, laid-and-couched fills, bare linen for faces and hands; upper and lower borders of birds and beasts between diagonal bars; stylised trees divide the scenes; flat side-on figures with big gestures; act titles under a branch arch and running captions stitched in Chinese; figures and objects stitch themselves on thread by thread while one long cloth scrolls past, pushing in until single threads show |
 | `parable` | a wordless 3D stick-figure parable: a black void with a glossy floor that mirrors everything, glowing white stick figures with round heads, one fixed wide camera; two figures do the same thing in opposite ways — bricks laid one by one, piles, steps — and the contrast is the whole story; one red object carries the meaning; small monospace labels and counters, a single title at the end; vertical first, 15–45 s, music only by default |
+| `pencil` | a hand-drawn pencil test: warm animation paper with peg holes and the drawing number, light blue construction lines under a pressure-weighted graphite line, smudge and hatching, drawings on twos with a gentle line boil; one drawing redraws itself into the next instead of a cut, machines really turn (wheels, cranks, chains geared by their teeth), faceless gesture figures, light pools in a graphite haze, one warm bloom at the peak; steps, numbers and contrast are drawn by hand |
 
 What it covers:
 
@@ -248,6 +249,14 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>parable</code></b> · Compound interest: one figure builds 30 bricks on day one and sleeps for a year; the other adds 1% a day — slow for months, then it passes him (1.01³⁶⁵ ≈ 37.8)<br>
 <sub>Wordless · the numbers are computed, 1% a day is an illustration</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/parable.mp4">Full video</a>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/pencil.mp4"><img src="examples/pencil/preview.gif" width="100%" alt="pencil"></a><br>
+<b><code>pencil</code></b> · How the bicycle got its shape: one rider on one road, the machine redrawn into its next generation on the move — the running machine, pedals on the front wheel, the high wheel, the chain, air in the tyres, the diamond frame; each change has a mechanical reason, and every wheel and gear is computed<br>
+<sub>Faceless figures, machines drawn in code · sources: Science Museum Group, Stadt Mannheim, Cycling UK, Grace's Guide, DPMA, Library Company of Philadelphia</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/pencil.mp4">Full video</a>
 </td>
 </tr>
 </table>
