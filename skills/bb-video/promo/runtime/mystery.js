@@ -16,8 +16,8 @@
 //       wobble, the reconstruction tag — always) | 'cctv' (surveillance: grey, scan lines, REC, a ticking timestamp from clock) | 'night' (green
 //       night vision) | 'truth' (warm daylight, for the reveal) | 'plain'. push / cam: camera keys { s, x, y } (focus 0–1; the focus stays put on screen)
 //   R.cam(L, [[t, { s, x, y }, ease]…])   R.jolt(L, at, amount)   R.flash(at)   R.dip(a, b)
-//   R.text(parent, html, { x, y, size, font, weight, color, anchor, w, a, b, kind, bg, enter: 'fade' | 'slam' | 'type' })   R.tag(L, text, { a, b, right, bottom, dot })
-//   R.stamp(parent, text, { x, y, size, rot, a, b, color })   red ink, slammed, centred on x, y
+//   R.text(parent, html, { x, y, size, font, weight, color, anchor, w, a, b, kind, bg, stroke, strokeColor, enter: 'fade' | 'slam' | 'type' })   R.tag(L, text, { a, b, right, bottom, dot })
+//   R.stamp(parent, text, { x, y, size, rot, a, b, color, bg })   red ink, slammed, centred on x, y (bg: the paper behind it; TV look: cream)
 //   R.lower(L, { a, b, title, sub, y })   lower third    R.card(L, { a, b, kicker, title, sub })   chapter card
 //   R.question(L, { a, b, text, sub })    the question card (music hit, a words-only scene on purpose)
 //   R.theory(L, { a, b, n, text, out: { text, at }, note: { text, at } })   a hypothesis on a case card, struck out and stamped (排除)
@@ -37,7 +37,8 @@
 //   Props (SVG, cartoon): const S = R.svg(L); R.prop(S, name, { x, y, s, rot, a, b, move, bob, tape, sfx, …own options })
 //       phone (chat or lock screen), envelope (red packet), friend (bean person: face, look, arms, wear, nod), calendar, scale (balance), bubble,
 //       lantern, cake, gift, heart, box, qmark, coin, sparkle, magnifier, bird (pigeon: nod, peck, flap, coo), bread, bed, door, measure,
-//       snack (crisps), book (closed / stack / open with lines), ticket. R.arrow(S, { from, to, bend | loop, a, label }) for diagrams. Add your own: R.props.name = (g, o, k) => handle
+//       snack (crisps), book (closed / stack / open with lines), ticket, pan, stove, pie, bowl, sack, plate, menu, steak, lobster, steamer, gauge, thermo, certificate, hangtag.
+//       R.arrow(S, { from, to, bend | loop, a, label }) for diagrams. Add your own: R.props.name = (g, o, k) => handle
 // Times: a = in, b = out. In a narrated film take them from the narration (T.start / T.end / T.word).
 (function () {
   const P = window.PROMO;
@@ -237,11 +238,11 @@
     // ---------- type ----------
     const typed = [];
     R.text = (parent, html, o = {}) => {
-      const { x = 0, y = 0, size = 56, font = FONT.sans, weight = 900, color = '#fff', anchor = 'l', w, kind = 'label', text, bg, pad = 0.3, ls = '.02em', noFact, overlap, chrome, enter = 'fade', shadow = true, lh = 1.25, z } = o;
+      const { x = 0, y = 0, size = 56, font = FONT.sans, weight = 900, color = '#fff', anchor = 'l', w, kind = 'label', text, bg, pad = 0.3, ls = '.02em', noFact, overlap, chrome, enter = 'fade', shadow = true, lh = 1.25, z, stroke } = o;
       const [a, b] = winOf(parent, o.a, o.b);
       const left = anchor === 'c' ? `left:${gx(x - (w ?? RW * 2) / 2)}px;width:${gx(w ?? RW * 2)}px;text-align:center` : anchor === 'r' ? `left:${gx(x - (w ?? RW * 2))}px;width:${gx(w ?? RW * 2)}px;text-align:right` : `left:${gx(x)}px;${w ? `width:${gx(w)}px` : ''}`;
       const box = el('div', `${left};top:${gx(y)}px;opacity:0;${z ? `z-index:${z}` : ''}`, parent);
-      const s = el('span', `position:relative;display:inline-block;font:${weight} ${gx(size)}px/${lh} ${font};letter-spacing:${ls};color:${color};white-space:${w ? 'normal' : 'nowrap'};${bg ? `background:${bg};padding:${gx(size * pad * 0.5)}px ${gx(size * pad)}px;border-radius:${gx(size * 0.12)}px` : ''};${shadow && !bg ? `text-shadow:0 ${gx(3)}px ${gx(16)}px rgba(0,0,0,.5)` : ''}`, box, html);
+      const s = el('span', `position:relative;display:inline-block;font:${weight} ${gx(size)}px/${lh} ${font};letter-spacing:${ls};color:${color};white-space:${w ? 'normal' : 'nowrap'};${bg ? `background:${bg};padding:${gx(size * pad * 0.5)}px ${gx(size * pad)}px;border-radius:${gx(size * 0.12)}px` : ''};${shadow && !bg ? `text-shadow:0 ${gx(3)}px ${gx(16)}px rgba(0,0,0,.5)` : ''};${stroke ? `-webkit-text-stroke:${gx(stroke)}px ${o.strokeColor ?? '#fff'};paint-order:stroke fill` : ''}`, box, html);
       const full = text ?? s.textContent;
       F.text(s, kind, full, a, b, { noFact, overlap, chrome });
       if (enter === 'type') {
@@ -270,11 +271,11 @@
       return chip;
     };
     R.stamp = (parent, html, o = {}) => {
-      const { x = 0, y = 0, size = 80, rot = -8, color = C.red, text } = o, [a, b] = winOf(parent, o.a, o.b);
+      const { x = 0, y = 0, size = 80, rot = -8, color = C.red, text, bg = look === 'tv' ? 'rgba(255,246,224,.94)' : 'rgba(255,255,255,.04)' } = o, [a, b] = winOf(parent, o.a, o.b);   // bg: the paper behind the ink (TV look: cream, red ink on the blue would vibrate)
       const box = el('div', `left:${gx(x)}px;top:${gx(y)}px;width:0;height:0;opacity:0;z-index:30`, parent);
-      const s = el('span', `position:absolute;left:0;top:0;transform:translate(-50%,-50%);display:inline-block;font:900 ${gx(size)}px/1.05 ${FONT.title};letter-spacing:.12em;color:${color};white-space:nowrap;border:${gx(size * 0.08)}px double ${color};padding:${gx(size * 0.08)}px ${gx(size * 0.28)}px;border-radius:${gx(size * 0.1)}px;background:rgba(255,255,255,.04)`, box, html);
+      const s = el('span', `position:absolute;left:0;top:0;transform:translate(-50%,-50%);display:inline-block;font:900 ${gx(size)}px/1.05 ${FONT.title};letter-spacing:.12em;color:${color};white-space:nowrap;border:${gx(size * 0.08)}px double ${color};padding:${gx(size * 0.08)}px ${gx(size * 0.28)}px;border-radius:${gx(size * 0.1)}px;background:${bg}`, box, html);
       F.text(s, 'label', text ?? s.textContent, a, b, { overlap: true });
-      F.sfx(a, 'stamp', 0.65); F.blur(a, a + 0.16, 8);
+      F.sfx(a, 'stamp', o.gain ?? 0.65); F.blur(a, a + 0.16, 8);   // gain: under a voice, below .45 it stays silent
       F.add((t) => { const q = seg(t, a, a + 0.14, E.expoOut); set(box, { opacity: t >= a && t < b ? 0.94 : 0, transform: `rotate(${rot}deg) scale(${(1.7 - 0.7 * q).toFixed(3)})` }); });
       return s;
     };
@@ -427,7 +428,7 @@
           const bub = el('div', `${side};top:0;width:${gx(bw)}px;padding:${gx(17)}px ${gx(28)}px;box-sizing:border-box;background:${fill};border-radius:${gx(12)}px;font:400 ${gx(FS)}px/1.3 ${FONT.sans};color:#111;white-space:nowrap`, row, x.lines.join('<br>'));
           el('div', `${x.mine ? 'right' : 'left'}:${gx(-12)}px;top:${gx(30)}px;width:${gx(24)}px;height:${gx(24)}px;background:${fill};transform:rotate(45deg)`, bub);
           F.text(bub, 'label', x.m.text, at, b);
-          if (x.m.at !== undefined) F.sfx(at, x.mine ? 'pop' : 'msg', x.mine ? 0.42 : 0.55);
+          if (x.m.at !== undefined) F.sfx(at, x.mine ? 'pop' : 'msg', o.gain ?? (x.mine ? 0.42 : 0.55));
         }
         F.add((t) => { const q = seg(t, at, at + 0.3, E.backOut); set(row, { opacity: t >= at ? Math.min(1, seg(t, at, at + 0.12)).toFixed(3) : 0, transform: `translateY(${f1(-gx(scrollAt(t)))}px) scale(${(0.92 + 0.08 * q).toFixed(3)})`, transformOrigin: x.mine ? '100% 0' : '0 0' }); });
       }
@@ -478,7 +479,7 @@
     R.svg = (L, o = {}) => svgEl('svg', { viewBox: `0 0 ${RW} ${RH}`, width: W, height: H, style: `position:absolute;left:0;top:0;overflow:visible;z-index:${o.z ?? 2}` }, L);
     const drawOn = (e, at, dur) => {
       F.prep(() => { const len = e.getTotalLength ? e.getTotalLength() : 1000; e.setAttribute('stroke-dasharray', `${len} ${len + 10}`); e._len = len; e.setAttribute('stroke-dashoffset', len); });
-      F.add((t) => { const len = e._len ?? 1000; e.setAttribute('stroke-dashoffset', f1(len * (1 - seg(t, at, at + dur, E.cubicInOut)))); });
+      F.add((t) => { const len = e._len ?? 1000; e.setAttribute('stroke-dashoffset', f1(len * (1 - seg(t, at, at + dur, E.cubicInOut)))); e.setAttribute('visibility', t >= at ? 'visible' : 'hidden'); });   // hidden until it starts: a round cap on an empty dash would show as a dot
       return e;
     };
     R.drawOn = drawOn;
@@ -787,6 +788,11 @@
       const sweat = svgEl('path', { d: 'M96,-246 Q84,-224 96,-214 Q108,-224 96,-246 Z', fill: '#8fd3ff', stroke: INK, 'stroke-width': 4 }, fg);
       if (wear.includes('detective')) { svgEl('path', { d: 'M-94,-222 C-92,-306 92,-306 94,-222 Z', fill: '#8b5e3c', stroke: INK, 'stroke-width': 6 }, g); svgEl('path', { d: 'M-120,-216 Q0,-196 120,-216', fill: 'none', stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round' }, g); svgEl('path', { d: 'M-88,-240 Q0,-224 88,-240', fill: 'none', stroke: '#5a3a24', 'stroke-width': 12 }, g); }
       if (wear.includes('party')) { svgEl('path', { d: 'M-34,-250 L14,-372 L56,-246 Z', fill: '#7cc4ff', stroke: INK, 'stroke-width': 6, 'stroke-linejoin': 'round' }, g); svgEl('path', { d: 'M-18,-290 L40,-282 M-2,-330 L28,-326', stroke: '#ff6b8a', 'stroke-width': 9 }, g); svgEl('circle', { cx: 14, cy: -376, r: 13, fill: C.amber, stroke: INK, 'stroke-width': 5 }, g); }
+      if (wear.includes('chef')) {   // a chef's toque
+        const ty = body === 'bulb' ? -348 : body === 'brain' ? -326 : -238;
+        svgEl('path', { d: `M-70,${ty} C-130,${ty - 20} -120,${ty - 104} -62,${ty - 92} C-52,${ty - 150} 52,${ty - 150} 62,${ty - 92} C120,${ty - 104} 130,${ty - 20} 70,${ty} Z`, fill: '#fff', stroke: INK, 'stroke-width': 7, 'stroke-linejoin': 'round' }, g);
+        svgEl('path', { d: `M-70,${ty - 8} L-66,${ty + 34} Q0,${ty + 48} 66,${ty + 34} L70,${ty - 8} Q0,${ty + 6} -70,${ty - 8} Z`, fill: '#f0f0f4', stroke: INK, 'stroke-width': 7, 'stroke-linejoin': 'round' }, g);
+      }
       if (wear.includes('cap')) {   // a graduation mortarboard with a tassel
         const ty = body === 'bulb' ? -372 : body === 'brain' ? -336 : -256;
         svgEl('path', { d: `M-62,${ty + 2} L-58,${ty + 40} Q0,${ty + 56} 58,${ty + 40} L62,${ty + 2} Z`, fill: '#2a2c38', stroke: INK, 'stroke-width': 6, 'stroke-linejoin': 'round' }, g);
@@ -979,7 +985,34 @@
       return {};
     };
     // a calendar: mode 'day' (a tear-off page: month, a big date, the weekday, a note) or 'month' (a grid with red marks)
+    // a wide wall calendar, one row of columns (mode: 'week'), origin at its centre: heads: ['星期一'…], extra columns may join later with { text, at };
+    // cells: [{ i, text, at, circle, color }] written in column i, circled in red when circle is set; month is the banner
+    const calendarWeek = (g, o, k) => {
+      const [a, b] = k.win(), heads = (o.heads || M(['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'], ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'])).map((h) => (typeof h === 'string' ? { text: h } : h)), cw = o.cw ?? 150, ch = o.ch ?? 300, ww = cw * heads.length, x0 = -ww / 2, top = -ch / 2 - 40;
+      const pap = svgEl('rect', { y: top - 96, height: ch + 136, rx: 18, fill: '#fffaf0', stroke: INK, 'stroke-width': 8 }, g), bar = svgEl('rect', { y: top - 96, height: 96, rx: 18, fill: C.red, stroke: INK, 'stroke-width': 8 }, g);
+      const mo = k.text(g, o.month ?? M('万年历', 'PERPETUAL CALENDAR'), { x: x0 + 40, y: top - 30, 'font-size': 56, 'font-weight': 900, 'font-family': FONT.title, fill: '#fff' });
+      k.F.text(mo, 'label', mo.textContent, a, b, { overlap: true });
+      const lateIn = (h) => h.at !== undefined;
+      heads.forEach((h, i) => {
+        const cg = svgEl('g', {}, g), x = x0 + cw * i;
+        svgEl('rect', { x, y: top, width: cw, height: 56, fill: h.color ? shade(h.color, 0.75) : '#eceff5', stroke: INK, 'stroke-width': 5 }, cg);
+        svgEl('rect', { x, y: top + 56, width: cw, height: ch - 16, fill: '#fffaf0', stroke: INK, 'stroke-width': 5 }, cg);
+        const te = k.text(cg, h.text, { x: x + cw / 2, y: top + 42, 'text-anchor': 'middle', 'font-size': o.headSize ?? 34, 'font-weight': 900, fill: h.color ?? INK });
+        k.F.text(te, 'label', h.text, lateIn(h) ? k.when(h.at) : a, b, { overlap: true });
+        if (lateIn(h)) k.F.add((t) => { const lt = k.clock(t), q = seg(lt, h.at, h.at + 0.3, E.backOut); cg.setAttribute('display', lt >= h.at ? '' : 'none'); cg.setAttribute('transform', `translate(0,${f1((1 - q) * -60)})`); });
+      });
+      const widthAt = (lt) => { let w = 0; heads.forEach((h, i) => { if (!lateIn(h)) w = cw * (i + 1); else w = lerp(w, cw * (i + 1), seg(lt, h.at - 0.15, h.at + 0.15, E.cubicInOut)); }); return w; };
+      k.F.add((t) => { const w = widthAt(k.clock(t)); for (const r of [pap, bar]) { r.setAttribute('x', f1(x0)); r.setAttribute('width', f1(w)); } });
+      (o.cells || []).forEach((c, j) => {
+        const x = x0 + cw * c.i + cw / 2, y = top + 56 + (ch - 16) / 2, cg = svgEl('g', {}, g), at = c.at, size = c.size ?? 54, te = k.text(cg, c.text, { x, y: y + size * 0.36, 'text-anchor': 'middle', 'font-size': size, 'font-weight': 900, 'font-family': FONT.title, fill: c.color ?? INK });
+        k.F.text(te, 'label', c.text, at !== undefined ? k.when(at) : a, b, { overlap: true });
+        if (at !== undefined) k.F.add((t) => cg.setAttribute('opacity', Math.min(1, seg(k.clock(t), at, at + 0.12)).toFixed(3)));
+        if (c.circle !== undefined) { const p = svgEl('path', { d: roughEllipse(x, y, cw * 0.42, size * 1.05, j + 3), fill: 'none', stroke: C.red, 'stroke-width': 8, 'stroke-linecap': 'round' }, g); drawOn(p, k.when(c.circle), 0.4); k.F.sfx(k.when(c.circle), 'pen', 0.55, { dur: 0.4 }); }
+      });
+      return { info: 'chart' };
+    };
     PROPS.calendar = (g, o, k) => {
+      if (o.mode === 'week') return calendarWeek(g, o, k);
       const [a, b] = k.win();
       svgEl('rect', { x: -170, y: -190, width: 340, height: 380, rx: 18, fill: '#fffaf0', stroke: INK, 'stroke-width': 7 }, g);
       svgEl('path', { d: 'M-170,-172 Q-170,-190 -152,-190 L152,-190 Q170,-190 170,-172 L170,-100 L-170,-100 Z', fill: C.red, stroke: INK, 'stroke-width': 7 }, g);
@@ -1266,6 +1299,296 @@
       k.F.text(te, 'label', tt, ...k.win(), { overlap: true });
       if (o.sub) { const se = k.text(g, o.sub, { x: -60, y: 60, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 700, fill: shade(col, -0.55) }); k.F.text(se, 'label', o.sub, ...k.win(), { overlap: true }); }
       return { info: 'shape' };
+    };
+    // ---------- kitchen and clinic props: for a metaphor taken literally (a pan with no fire, a pie that never leaves it, a meter, a certificate) ----------
+    // a number, or keys [[t, v, ease?]…] between which it moves
+    const numAt = (v, lt, d = 0) => (Array.isArray(v) ? keyed(v.map(([t, x, ez]) => [t, { v: x }, ez]), lt).v : v ?? d);
+    // wisps of steam rising from y = 0 across w; level 0–1 or keyed
+    const wisps = (g, k, o) => {
+      const n = o.n ?? 4, w = o.w ?? 200, h = o.h ?? 200, sg = svgEl('g', {}, g), ps = [];
+      for (let i = 0; i < n; i++) ps.push(svgEl('path', { fill: 'none', stroke: o.color ?? '#fff', 'stroke-width': o.width ?? 13, 'stroke-linecap': 'round' }, sg));
+      k.F.add((t) => {
+        const lt = k.clock(t), lv = numAt(o.level ?? 1, lt, 1);
+        ps.forEach((p, i) => {
+          const q = (((lt * (o.rate ?? 0.6) + i / n) % 1) + 1) % 1, x = (n > 1 ? -w / 2 + (w * i) / (n - 1) : 0) + Math.sin(lt * 1.7 + i * 2) * 14, y = -q * h, c = 22 + q * 16;
+          p.setAttribute('d', `M${f1(x)},${f1(y)} c${f1(c)},-24 ${f1(-c)},-48 0,-72`);
+          p.setAttribute('opacity', (Math.sin(Math.PI * q) * 0.72 * lv).toFixed(3));
+        });
+      });
+      return sg;
+    };
+    // a frying pan, three-quarter view: h.top is where the food goes (R.prop(h.top, 'pie', { squash: .32 })); steam: 0–1 or keyed; handle: 'right' | 'left'
+    PROPS.pan = (g, o, k) => {
+      const col = o.color || '#3a3d4a', sd = o.handle === 'left' ? -1 : 1;
+      svgEl('path', { d: `M${sd * 190},-4 L${sd * 440},-16`, stroke: INK, 'stroke-width': 42, 'stroke-linecap': 'round' }, g);
+      svgEl('path', { d: `M${sd * 196},-4 L${sd * 436},-16`, stroke: '#8a5a22', 'stroke-width': 28, 'stroke-linecap': 'round' }, g);
+      svgEl('path', { d: 'M-200,0 L-170,60 Q0,96 170,60 L200,0 Z', fill: shade(col, -0.2), stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, g);
+      svgEl('ellipse', { rx: 200, ry: 62, fill: shade(col, 0.12), stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('ellipse', { cy: 5, rx: 172, ry: 48, fill: shade(col, -0.3) }, g);
+      svgEl('path', { d: 'M-150,-18 Q-70,-44 30,-44', fill: 'none', stroke: '#fff', 'stroke-width': 7, 'stroke-linecap': 'round', opacity: 0.22 }, g);
+      const top = svgEl('g', { transform: 'translate(0,4)' }, g);
+      if (o.steam) wisps(svgEl('g', { transform: 'translate(0,-40)' }, g), k, { level: o.steam, w: 230, h: o.steamH ?? 190 });
+      return { top, info: 'shape' };
+    };
+    // a gas stove, feet at y = 0: fire 0–1 or keyed [[t, level]…] (no key = no fire), click: [t…] the knob clicks and sparks, h.top is where the pan sits
+    PROPS.stove = (g, o, k) => {
+      const col = o.color || '#d7dbe6';
+      svgEl('rect', { x: -250, y: -165, width: 500, height: 165, rx: 14, fill: col, stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('rect', { x: -214, y: -112, width: 428, height: 84, rx: 10, fill: shade(col, -0.38), stroke: INK, 'stroke-width': 6 }, g);
+      svgEl('path', { d: 'M-196,-92 L-120,-92', stroke: '#fff', 'stroke-width': 6, 'stroke-linecap': 'round', opacity: 0.35 }, g);
+      svgEl('ellipse', { cy: -165, rx: 250, ry: 44, fill: shade(col, 0.45), stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('ellipse', { cy: -168, rx: 112, ry: 22, fill: '#3a3d4a', stroke: INK, 'stroke-width': 7 }, g);
+      const knobs = [-1, 1].map((sd) => { const kg = svgEl('g', { transform: `translate(${sd * 118},-70)` }, g); svgEl('circle', { r: 26, fill: '#fafafa', stroke: INK, 'stroke-width': 6 }, kg); return svgEl('path', { d: 'M0,-20 L0,-4', stroke: C.red, 'stroke-width': 8, 'stroke-linecap': 'round' }, kg); });
+      const fl = svgEl('g', { transform: 'translate(0,-170)' }, g), flames = [-84, -56, -28, 0, 28, 56, 84].map((x) => svgEl('path', { transform: `translate(${x},0)`, fill: '#ff8a1f', stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round' }, fl));
+      const inner = [-56, 0, 56].map((x) => svgEl('path', { transform: `translate(${x},0)`, fill: '#ffd84a' }, fl));
+      const spark = svgEl('path', { d: 'M0,-34 L8,-10 L32,-4 L10,6 L4,30 L-6,8 L-30,6 L-8,-6 Z', transform: 'translate(92,-180)', fill: '#fff06a', stroke: INK, 'stroke-width': 4, display: 'none' }, g);
+      const clicks = [].concat(o.click || []), fire = o.fire ?? 0;
+      for (const at of clicks) k.F.sfx(k.when(at), 'click', 0.7);
+      if (Array.isArray(fire)) fire.forEach(([at, v], i) => { if (v > 0 && (i === 0 || fire[i - 1][1] === 0)) k.F.sfx(k.when(at), 'ignite', 0.75); });
+      k.F.add((t) => {
+        const lt = k.clock(t), lv = numAt(fire, lt, 0), hit = clicks.filter((c) => lt >= c).length, sp = clicks.some((c) => lt >= c && lt < c + 0.09);
+        knobs[1].setAttribute('transform', `rotate(${Math.min(hit, 4) * 25 + (lv > 0 ? 40 : 0)})`);
+        spark.setAttribute('display', sp ? '' : 'none');
+        fl.setAttribute('display', lv > 0.01 ? '' : 'none');
+        flames.forEach((p, i) => { const h = (46 + 44 * vnoise(lt, 7, 200 + i)) * lv; p.setAttribute('d', `M-15,0 C-20,${f1(-h * 0.45)} -6,${f1(-h * 0.7)} 0,${f1(-h)} C6,${f1(-h * 0.7)} 20,${f1(-h * 0.45)} 15,0 Z`); });
+        inner.forEach((p, i) => { const h = (22 + 20 * vnoise(lt, 8, 220 + i)) * lv; p.setAttribute('d', `M-7,0 C-9,${f1(-h * 0.5)} -3,${f1(-h * 0.7)} 0,${f1(-h)} C3,${f1(-h * 0.7)} 9,${f1(-h * 0.5)} 7,0 Z`); });
+      });
+      return { top: svgEl('g', { transform: 'translate(0,-258)' }, g), info: 'shape' };
+    };
+    // a pie (or any round flatbread): r, squash (.3 lying in a pan), color, text (stamped on it); glow 0–1 or keyed (halo and rays: how promising it looks; rays: false = only the halo, a moon);
+    // old (cracks, mould, a cobweb); mode: 'sketch' only a drawn outline (pen, draw: [at, dur] draws it on); bites: [t…] bites taken out, going round from biteAt degrees (0 = right, 180 = left); steam;
+    // flip: [t…] tossed and turned over, sides: [a, b] the text on each side
+    PROPS.pie = (g, o, k) => {
+      const r0 = o.r ?? 150, sq = o.squash ?? 1, col = o.color || (o.old ? '#a98a52' : '#e7b05c'), [wa, wb] = k.win();
+      const seed = (o.seed ?? 1) * 97 + 11, r = rnd(seed);
+      const halo = svgEl('g', { opacity: 0 }, g);
+      if (o.glow !== undefined) {
+        const id = uid(), gr = svgEl('radialGradient', { id }, svgEl('defs', {}, g));
+        svgEl('stop', { offset: '35%', 'stop-color': '#fff6b8', 'stop-opacity': 0.95 }, gr); svgEl('stop', { offset: '100%', 'stop-color': '#ffe27a', 'stop-opacity': 0 }, gr);
+        svgEl('circle', { r: r0 * 2.1, fill: `url(#${id})` }, halo);
+      }
+      const rays = svgEl('g', {}, halo);
+      if (o.glow !== undefined && o.rays !== false) for (let i = 0; i < 12; i++) svgEl('path', { d: `M${f1(-r0 * 0.09)},${f1(-r0 * 1.2)} L0,${f1(-r0 * (i % 2 ? 1.75 : 2.05))} L${f1(r0 * 0.09)},${f1(-r0 * 1.2)} Z`, fill: '#fff3a0', transform: `rotate(${i * 30})` }, rays);
+      const flipG = svgEl('g', {}, g);
+      let target = flipG;
+      if (o.bites) {
+        const id = uid(), mk = svgEl('mask', { id, maskUnits: 'userSpaceOnUse', x: -r0 * 1.3, y: -r0 * 1.3, width: r0 * 2.6, height: r0 * 2.6 }, svgEl('defs', {}, g));
+        svgEl('rect', { x: -r0 * 1.3, y: -r0 * 1.3, width: r0 * 2.6, height: r0 * 2.6, fill: '#fff' }, mk);
+        [].concat(o.bites).forEach((at, i) => {
+          const an = ((o.biteAt ?? -30) * Math.PI) / 180 + i * 0.85, cx = Math.cos(an) * r0 * 0.95, cy = Math.sin(an) * r0 * 0.95, cs = [[0, 0, 0.42], [0.25, 0.22, 0.26], [-0.2, 0.28, 0.24]].map(([dx, dy, rr]) => svgEl('circle', { cx: f1(cx + dx * r0 * Math.cos(an) - dy * r0 * Math.sin(an)), cy: f1(cy + dx * r0 * Math.sin(an) + dy * r0 * Math.cos(an)), r: 0, fill: '#000' }, mk));
+          const rs = [0.42, 0.26, 0.24];
+          if (i % 2 === 0) k.F.sfx(k.when(at), 'crunch', 0.6);
+          k.F.add((t) => { const q = seg(k.clock(t), at, at + 0.08); cs.forEach((c, j) => c.setAttribute('r', f1(rs[j] * r0 * q))); });
+        });
+        target = svgEl('g', { mask: `url(#${id})` }, flipG);
+      }
+      if (o.mode === 'sketch') {
+        const pen = o.pen || C.red, [at, dur] = o.draw || [wa, 0.6], ws = o.width ?? 11, paths = [roughEllipse(0, 0, r0, r0, o.seed ?? 1), roughEllipse(0, 0, r0 * 0.78, r0 * 0.78, (o.seed ?? 1) + 1)];
+        for (let i = 0; i < 7; i++) { const an = r() * 6.3, d = r() * r0 * 0.6, x = Math.cos(an) * d, y = Math.sin(an) * d; paths.push(`M${f1(x - 11)},${f1(y)} L${f1(x + 11)},${f1(y + 4)}`); }
+        paths.forEach((d, i) => { const st = i < 2 ? at + i * dur * 0.38 : at + dur * 0.76 + (i - 2) * dur * 0.04; drawOn(svgEl('path', { d, fill: 'none', stroke: pen, 'stroke-width': i < 2 ? ws : ws * 0.8, 'stroke-linecap': 'round' }, target), k.when(st), i < 2 ? dur * 0.46 : 0.08); });
+        k.F.sfx(k.when(at), 'pen', 0.55, { dur });
+      } else {
+        svgEl('circle', { r: r0, fill: col, stroke: INK, 'stroke-width': 8 }, target);
+        svgEl('circle', { r: r0 * 0.82, fill: shade(col, 0.2) }, target);
+        for (let i = 0; i < 6; i++) { const an = r() * 6.3, d = r() * r0 * 0.68; svgEl('ellipse', { cx: f1(Math.cos(an) * d), cy: f1(Math.sin(an) * d), rx: f1(r0 * (0.06 + r() * 0.08)), ry: f1(r0 * (0.04 + r() * 0.05)), transform: `rotate(${f1(r() * 180)},${f1(Math.cos(an) * d)},${f1(Math.sin(an) * d)})`, fill: shade(col, -0.3), opacity: 0.6 }, target); }
+        for (let i = 0; i < 9; i++) { const an = r() * 6.3, d = r() * r0 * 0.74; svgEl('circle', { cx: f1(Math.cos(an) * d), cy: f1(Math.sin(an) * d), r: f1(r0 * 0.022), fill: '#fff7dc', stroke: INK, 'stroke-width': 1.5 }, target); }
+        if (o.old) {
+          for (const d of [`M${f1(-r0 * 0.7)},${f1(-r0 * 0.3)} l${f1(r0 * 0.3)},${f1(r0 * 0.12)} l${f1(r0 * 0.1)},${f1(r0 * 0.3)} l${f1(r0 * 0.26)},${f1(r0 * 0.08)}`, `M${f1(r0 * 0.28)},${f1(-r0 * 0.74)} l${f1(-r0 * 0.1)},${f1(r0 * 0.32)} l${f1(r0 * 0.2)},${f1(r0 * 0.18)}`]) svgEl('path', { d, fill: 'none', stroke: INK, 'stroke-width': 6, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, target);
+          for (const [x, y, q] of [[0.45, 0.3, 0.2], [0.58, 0.14, 0.12], [-0.35, 0.5, 0.16], [-0.5, -0.5, 0.11]]) svgEl('circle', { cx: f1(x * r0), cy: f1(y * r0), r: f1(q * r0), fill: '#6e9a5a', stroke: INK, 'stroke-width': 4, opacity: 0.92 }, target);
+          const web = svgEl('g', { transform: `translate(${f1(r0 * 0.74)},${f1(-r0 * 0.74)})`, fill: 'none', stroke: '#fff', 'stroke-width': 3, opacity: 0.85 }, target);
+          for (const an of [100, 130, 160]) svgEl('path', { d: `M0,0 L${f1(Math.cos((an * Math.PI) / 180) * r0 * 0.75)},${f1(Math.sin((an * Math.PI) / 180) * r0 * 0.75)}`, 'stroke-linecap': 'round' }, web);
+          for (const q of [0.3, 0.5, 0.7]) svgEl('path', { d: `M${f1(-Math.cos(Math.PI * 0.45) * r0 * q * 0.8)},${f1(Math.sin(Math.PI * 0.45) * r0 * q)} Q${f1(-r0 * q * 0.45)},${f1(r0 * q * 0.42)} ${f1(-r0 * q)},${f1(r0 * q * 0.12)}` }, web);
+        }
+      }
+      const sides = o.sides || (o.text ? [o.text] : []), labels = sides.map((s) => {
+        const te = k.text(flipG, s, { x: 0, y: (o.textSize ?? r0 * 0.42) * 0.36, 'text-anchor': 'middle', 'font-size': o.textSize ?? r0 * 0.42, 'font-weight': 900, 'font-family': FONT.title, fill: INK, stroke: '#fff4dc', 'stroke-width': 7, 'paint-order': 'stroke' });
+        k.F.text(te, 'label', s, wa, wb, { overlap: true }); return te;
+      });
+      const flips = [].concat(o.flip || []), FD = 0.52, jump = o.jump ?? r0 * 1.5;
+      for (const at of flips) { k.F.sfx(k.when(at), 'whoosh', 0.3); k.F.sfx(k.when(at + FD), 'hiss', 0.34, { dur: 0.35 }); }
+      if (o.steam) wisps(svgEl('g', { transform: `translate(0,${f1(-r0 * sq)})` }, g), k, { level: o.steam, w: r0 * 1.2, h: r0 * 1.1 });
+      k.F.add((t) => {
+        const lt = k.clock(t); let y = 0, sy = sq, n = 0, rt = 0;
+        for (const at of flips) { if (lt >= at + FD) n++; else if (lt >= at) { const q = (lt - at) / FD; y = -Math.sin(Math.PI * q) * jump; rt = Math.cos(Math.PI * q * 3); sy = Math.max(0.05, Math.abs(rt)) * Math.max(sq, 0.55 + 0.45 * (1 - Math.abs(rt))); n += q > 0.5 ? 1 : 0; } }
+        flipG.setAttribute('transform', `translate(0,${f1(y)}) scale(1,${sy.toFixed(3)})`);
+        labels.forEach((te, i) => te.setAttribute('display', labels.length < 2 || n % labels.length === i ? '' : 'none'));
+        if (o.glow !== undefined) { halo.setAttribute('opacity', numAt(o.glow, lt, 0).toFixed(3)); rays.setAttribute('transform', `rotate(${f1(lt * 14)}) scale(${(1 + Math.sin(lt * 3) * 0.05).toFixed(3)})`); }
+      });
+      return { info: null };
+    };
+    // a mixing bowl, side view, feet at y = 0: fill 0–1 or keyed (the batter inside), stir: turns per second (a spoon goes round), color, batter
+    PROPS.bowl = (g, o, k) => {
+      const col = o.color || '#e8ecf4', rim = -170;
+      svgEl('ellipse', { cy: rim, rx: 190, ry: 42, fill: shade(col, -0.32), stroke: INK, 'stroke-width': 8 }, g);
+      const surf = svgEl('ellipse', { cy: rim + 6, fill: o.batter || '#f3dba0', stroke: INK, 'stroke-width': 5 }, g);
+      const swirl = svgEl('path', { fill: 'none', stroke: shade(o.batter || '#f3dba0', -0.22), 'stroke-width': 6, 'stroke-linecap': 'round' }, g);
+      const spoon = svgEl('path', { fill: 'none', stroke: '#8a5a22', 'stroke-width': 14, 'stroke-linecap': 'round', display: 'none' }, g);
+      svgEl('path', { d: `M-190,${rim} C-186,${rim + 110} -100,-6 0,-6 C100,-6 186,${rim + 110} 190,${rim} C150,${rim + 46} -150,${rim + 46} -190,${rim} Z`, fill: col, stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, g);
+      svgEl('path', { d: `M-140,${rim + 66} C-120,-70 -90,-50 -60,-40`, fill: 'none', stroke: '#fff', 'stroke-width': 10, 'stroke-linecap': 'round', opacity: 0.75 }, g);
+      k.F.add((t) => {
+        const lt = k.clock(t), fv = numAt(o.fill ?? 0, lt, 0), rx = 160 * Math.sqrt(fv), ry = 30 * Math.sqrt(fv), on = fv > 0.02;
+        surf.setAttribute('display', on ? '' : 'none'); surf.setAttribute('rx', f1(rx)); surf.setAttribute('ry', f1(ry));
+        const stir = numAt(o.stir ?? 0, lt, 0), an = lt * stir * Math.PI * 2, sx = Math.cos(an) * rx * 0.5, sy = rim + 6 + Math.sin(an) * ry * 0.5;
+        swirl.setAttribute('display', on ? '' : 'none'); swirl.setAttribute('d', `M${f1(-rx * 0.6)},${rim + 6} Q${f1(sx)},${f1(sy - ry * 0.9)} ${f1(rx * 0.6)},${rim + 6}`);
+        spoon.setAttribute('display', stir && on ? '' : 'none'); spoon.setAttribute('d', `M${f1(sx)},${f1(sy)} L${f1(sx * 0.3 + 90)},${f1(rim - 180)}`);
+      });
+      return { info: 'shape' };
+    };
+    // a sack (flour, rice), feet at y = 0: label, color, sealed (a tied neck), cobweb
+    PROPS.sack = (g, o, k) => {
+      const col = o.color || '#f2ead8', [a, b] = k.win();
+      svgEl('path', { d: 'M-130,-250 C-180,-180 -180,-30 -130,0 L130,0 C180,-30 180,-180 130,-250 C90,-226 -90,-226 -130,-250 Z', fill: col, stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, g);
+      svgEl('path', { d: 'M100,-210 C130,-150 130,-60 104,-20', fill: 'none', stroke: shade(col, -0.2), 'stroke-width': 14, opacity: 0.7 }, g);
+      svgEl('path', { d: 'M-130,-250 C-100,-330 100,-330 130,-250 C90,-226 -90,-226 -130,-250 Z', fill: shade(col, -0.08), stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('path', { d: 'M-50,-262 L50,-262', stroke: C.red, 'stroke-width': 14, 'stroke-linecap': 'round' }, g);
+      const lb = o.label ?? M('面粉', 'FLOUR'), te = k.text(g, lb, { x: 0, y: -92, 'text-anchor': 'middle', 'font-size': o.size ?? 74, 'font-weight': 900, 'font-family': FONT.title, fill: INK });
+      k.F.text(te, 'label', lb, a, b, { overlap: true });
+      if (o.cobweb !== false) { const web = svgEl('g', { transform: 'translate(150,-280)', fill: 'none', stroke: '#fff', 'stroke-width': 4, opacity: 0.85 }, g); for (const an of [100, 130, 160]) svgEl('path', { d: `M0,0 L${f1(Math.cos((an * Math.PI) / 180) * 150)},${f1(Math.sin((an * Math.PI) / 180) * 150)}` }, web); for (const q of [55, 95, 130]) svgEl('path', { d: `M${f1(-q * 0.17)},${f1(q * 0.98)} Q${f1(-q * 0.45)},${f1(q * 0.5)} ${f1(-q * 0.94)},${f1(q * 0.34)}` }, web); }
+      return { info: 'shape' };
+    };
+    // a plate with a fork and a knife, three-quarter view: h.top is where the food goes; empty by default
+    PROPS.plate = (g, o) => {
+      svgEl('ellipse', { cy: 14, rx: 196, ry: 62, fill: 'rgba(0,0,0,.24)' }, g);
+      svgEl('ellipse', { rx: 190, ry: 58, fill: o.color || '#fafafa', stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('ellipse', { rx: 132, ry: 36, fill: 'none', stroke: '#c8ccd6', 'stroke-width': 6 }, g);
+      if (o.cutlery !== false) {
+        svgEl('path', { d: 'M-250,-44 L-250,62 M-268,-44 L-268,-8 Q-268,6 -250,6 Q-232,6 -232,-8 L-232,-44', fill: 'none', stroke: '#c8ccd6', 'stroke-width': 9, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+        svgEl('path', { d: 'M252,62 L252,-44 Q276,-12 262,10 L252,10', fill: '#dfe3ea', stroke: INK, 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
+      }
+      return { top: svgEl('g', {}, g), info: 'shape' };
+    };
+    // a menu, origin at its top centre: title, items: [{ text, note, at, color }] (written on at `at`), w, rows (how long it can get),
+    // unroll: [t0, t1] it rolls down from just its title to its full length; no items = a blank menu
+    PROPS.menu = (g, o, k) => {
+      const w = o.w ?? 520, items = o.items || [], rows = o.rows ?? Math.max(items.length, 3), RH2 = o.rowH ?? 72, head = 120, full = head + rows * RH2 + 40, hw = w / 2, id = uid(), col = o.color || '#fffaf0', [a, b] = k.win();
+      const cp = svgEl('rect', { x: -hw - 10, y: -10, width: w + 20, height: full + 20 }, svgEl('clipPath', { id }, svgEl('defs', {}, g)));
+      const body = svgEl('g', { 'clip-path': `url(#${id})` }, g);
+      svgEl('rect', { x: -hw, y: 0, width: w, height: full, rx: 10, fill: col, stroke: INK, 'stroke-width': 8 }, body);
+      svgEl('rect', { x: -hw, y: 0, width: w, height: head - 14, rx: 10, fill: o.head || '#b0303a', stroke: INK, 'stroke-width': 8 }, body);
+      const tt = o.title ?? M('菜单', 'MENU'), te = k.text(body, tt, { x: 0, y: 76, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 900, 'font-family': FONT.title, fill: '#fff' });
+      k.F.text(te, 'label', tt, a, b, { overlap: true });
+      const size = o.size ?? 44;
+      items.forEach((it0, i) => {
+        const it = typeof it0 === 'string' ? { text: it0 } : it0, y = head + i * RH2 + RH2 * 0.66, row = svgEl('g', {}, body), at = it.at, nm = k.text(row, it.text, { x: -hw + 30, y, 'font-size': size, 'font-weight': 900, 'font-family': FONT.title, fill: it.color ?? INK });
+        k.F.text(nm, 'label', it.text, at !== undefined ? k.when(at) : a, b, { overlap: true });
+        if (it.note) { const nt = k.text(row, it.note, { x: hw - 30, y, 'text-anchor': 'end', 'font-size': size * 0.72, 'font-weight': 700, fill: C.red }); k.F.text(nt, 'label', it.note, at !== undefined ? k.when(at) : a, b, { overlap: true }); }
+        if (at !== undefined) k.F.add((t) => row.setAttribute('opacity', Math.min(1, seg(k.clock(t), at, at + 0.15)).toFixed(3)));
+      });
+      const curl = svgEl('rect', { x: -hw - 8, width: w + 16, height: 34, rx: 16, fill: shade(col, -0.12), stroke: INK, 'stroke-width': 7 }, g);
+      k.F.add((t) => { const q = o.unroll ? seg(k.clock(t), o.unroll[0], o.unroll[1], E.cubicInOut) : 1, h = lerp(head, full, q); cp.setAttribute('height', f1(h + 8)); curl.setAttribute('y', f1(h - 10)); curl.setAttribute('display', q < 1 ? '' : 'none'); });
+      if (o.unroll) k.F.sfx(k.when(o.unroll[0]), 'paper', 0.5, { dur: o.unroll[1] - o.unroll[0] });
+      return { info: 'list' };
+    };
+    // food stickers
+    PROPS.steak = simple((g, o) => {
+      svgEl('path', { d: 'M-210,-30 C-220,-120 -90,-160 20,-130 C120,-160 230,-90 200,10 C180,110 40,130 -60,110 C-150,110 -200,50 -210,-30 Z', fill: '#f3d9c6', stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, g);
+      svgEl('path', { d: 'M-176,-26 C-180,-96 -80,-126 20,-100 C110,-126 196,-74 170,6 C150,86 36,100 -56,84 C-126,84 -170,36 -176,-26 Z', fill: o.color || '#c4534a' }, g);
+      for (const d of ['M-130,-40 C-90,-70 -50,-20 -10,-50 C30,-80 70,-40 120,-60', 'M-120,20 C-80,0 -40,40 10,10 C50,-10 90,30 130,0', 'M-70,60 C-40,40 0,70 50,50', 'M-60,-90 C-30,-70 10,-96 50,-84']) svgEl('path', { d, fill: 'none', stroke: '#fbe6da', 'stroke-width': 8, 'stroke-linecap': 'round', opacity: 0.85 }, g);
+    });
+    PROPS.lobster = simple((g, o) => {
+      const col = o.color || '#e0453a', st = { stroke: INK, 'stroke-width': 7, 'stroke-linejoin': 'round' };
+      for (const [x, d] of [[-20, 1], [30, 1], [80, 1], [130, 1]]) svgEl('path', { d: `M${x},30 Q${x + 12},90 ${x - 18},120`, fill: 'none', stroke: INK, 'stroke-width': 11, 'stroke-linecap': 'round' }, g);
+      svgEl('path', { d: 'M-40,-30 C-120,-44 -220,-24 -300,44 L-360,20 L-350,76 L-406,96 L-340,118 C-260,110 -120,80 -40,50 Z', fill: shade(col, -0.1), ...st }, g);
+      for (const x of [-110, -180, -250]) svgEl('path', { d: `M${x},${f1(-34 - (x + 110) * 0.3)} Q${x + 18},${f1(20 - (x + 110) * 0.3)} ${x + 6},${f1(62 - (x + 110) * 0.28)}`, fill: 'none', stroke: INK, 'stroke-width': 6 }, g);
+      svgEl('ellipse', { cx: 70, cy: 0, rx: 150, ry: 66, fill: col, ...st }, g);
+      svgEl('path', { d: 'M-10,-44 Q60,-70 150,-44', fill: 'none', stroke: '#fff', 'stroke-width': 8, 'stroke-linecap': 'round', opacity: 0.45 }, g);
+      for (const sd of [-1, 1]) {
+        const cx = 262, cy = sd < 0 ? -150 : -70;
+        svgEl('path', { d: `M180,${sd < 0 ? -40 : -20} Q220,${cy + 44} ${cx - 34},${cy + 18}`, fill: 'none', stroke: INK, 'stroke-width': 26, 'stroke-linecap': 'round' }, g);
+        svgEl('path', { d: `M180,${sd < 0 ? -40 : -20} Q220,${cy + 44} ${cx - 34},${cy + 18}`, fill: 'none', stroke: col, 'stroke-width': 13, 'stroke-linecap': 'round' }, g);
+        svgEl('path', { d: `M${cx - 60},${cy + 26} C${cx - 40},${cy - 56} ${cx + 70},${cy - 66} ${cx + 110},${cy - 14} C${cx + 60},${cy - 18} ${cx + 30},${cy} ${cx + 22},${cy + 6} C${cx + 44},${cy + 14} ${cx + 76},${cy + 22} ${cx + 100},${cy + 40} C${cx + 50},${cy + 74} ${cx - 34},${cy + 66} ${cx - 60},${cy + 26} Z`, fill: col, ...st }, g);
+      }
+      for (const dy of [-30, -14]) svgEl('path', { d: `M210,${dy} C300,${dy - 110} 400,${dy - 60} 430,${dy + 26}`, fill: 'none', stroke: INK, 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+      for (const x of [158, 196]) { svgEl('path', { d: `M${x - 10},-44 L${x - 2},-74`, stroke: INK, 'stroke-width': 7 }, g); svgEl('circle', { cx: x, cy: -86, r: 15, fill: '#fff', stroke: INK, 'stroke-width': 5 }, g); svgEl('circle', { cx: x + 3, cy: -84, r: 6, fill: INK }, g); }
+    });
+    // a bamboo steamer, feet at y = 0: stack: tiers (or keyed), steam 0–1 or keyed, rattle: 0–1 or keyed (the lid shakes but never comes off), label on the front
+    PROPS.steamer = (g, o, k) => {
+      const w = o.w ?? 460, hw = w / 2, th = 92, col = o.color || '#d8b36a', [a, b] = k.win(), keysN = Array.isArray(o.stack) ? o.stack : [[-9, o.stack ?? 2]], max = Math.max(...keysN.map(([, n]) => n)), tiers = [];
+      for (let i = 0; i < max; i++) {
+        const tg = svgEl('g', { transform: `translate(0,${-i * th})` }, g);
+        svgEl('path', { d: `M${-hw},0 L${-hw},${-th} A${hw},26 0 0 0 ${hw},${-th} L${hw},0 A${hw},26 0 0 1 ${-hw},0 Z`, fill: col, stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, tg);
+        svgEl('path', { d: `M${-hw},${-th * 0.5} A${hw},26 0 0 0 ${hw},${-th * 0.5}`, fill: 'none', stroke: shade(col, -0.32), 'stroke-width': 6 }, tg);
+        for (let x = -hw + 60; x < hw; x += 62) svgEl('path', { d: `M${x},${-th + 22 * Math.sqrt(1 - (x / hw) ** 2)} L${x},${22 * Math.sqrt(1 - (x / hw) ** 2)}`, stroke: shade(col, -0.22), 'stroke-width': 5, opacity: 0.8 }, tg);
+        tiers.push(tg);
+      }
+      const lid = svgEl('g', {}, g);
+      svgEl('path', { d: `M${-hw - 8},0 C${-hw},${-104} ${hw},${-104} ${hw + 8},0 A${hw + 8},26 0 0 1 ${-hw - 8},0 Z`, fill: shade(col, 0.12), stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, lid);
+      for (const x of [-110, 0, 110]) svgEl('path', { d: `M${x},22 Q${x * 0.8},-30 ${x * 0.5},-74`, fill: 'none', stroke: shade(col, -0.25), 'stroke-width': 5 }, lid);
+      svgEl('path', { d: 'M-30,-74 Q0,-118 30,-74', fill: 'none', stroke: INK, 'stroke-width': 14, 'stroke-linecap': 'round' }, lid);
+      const st = wisps(g, k, { level: o.steam ?? 0, w: w * 0.85, h: o.steamH ?? 240, n: 5, rate: 0.8, width: 16 });
+      if (o.label) { const te = k.text(g, o.label, { x: 0, y: -th * 0.28, 'text-anchor': 'middle', 'font-size': o.size ?? 52, 'font-weight': 900, 'font-family': FONT.title, fill: INK }); k.F.text(te, 'label', o.label, a, b, { overlap: true }); }
+      for (const at of [].concat(o.hiss || [])) k.F.sfx(k.when(at), 'hiss', 0.6, { dur: o.hissDur ?? 1 });
+      k.F.add((t) => {
+        const lt = k.clock(t), [n, at] = lastAt(keysN, lt, 1), rt = numAt(o.rattle ?? 0, lt, 0), top = -n * th;
+        tiers.forEach((tg, i) => { const nw = i === n - 1 && at > -5 ? seg(lt, at, at + 0.22, E.backOut) : 1; tg.setAttribute('display', i < n ? '' : 'none'); tg.setAttribute('transform', `translate(0,${f1(-i * th - (1 - nw) * 120)})`); });
+        const jig = rt ? Math.abs(Math.sin(lt * 31)) * 15 * rt : 0, tilt = rt ? Math.sin(lt * 23) * 4 * rt : 0;
+        lid.setAttribute('transform', `translate(0,${f1(top - jig)}) rotate(${tilt.toFixed(2)})`);
+        st.setAttribute('transform', `translate(0,${f1(top - 70)})`);
+      });
+      return { info: 'shape' };
+    };
+    // a dial, origin at its hub: value 0–1 or keyed, label under it, ticks: ['…', '…'] printed round the scale; shakes at full
+    PROPS.gauge = (g, o, k) => {
+      const r0 = o.r ?? 240, [a, b] = k.win(), an = (q) => Math.PI * (1 - q), pt = (q, rr) => [Math.cos(an(q)) * rr, -Math.sin(an(q)) * rr];
+      svgEl('path', { d: `M${-r0 - 22},30 L${-r0 - 22},0 A${r0 + 22},${r0 + 22} 0 0 1 ${r0 + 22},0 L${r0 + 22},30 Z`, fill: '#fffaf0', stroke: INK, 'stroke-width': 9, 'stroke-linejoin': 'round' }, g);
+      for (const [q0, q1, c] of [[0, 0.55, '#5cb85c'], [0.55, 0.8, C.amber], [0.8, 1, C.red]]) { const [x0, y0] = pt(q0, r0 - 24), [x1, y1] = pt(q1, r0 - 24); svgEl('path', { d: `M${f1(x0)},${f1(y0)} A${r0 - 24},${r0 - 24} 0 0 1 ${f1(x1)},${f1(y1)}`, fill: 'none', stroke: c, 'stroke-width': 32 }, g); }
+      for (let i = 0; i <= 10; i++) { const [x0, y0] = pt(i / 10, r0 - 52), [x1, y1] = pt(i / 10, r0 - 68); svgEl('path', { d: `M${f1(x0)},${f1(y0)} L${f1(x1)},${f1(y1)}`, stroke: INK, 'stroke-width': i % 5 ? 5 : 9 }, g); }
+      (o.ticks || []).forEach((s, i, l) => { const [x, y] = pt(l.length > 1 ? 0.15 + (0.7 * i) / (l.length - 1) : 0.5, r0 - 116), te = k.text(g, s, { x: f1(x), y: f1(y + 12), 'text-anchor': 'middle', 'font-size': o.tickSize ?? 34, 'font-weight': 900, 'font-family': FONT.title }); k.F.text(te, 'label', s, a, b, { overlap: true }); });
+      const needle = svgEl('g', {}, g);
+      svgEl('path', { d: `M-14,10 L0,${-r0 + 60} L14,10 Z`, fill: C.red, stroke: INK, 'stroke-width': 6, 'stroke-linejoin': 'round' }, needle);
+      svgEl('circle', { r: 26, fill: INK }, g);
+      if (o.label) { const te = k.text(g, o.label, { x: 0, y: 44 + (o.size ?? 64), 'text-anchor': 'middle', 'font-size': o.size ?? 64, 'font-weight': 900, 'font-family': FONT.title, fill: '#fff', stroke: INK, 'stroke-width': 10, 'paint-order': 'stroke' }); k.F.text(te, 'label', o.label, a, b, { overlap: true }); }
+      k.F.add((t) => { const lt = k.clock(t), v = Math.min(1.04, numAt(o.value ?? 0, lt, 0)), sh = v >= 0.98 ? Math.sin(lt * 46) * 2.2 : 0; needle.setAttribute('transform', `rotate(${(-90 + v * 180 + sh).toFixed(2)})`); });
+      return { info: 'chart' };
+    };
+    // an infrared thermometer pointing left (flip: right), origin at its grip: read: the moment it reads (a beep, the beam drawn to `to` [dx, dy]), value: the reading
+    PROPS.thermo = (g, o, k) => {
+      const col = o.color || '#eef0f6', dir = o.flip ? -1 : 1, body = svgEl('g', { transform: `scale(${dir},1)` }, g), [a, b] = k.win(), at = o.read ?? a;
+      svgEl('path', { d: 'M-34,-10 L-14,110 L44,110 L34,-10 Z', fill: shade(col, -0.25), stroke: INK, 'stroke-width': 7, 'stroke-linejoin': 'round' }, body);
+      svgEl('path', { d: 'M-44,-10 L-54,44', stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round' }, body);
+      svgEl('path', { d: 'M-180,-104 L110,-104 Q136,-104 136,-78 L136,-14 Q136,4 110,4 L-90,4 L-180,-30 Z', fill: col, stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, body);
+      svgEl('rect', { x: -192, y: -96, width: 20, height: 62, rx: 8, fill: C.red, stroke: INK, 'stroke-width': 6 }, body);
+      svgEl('rect', { x: -56, y: -94, width: 182, height: 84, rx: 8, fill: '#10201a', stroke: INK, 'stroke-width': 6 }, body);
+      const beam = o.to ? svgEl('path', { d: `M${dir * -194},-65 L${dir * -194 + o.to[0]},${-65 + o.to[1]}`, fill: 'none', stroke: C.red, 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-dasharray': '4 14', opacity: 0 }, g) : null;
+      const val = String(o.value ?? '21.0℃'), dsp = { x: dir * 35, y: -36, 'text-anchor': 'middle', 'font-size': 50, 'font-weight': 700, 'font-family': FONT.mono, fill: '#7dffb0' }, rd = svgText(g, val, dsp), wait = svgText(g, '--.-', dsp);
+      k.F.text(rd, 'label', val, k.when(at), b, { overlap: true });
+      k.F.sfx(k.when(at), 'beep', 0.6);
+      k.F.add((t) => { const lt = k.clock(t), on = lt >= at; rd.setAttribute('display', on ? '' : 'none'); wait.setAttribute('display', !on && lt >= at - 0.5 ? '' : 'none'); if (beam) beam.setAttribute('opacity', lt >= at - 0.5 ? 1 : 0); });
+      return { info: 'annotate' };
+    };
+    // a certificate, origin at its centre: title, lines: [{ text, at, check }], seal: { text, at } the red seal slammed on at `at`, w, h
+    PROPS.certificate = (g, o, k) => {
+      const w = o.w ?? 860, h = o.h ?? 620, hw = w / 2, hh = h / 2, [a, b] = k.win(), sizeL = o.size ?? 56;
+      svgEl('rect', { x: -hw, y: -hh, width: w, height: h, rx: 8, fill: o.color || '#fff6e0', stroke: INK, 'stroke-width': 8 }, g);
+      svgEl('rect', { x: -hw + 24, y: -hh + 24, width: w - 48, height: h - 48, fill: 'none', stroke: '#b0303a', 'stroke-width': 7 }, g);
+      svgEl('rect', { x: -hw + 38, y: -hh + 38, width: w - 76, height: h - 76, fill: 'none', stroke: '#b0303a', 'stroke-width': 3 }, g);
+      const tt = o.title ?? M('鉴定书', 'CERTIFICATE'), te = k.text(g, tt, { x: 0, y: -hh + 124, 'text-anchor': 'middle', 'font-size': o.titleSize ?? 84, 'font-weight': 900, 'font-family': FONT.title, 'letter-spacing': 12 });
+      k.F.text(te, 'label', tt, a, b, { overlap: true });
+      (o.lines || []).forEach((l0, i) => {
+        const l = typeof l0 === 'string' ? { text: l0 } : l0, y = -hh + 214 + i * (sizeL + 26), at = l.at, row = svgEl('g', {}, g), ln = k.text(row, l.text, { x: -hw + 110, y, 'font-size': sizeL, 'font-weight': 700, 'font-family': FONT.title });
+        k.F.text(ln, 'label', l.text, at !== undefined ? k.when(at) : a, b, { overlap: true });
+        if (at !== undefined) k.F.add((t) => row.setAttribute('opacity', Math.min(1, seg(k.clock(t), at, at + 0.12)).toFixed(3)));
+        if (l.check) { const c = svgEl('path', { d: `M${hw - 170},${y - 20} l26,30 l54,-62`, fill: 'none', stroke: C.red, 'stroke-width': 13, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g); if (at !== undefined) { drawOn(c, k.when(at + 0.08), 0.18); k.F.sfx(k.when(at), 'pen', 0.4, { dur: 0.2 }); } }
+      });
+      if (o.seal) {
+        const at = o.seal.at, sg = svgEl('g', {}, g), sw = o.seal.w ?? Math.max(300, [...o.seal.text].reduce((n, c) => n + (/[⺀-￿]/.test(c) ? 1 : 0.56), 0) * (o.seal.size ?? 66) + 70), sh = (o.seal.size ?? 66) * 1.9, sx = o.seal.x ?? hw - sw / 2 - 30, sy = o.seal.y ?? hh - sh / 2 - 34;
+        svgEl('rect', { x: -sw / 2, y: -sh / 2, width: sw, height: sh, rx: 14, fill: 'none', stroke: C.red, 'stroke-width': 11 }, sg);
+        const st = k.text(sg, o.seal.text, { x: 0, y: (o.seal.size ?? 66) * 0.36, 'text-anchor': 'middle', 'font-size': o.seal.size ?? 66, 'font-weight': 900, 'font-family': FONT.title, fill: C.red });
+        k.F.text(st, 'label', o.seal.text, k.when(at), b, { overlap: true });
+        k.F.sfx(k.when(at), 'stamp', 0.75); k.F.blur(k.when(at), k.when(at) + 0.16, 8);
+        k.F.add((t) => { const lt = k.clock(t), q = seg(lt, at, at + 0.14, E.expoOut); sg.setAttribute('display', lt >= at ? '' : 'none'); sg.setAttribute('transform', `translate(${f1(sx)},${f1(sy)}) rotate(${o.seal.rot ?? -6}) scale(${(1.7 - 0.7 * q).toFixed(3)})`); });
+      }
+      return { info: 'shape' };
+    };
+    // a hang tag on a string, origin at the top of the string: lines of text, color, w, size; it sways
+    PROPS.hangtag = (g, o, k) => {
+      const lines = [].concat(o.lines ?? o.text ?? ''), size = o.size ?? 44, w = o.w ?? Math.max(...lines.map(wlen)) * size + 70, h = lines.length * size * 1.3 + 74, col = o.color || C.manila, str = o.string ?? 60, [a, b] = k.win(), sw = svgEl('g', {}, g);
+      svgEl('path', { d: `M0,0 L0,${str + 26}`, stroke: INK, 'stroke-width': 5 }, sw);
+      svgEl('path', { d: `M0,${str} L${w / 2},${str + 40} L${w / 2},${str + h} L${-w / 2},${str + h} L${-w / 2},${str + 40} Z`, fill: col, stroke: INK, 'stroke-width': 7, 'stroke-linejoin': 'round' }, sw);
+      svgEl('circle', { cy: str + 26, r: 9, fill: '#fff', stroke: INK, 'stroke-width': 5 }, sw);
+      lines.forEach((s, i) => { const te = k.text(sw, s, { x: 0, y: str + 54 + size * 0.92 + i * size * 1.3, 'text-anchor': 'middle', 'font-size': size, 'font-weight': 900, 'font-family': FONT.title, fill: o.ink ?? INK }); k.F.text(te, 'label', s, a, b, { overlap: true }); });
+      k.F.add((t) => sw.setAttribute('transform', `rotate(${(Math.sin(k.clock(t) * 2.2 + (o.seed ?? 0)) * 3).toFixed(2)})`));
+      return { info: 'annotate' };
     };
     // ---------- the interviewee ----------
     R.witness = (L, o = {}) => {

@@ -5,7 +5,7 @@
 // Types the mystery runtime emits: sting (question card), boom (titles, the ident), heart (countdown, ident), shutter (R.flash), type (typed
 // text), paper (cards and files), pin (board items), string (red string), pen (marker, strike-outs), msg / pop (chat bubbles, props),
 // stamp, zoom (magnifier), click (flashlight), rewind (tape), tick (countdown), static (surveillance cut-in), open (red envelope), resolve (the truth),
-// brush (a point written on), tone (the test card), buzz (a phone vibrating), coo / flap (a pigeon: bird prop), crunch (snack prop).
+// brush (a point written on), tone (the test card), buzz (a phone vibrating), coo / flap (a pigeon: bird prop), crunch (snack prop, a bite out of a pie), hiss (steam: steamer, pie), beep (thermo), ignite (stove), growl (an empty stomach).
 const SR = 44100;
 // a heartbeat: lub-dub, a low thump with a body in the 100–200 Hz band so phones hear it
 function heartbeat(p, r) {
@@ -79,6 +79,18 @@ function crunch(p, r) {
   }
   return o;
 }
+// steam: bright noise swelling and fading over dur
+function hiss(p, r) {
+  const d = Math.max(0.2, p.dur ?? 0.8), n = Math.ceil(d * SR), o = new Float32Array(n); let prev = 0, hp = 0;
+  for (let i = 0; i < n; i++) { const t = i / SR, w = r() * 2 - 1; hp = 0.72 * (hp + w - prev); prev = w; o[i] = hp * Math.min(1, t * 14) * Math.min(1, (d - t) * 5) * (0.75 + 0.25 * Math.sin(t * 47)) * 0.6; }
+  return o;
+}
+// an empty stomach: a slow, wandering, gurgling rumble
+function growl(p, r) {
+  const d = Math.max(0.5, p.dur ?? 1.1), n = Math.ceil(d * SR), o = new Float32Array(n); let ph = 0; const w1 = 5 + r() * 3, w2 = 11 + r() * 5;
+  for (let i = 0; i < n; i++) { const t = i / SR, f = 120 + 55 * Math.sin(t * w1) + 25 * Math.sin(t * w2); ph += f / SR; const v = Math.sin(2 * Math.PI * ph) + 0.5 * Math.sin(4 * Math.PI * ph) + 0.3 * Math.sin(6 * Math.PI * ph); o[i] = v * Math.min(1, t * 8) * Math.min(1, (d - t) * 3) * (0.6 + 0.4 * Math.abs(Math.sin(t * 19))) * 0.5; }
+  return o;
+}
 export default {
   name: 'One line: what this film sounds like (e.g. a late-night investigation taken far too seriously: room tone, heartbeat, stingers, a typewriter)',
   space: { size: 0.4, mix: 0.16 },
@@ -108,6 +120,10 @@ export default {
     buzz: { use: buzz, gain: 0.8 },
     coo: { use: coo, gain: 0.7 },
     crunch: { use: crunch, gain: 0.7 },
+    hiss: { use: hiss, gain: 0.6 },
+    beep: { layers: [{ use: 'blip', freq: 2093, to: 2093, wave: 'sine', dur: 0.08 }, { use: 'blip', freq: 2093, to: 2093, wave: 'sine', dur: 0.12, delay: 0.13 }] },
+    ignite: { layers: [{ use: 'swish', color: 'cloth', from: 300, to: 1400, shape: 'up', gain: 0.7 }, { use: 'thud', freq: 80, gain: 0.5 }] },
+    growl: { use: growl, gain: 0.7 },
     flap: { use: 'paper', grain: 0.5, flap: 16, dur: 0.45, bright: 1800, gain: 0.6 },
     static: { use: staticBurst, gain: 0.6 },
     open: { layers: [{ use: 'paper', grain: 0.7, dur: 0.35 }, { use: 'glint', note: 'A6', delay: 0.25, gain: 0.6 }] },

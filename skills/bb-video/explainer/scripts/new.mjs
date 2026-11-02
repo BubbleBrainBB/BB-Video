@@ -27,9 +27,13 @@ const style = opt('style', args.includes('--update-lib') && detected ? detected 
 // The promo-born styles (launch, origami, pop, op, cutout, ascii, shadow, bauhaus, pixel, chat, toy3d, newsreel, filmroom, mystery, isometric, trailer, dossier, manga, map, swiss, lumen, blueprint, collage, grain, storybook, tapestry, parable, pencil, drawnworld) make explainers too: the project is created by promo/scripts/new.mjs in its
 // narration-paced mode (voiceover + captions + the style's common verbs), with the same script.json / tts.py workflow
 const PROMO_STYLES = ['launch', 'origami', 'pop', 'op', 'cutout', 'ascii', 'shadow', 'bauhaus', 'pixel', 'chat', 'toy3d', 'newsreel', 'filmroom', 'mystery', 'isometric', 'trailer', 'dossier', 'manga', 'map', 'swiss', 'lumen', 'blueprint', 'collage', 'grain', 'storybook', 'tapestry', 'parable', 'pencil', 'drawnworld'];
-if (PROMO_STYLES.includes(opt('style'))) {
+// Refreshing without --style: a project made by promo/scripts/new.mjs has lib/promo.js, whatever its style, and only that script knows its files
+const update = args.includes('--update-lib');
+const promoProject = update && !opt('style') && fs.existsSync(path.join(lib, 'promo.js'));
+if (update && !opt('style') && !promoProject && !detected) { console.error(M(`认不出 ${lib} 属于哪种风格：路径对吗？确认后用 --style <风格> 指定`, `Can't tell which style ${lib} belongs to: is the path right? If so, name it with --style <style>`)); process.exit(1); }
+if (PROMO_STYLES.includes(opt('style')) || promoProject) {
   const { spawnSync } = await import('node:child_process');
-  const pass = ['--style', opt('style'), '--explain', '--lang', opt('lang', 'zh-CN'), ...(opt('voice') ? ['--voice', opt('voice')] : []), ...(opt('title') ? ['--title', opt('title')] : []), ...(args.includes('--update-lib') ? ['--update-lib'] : []), ...(args.includes('--quick') ? ['--quick'] : [])];
+  const pass = [...(opt('style') ? ['--style', opt('style')] : []), '--explain', '--lang', opt('lang', 'zh-CN'), ...(opt('voice') ? ['--voice', opt('voice')] : []), ...(opt('title') ? ['--title', opt('title')] : []), ...(update ? ['--update-lib'] : []), ...(args.includes('--quick') ? ['--quick'] : [])];
   const r = spawnSync(process.execPath, [path.join(skill, '..', 'promo', 'scripts', 'new.mjs'), proj, ...pass], { stdio: 'inherit' });
   process.exit(r.status ?? 0);
 }
