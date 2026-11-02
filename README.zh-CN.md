@@ -9,7 +9,7 @@
 
 | 技能 | 做什么 |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，30 种画面风格 |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，32 种画面风格 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -46,6 +46,7 @@
 | `tapestry` 贝叶挂毯 · 中世纪刺绣长卷 | 一整块看得见经纬的亚麻布，所有东西都用几种羊毛线绣上去：轮廓是茎绣，大块颜色是铺线钉线，脸和手露出布底；上下两条花边，斜杠隔开一只只鸟兽；风格化的树分开场景；人物扁平、侧身、动作夸张；每一卷的标题在树枝拱门下，旁白用中文绣字；人物和器物一针一线地绣出来，整条长卷慢慢卷过，推近时能看清一根根线 |
 | `parable` 3D 火柴人寓言 | 无旁白的 3D 火柴人寓言：黑色虚空加一面映出倒影的镜面地面，发着微光的白色圆头火柴人，一个固定的远景镜头；两个人用相反的方式做同一件事——一块块垒砖、堆成一堆、爬台阶——对照本身就是整个故事；只有一样红色的东西承载寓意；等宽小标签和计数，片尾一行标题；竖屏优先，15–45 秒，默认只有配乐 |
 | `pencil` 铅笔手绘动画 | 手绘动画的铅笔样片：带定位孔和张号的暖色动画纸，淡蓝色构造线上压着有轻重的石墨线，晕染加排线，一拍二加轻微的线条抖动；不用硬切，一张画直接重画成下一张；机械真的在转（车轮、曲柄、按齿数咬合的链条），无脸的速写人形，石墨雾里的光池，高潮处一次暖色亮起；步骤、数字和对比都用手画出来 |
+| `drawnworld` 线稿成世界 | 全片只有一幅画，由一支笔画出来：黑色的笔在暖白色的纸上用干净的墨线一笔笔画出整个虚构的世界，从一个小东西开始往外长，镜头跟着笔走，隔一会儿缓缓拉远；被挡住的线不会透出来，所有招牌都由笔按真实笔顺写出，一张价签随着故事推进被划掉重写；整个机制都画完之后，颜色才漫过纸面，露出天空、远山和树，最后的定格全景里机器依次启动，整个世界活了过来 |
 
 能做什么：
 
@@ -257,6 +258,12 @@
 <b><code>pencil</code></b> · 《自行车是怎么变成今天这样的》：一个人一条路，车边骑边重画成下一代——跑步机、前轮脚踏、高轮车、链条、充气轮胎、菱形车架；每一次变形都有机械上的原因，每个轮子和齿轮都是算出来的<br>
 <sub>无脸人形，机械由代码画出 · 来源：Science Museum Group、Stadt Mannheim、Cycling UK、Grace's Guide、DPMA、Library Company of Philadelphia</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/pencil.mp4">完整视频</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/drawnworld.mp4"><img src="examples/drawnworld/preview.gif" width="100%" alt="drawnworld"></a><br>
+<b><code>drawnworld</code></b> · 《为什么会有通货膨胀》：一个面包摊、一张价签，一路长成一座虚构的小镇，一块区域讲一个原因——钱变多、人抢着买、成本上涨、预期自我实现；整个机制都画完，颜色才漫开<br>
+<sub>虚构的小镇，没有画任何真实的人和机构 · 来源：IMF、美国劳工统计局、Federal Reserve History、Hanke &amp; Krus、PBS、国家统计局</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/drawnworld.mp4">完整视频</a>
 </td>
 </tr>
 </table>

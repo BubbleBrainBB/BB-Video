@@ -1224,6 +1224,126 @@
     },
   });
 
+  // ======================= One continuous picture drawn by a pen, then washed with colour =======================
+  P.kit.register('drawnworld', {
+    runtime: 'drawnworld',
+    theme: { bg: '#f8f6f0', fg: '#17161a', ink: '#17161a', paper: '#f8f6f0', accent: '#c9452e', muted: '#5d5952', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"Noto Sans SC", serif', sans: '"Noto Sans SC", sans-serif', script: '"Noto Sans SC", sans-serif' } },
+    make(F, opt) {
+      // flat mode: every scene layer is a sheet of its own; positions below are in frame px, the runtime takes world units (px / u). The film's one-picture idea lives in hand-written PROMO.drawnworld; here each scene is a corner of that world
+      const W = P.drawnworld(F, { ...opt, flat: true }), Wd = F.W, H = F.H, PT = F.portrait, u = F.px(1), C2 = W.colors, q = (v) => v / u;
+      const S = { lead: 0.5, push: 0, ink: C2.line, paper: C2.paper, colors: [C2.line, C2.roof, C2.roofB, C2.roofC], raw: W };
+      const penDur = (text, base = 0.35, per = 0.12) => Math.min(2.2, base + estUnits(text) * per);
+      const letter = (text, o) => { const size = q(o.size), p = W.write(text, { x: q(o.x), y: q(o.y), size, align: o.align, wrap: o.maxW ? q(o.maxW) : undefined, small: true, noFact: true }), a = o.at, d = o.dur ?? penDur(text); W.draw(p, { at: a, until: a + d, hide: o.until }); F.fact(text, a, o.until ?? 1e9); return p; };
+      // background: the paper, and a corner of the world drawn along the bottom edge (variant 0 a street of stalls, 1 a terrace with a railing, 2 a scaffold and a gear)
+      S.bg = (layer, o = {}) => W.into(layer, () => {
+        const v = (o.variant ?? 0) % 3, Y = q(H * (PT ? 0.86 : 0.93)), Xw = q(Wd), parts = []; layer.style.background = C2.paper;
+        const keep = (r) => { parts.push(...W.partsOf(r.parts ? r.parts : r)); return r; };
+        keep(W.platform({ x0: -30, x1: Xw + 30, y: Y, t: 14, name: 'ground', shadow: false }));
+        if (v === 0) { keep(W.awning({ x0: Xw * 0.03, x1: Xw * 0.2, y: Y - 120, drop: 42, stripes: 6, name: 'awn-a' })); keep(W.awning({ x0: Xw * 0.8, x1: Xw * 0.97, y: Y - 120, drop: 42, stripes: 6, colors: C2.awnB, name: 'awn-b' })); for (const x of [0.04, 0.19, 0.81, 0.96]) keep(W.post({ x: Xw * x, y0: Y - 118, y1: Y, w: 8, name: `st${x}` })); }
+        else if (v === 1) keep(W.railing({ x0: Xw * 0.02, x1: Xw * 0.98, y: Y, h: 46, n: Math.round(Xw / 30), name: 'rail' }));
+        else { keep(W.truss({ x: Xw * 0.1, y: Y, w: Xw * 0.14, h: 130, bays: 2, name: 'scaf' })); keep(W.gear({ x: Xw * 0.9, y: Y - 56, r: 50, teeth: 12, name: 'gear-bg' })); }
+        if (o.at > 0) W.draw(parts, { at: o.at - 0.2, until: o.at + 1.1 });
+        else W.draw(parts, { at: 0, until: 0.8 });
+        return { el: layer };
+      });
+      // big word: lettered with the pen
+      S.word = (layer, o) => W.into(layer, () => { const sz = Math.min(F.px(o.size ?? (PT ? 140 : 170)), (o.maxW ?? Wd * 0.86) / Math.max(1, estUnits(o.text)) / 1.05); return letter(o.text, { x: o.x ?? Wd / 2, y: o.y ?? H * 0.42, size: sz, at: o.at - S.lead, until: o.until, dur: Math.min(1.6, penDur(o.text, 0.3, 0.16)) }); });
+      // a sentence: lettered, wraps inside maxW
+      S.line = (layer, o) => W.into(layer, () => letter(o.text, { x: o.x ?? Wd / 2, y: o.y ?? H * 0.66, size: F.px(Math.min(58, o.size ?? 48)), maxW: o.maxW ?? Wd * (PT ? 0.86 : 0.72), align: o.align, at: o.at - S.lead, until: o.until, dur: penDur(o.text, 0.3, 0.05) }));
+      // card: a wooden sign drawn with the pen; content goes in the returned element
+      S.card = (layer, o) => W.into(layer, () => {
+        const p = W.part({ name: `card${o.x}`, lw: 3 }); p.rect(q(o.x), q(o.y), q(o.w), q(o.h), { fill: C2.note }); p.line([[q(o.x - o.w / 2) + 7, q(o.y - o.h / 2) + 7], [q(o.x + o.w / 2) - 7, q(o.y - o.h / 2) + 7], [q(o.x + o.w / 2) - 7, q(o.y + o.h / 2) - 7], [q(o.x - o.w / 2) + 7, q(o.y + o.h / 2) - 7], [q(o.x - o.w / 2) + 7, q(o.y - o.h / 2) + 7]], { lw: 1.2 });
+        W.draw(p, { at: o.at - S.lead, until: o.at + 0.15, hide: o.until });
+        const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;z-index:3`, layer); win(F, c, o.at - 0.1, o.until ?? 1e9);
+        return { el: c, w: o.w, h: o.h };
+      });
+      // screenshot: unaltered, in a timber frame drawn with the pen; the picture wipes down
+      S.shot = (layer, o) => W.into(layer, () => {
+        const fit = o.fit === 'contain', a = o.at - S.lead, until = o.until ?? 1e9;
+        if (!fit) { const p = W.part({ name: `shot${o.x}`, lw: 3.2 }), m = 14 * u; p.shape([[q(o.x - o.w / 2 - m), q(o.y - o.h / 2 - m)], [q(o.x + o.w / 2 + m), q(o.y - o.h / 2 - m)], [q(o.x + o.w / 2 + m), q(o.y + o.h / 2 + m)], [q(o.x - o.w / 2 - m), q(o.y + o.h / 2 + m)]], { fill: C2.wood, occlude: false }); W.draw(p, { at: a, until: a + 0.5, hide: o.until }); }
+        const box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:3`, layer);
+        const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src;
+        F.add((t) => { const on = t >= a + 0.2 && t < until; set(box, { display: on ? '' : 'none' }); if (on) set(box, { clipPath: `inset(0 0 ${f1((1 - E.cubicInOut(seg(t, a + 0.2, a + 0.7))) * 100)}% 0)`, opacity: String(Math.min(1, 1 - seg(t, until - 0.25, until))) }); });
+        return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } };
+      });
+      // signature move: the pen rings the spot in a loose double loop
+      S.accent = (layer, o) => W.into(layer, () => { const r = q(F.px(o.size ?? 200) * 0.62), x = q(o.x), y = q(o.y), p = W.part({ name: `ring${x}`, lw: 3.6 }); p.line(Array.from({ length: 49 }, (_, i) => { const a = -2.4 + (i / 48) * Math.PI * 3.8, k = 1 + 0.06 * Math.sin(i * 0.4); return [x + Math.cos(a) * r * k * 1.5, y + Math.sin(a) * r * k * 0.86]; }), { noSplit: true }); W.draw(p, { at: o.at, until: o.at + 0.7, hide: o.until ?? o.at + 1.8 }); F.sfx(o.at, 'tap', 0.4); return {}; });
+      // transition: a wash of colour spreads across the frame in soft bands, the next sheet is under it as it leaves
+      let wc = null;
+      S.wipe = (o) => {
+        wc ??= (() => { const l = F.layer('pointer-events:none', 90), c = el('canvas', `left:0;top:0;width:${Wd}px;height:${H}px`, l); c.width = Wd; c.height = H; c.dataset.motion = 'skip'; return { c, x: c.getContext('2d'), list: [] }; })();
+        const at = o.cover, d = 0.55, col = S.colors[1 + (wc.list.length % 3)], sd = wc.list.length * 7.3; wc.list.push({ at, d, col, sd });
+        if (wc.list.length === 1) F.add((t) => { const X = wc.x; X.clearRect(0, 0, Wd, H); for (const w0 of wc.list) { if (t < w0.at - w0.d || t >= w0.at + w0.d) continue; const qa = t < w0.at ? E.cubicInOut(seg(t, w0.at - w0.d, w0.at)) : 1, qb = t >= w0.at ? E.cubicInOut(seg(t, w0.at, w0.at + w0.d)) : 0; for (const [al, off] of [[0.28, 0.1], [0.55, 0.05], [1, 0]]) { X.globalAlpha = al; X.fillStyle = w0.col; X.beginPath(); const fr = (y) => (qa - off) * Wd * 1.35 + Math.sin(y * 0.012 + w0.sd) * Wd * 0.03 + Math.sin(y * 0.031 + w0.sd * 2) * Wd * 0.012 - (y / H) * Wd * 0.2, bk = (y) => (qb * 1.35 + off - 0.15) * Wd - 0.001 * Wd + Math.sin(y * 0.014 + w0.sd) * Wd * 0.03 - (y / H) * Wd * 0.2; for (let y = -10; y <= H + 10; y += 20) X.lineTo(fr(y), y); for (let y = H + 10; y >= -10; y -= 20) X.lineTo(qb > 0 ? bk(y) : -40, y); X.closePath(); X.fill(); } X.globalAlpha = 1; } });
+        F.sfx(at - d, 'wash', 0.5, { dur: 2 * d }); F.transition(at - d, at + d); F.cut(at);
+        return { show: at, hide: at };
+      };
+      // end card: a little street drawn, the name lettered, then the colour washes in over it all
+      S.end = (layer, o) => W.into(layer, () => {
+        layer.style.background = C2.paper;
+        const Xw = q(Wd), Yh = q(H), Y = Yh * (PT ? 0.8 : 0.86), parts = [], sz = Math.min(F.px(PT ? 130 : 150), (Wd * 0.84) / Math.max(1, estUnits(o.title)) / 1.05);
+        const sky = W.part({ name: 'end-sky', colorOnly: true, z: -9 }); sky.rect(Xw / 2, Yh / 2, Xw + 80, Yh + 80, { fill: { v: [mix(C2.sky[1], C2.paper, 0.55), mix(C2.sky[3], C2.paper, 0.4), mix(C2.sky[4], C2.paper, 0.2)] }, stroke: false, occlude: false });
+        const keep = (r) => { parts.push(...W.partsOf(r.parts ? r.parts : r)); return r; };
+        keep(W.platform({ x0: -30, x1: Xw + 30, y: Y, t: 18, name: 'end-ground' }));
+        const n = PT ? 3 : 5, gw = Xw / n; for (let i = 0; i < n; i++) keep(W.house({ x: (i + 0.5) * gw, y: Y, w: gw * 0.8, h: 110 + (i % 2) * 50, roof: ['gable', 'barrel', 'shed'][i % 3], roofH: 56, roofFill: [C2.roof, C2.roofB, C2.roofC][i % 3], rows: 1, cols: 2, door: false, winH: 44, winW: 34, shingleH: 16, shingleW: 30, name: `end-h${i}` }));
+        const g = W.part({ name: 'end-green', colorOnly: true, z: 2 }); g.shape([[-30, Y + 18], [Xw + 30, Y + 18], [Xw + 30, Yh + 30], [-30, Yh + 30]], { fill: { v: [C2.leaf[2], C2.leaf[0]] }, stroke: false, occlude: false });
+        W.draw(parts, { at: o.at - 0.2, until: o.at + 1.0 });
+        const cy = H * (PT ? 0.34 : 0.32);
+        letter(o.title, { x: Wd / 2, y: cy, size: sz, at: o.at + 1.05, dur: Math.min(1.1, penDur(o.title, 0.3, 0.14)) });
+        if (o.tagline) letter(o.tagline, { x: Wd / 2, y: cy + sz * 0.95, size: F.px(PT ? 46 : 48), maxW: Wd * 0.84, at: o.at + 2.2, dur: 0.5 });
+        if (o.url) letter(o.url, { x: Wd / 2, y: cy + sz * 0.95 + F.px(84), size: F.px(44), at: o.at + 2.75, dur: 0.4 });
+        W.colorIn(layer, o.at + 3.1, 1.1);
+      });
+      // ---- Telling information (drawnworld): steps are a staircase the pen climbs, a landing per step; contrast is two signboards, the winner gets the colour; numbers are towers built to height; a spot on the UI is a lens ringed by the pen ----
+      S.steps = (layer, o) => W.into(layer, () => {
+        const { items, T, until, C: R } = o, k = items.length, row = !PT && R.w > R.h, out = [];
+        items.forEach((it, j) => {
+          const x = row ? R.x + R.w * ((j + 0.5) / k) : R.x + R.w * 0.14, y = row ? R.y + R.h * (0.86 - (j / Math.max(1, k - 1)) * 0.42) : R.y + R.h * ((j + 0.72) / k), t0 = T[j], pw = row ? (R.w / k) * 0.72 : R.w * 0.18, parts = [W.platform({ x0: q(x - pw / 2), x1: q(x + pw / 2), y: q(y), t: 12, name: `step-deck${j}`, shadow: false, plank: 40 })];
+          if (j) { const px = row ? R.x + R.w * ((j - 0.5) / k) + ((R.w / k) * 0.72) / 2 : x, py = row ? R.y + R.h * (0.86 - ((j - 1) / Math.max(1, k - 1)) * 0.42) : R.y + R.h * ((j - 1 + 0.72) / k); if (row) parts.unshift(W.stairs({ x0: q(px), y0: q(py), x1: q(x - pw / 2), y1: q(y), w: 18, rail: 26, n: 6, name: `step-st${j}` })); else parts.unshift(W.ladder({ x: q(x), y0: q(py), y1: q(y), w: 24, name: `step-st${j}` })); }
+          if (it.hot) parts.push(W.person({ x: q(x), y: q(y), h: 62, pose: 'up', name: `step-p${j}` }));
+          W.draw(parts, { at: t0 - 0.5, until: t0 - 0.05, hide: until });
+          const lx = row ? x : x + pw / 2 + 40 * u, ly = row ? y - F.px(it.hot ? 118 : 56) : y - F.px(34), maxW = row ? (R.w / k) * 0.92 : R.w * 0.66;
+          letter(it.text, { x: lx, y: ly, size: F.px(row ? 38 : 42), maxW, align: row ? 'center' : 'left', at: t0, until, dur: penDur(it.text, 0.25, 0.05) });
+          if (it.note) letter(it.note, { x: lx, y: ly + F.px(row ? 44 : 44), size: F.px(28), maxW, align: row ? 'center' : 'left', at: t0 + 0.4, until, dur: penDur(it.note, 0.2, 0.03) });
+          F.sfx(t0, 'tap', 0.4); out.push({ x, y });
+        });
+        return out;
+      });
+      S.versus = (layer, o) => W.into(layer, () => {
+        const { cols, T, at2, until, C: R } = o, stack = R.w < R.h * 1.1, n = cols.length, out = [];
+        cols.forEach((c, j) => {
+          const cw = stack ? R.w : R.w / n, ch = stack ? R.h / n : R.h, cx = stack ? R.x + R.w / 2 : R.x + cw * (j + 0.5), cy = stack ? R.y + ch * (j + 0.5) : R.y + R.h / 2, sw = cw * 0.86, sh = ch * 0.84;
+          const sg = W.sign({ x: q(cx), y: q(cy), w: q(sw), h: q(sh), posts: false, name: `vs${j}`, fill: c.hot ? mix(C2.lit, C2.note, 0.4) : C2.note });
+          W.draw(sg, { at: T[j] - 0.5, until: T[j] - 0.02, hide: until });
+          letter(c.title, { x: cx, y: cy - sh * 0.34, size: Math.min(F.px(PT ? 48 : 54), (sw * 0.86) / Math.max(1, estUnits(c.title)) / 1.05), at: T[j], until, dur: penDur(c.title, 0.2, 0.08) });
+          (c.points || []).forEach((pt, r) => { const txt = ptText(pt); letter(txt, { x: cx, y: cy - sh * 0.1 + r * F.px(58), size: F.px(34), maxW: sw * 0.88, at: at2 ? at2(j, r) : T[j] + 0.5 + r * 0.4, until, dur: penDur(txt, 0.2, 0.04) }); });
+          if (c.hot) W.colorIn(layer, T[j] + 0.3, 0.7, sg);
+          out.push({ x: cx, y: cy });
+        });
+        return out;
+      });
+      S.figures = (layer, o) => W.into(layer, () => {
+        const { data, ats, until, C: R } = o, hot = o.hot || [], vals = data.map((d) => Math.abs(+d[1]) || 0), mx = Math.max(...vals, 1e-6), n = data.length, stack = PT && n > 3, out = [], gy = R.y + R.h * 0.86;
+        data.forEach((d, j) => {
+          const slot = R.w / n, x = R.x + slot * (j + 0.5), h = R.h * 0.62 * Math.max(0.06, vals[j] / mx), w = Math.min(slot * 0.56, F.px(170)), t0 = ats[j], parts = [W.house({ x: q(x), y: q(gy), w: q(w), h: q(h), roof: 'flat', windows: h > F.px(110), rows: Math.max(1, Math.round(h / F.px(70))), cols: 2, winW: 22, winH: 26, wall: hot.includes(j) ? C2.lit : C2.wall, litP: 0.5, name: `fig${j}` })];
+          W.draw(parts, { at: t0 - 0.7, until: t0, hide: until });
+          const dec = o.decimals ?? (String(d[1]).split('.')[1] || '').length, val = `${o.prefix ?? ''}${(+d[1]).toFixed(dec)}${o.unit ?? ''}`;
+          letter(val, { x, y: gy - h - F.px(48), size: F.px(PT ? 42 : 46), at: t0, until, dur: 0.35 });
+          letter(String(d[0]), { x, y: gy + F.px(36), size: F.px(30), maxW: slot * 0.95, at: t0 + 0.2, until, dur: 0.3 });
+          F.sfx(t0, 'tap', 0.35); out.push({ x, y: gy - h });
+        });
+        void stack;
+        return out;
+      });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => {
+        const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until;
+        const ring = `box-shadow:0 0 0 ${f1(F.px(5))}px ${C2.line}, 0 0 0 ${f1(F.px(10))}px ${C2.paper}`;
+        return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30, sfxType: 'tap' }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 };
+      });
+      infoKit(F, S, { ink: C2.line, accent: C2.roof, colors: [C2.roof, C2.roofB, C2.roofC, C2.green], font: F.theme.fonts.sans, display: F.theme.fonts.sans, weight: 700, line: F.px(3), outline: C2.line, radius: F.px(2), mark: C2.roof, cutSfx: 'tap', flashAt: 'corner', flashBg: (col) => `background-color:${col}` });
+      return S;
+    },
+  });
+
   // ======================= Bayeux-Tapestry embroidered scroll =======================
   P.kit.register('tapestry', {
     runtime: 'tapestry',
@@ -2217,6 +2337,7 @@
   KITS.blueprint.tint = (c) => { const h = hslOf(c); if (!h || (h[0] > 185 && h[0] < 250) || h[1] < 0.35) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { l: [0.55, 0.68] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // blueprint: a vivid brand colour becomes the pencil (the one accent); blue or grey brands keep the red pencil (a blue pencil vanishes on cyanotype)
   KITS.collage.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.7], l: [0.36, 0.48] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // collage: a vivid brand colour becomes the protest-red ink (stamps, hot bars, the big printed word), pulled to a printed-ink saturation; grey / black brands keep the red
   KITS.storybook.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.38, 0.55] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // storybook: a vivid brand colour becomes the cast's accent (its light and deep tones follow), kept dark enough for ink outlines to read; grey / black brands keep teal
+  KITS.drawnworld.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.4, 0.56] }); return { kit: { colors: { roof: acc, awn: [acc, '#fbf1dc'] } }, theme: { accent: acc }, color: acc }; };   // drawnworld: the brand colour goes into the world's roofs and awnings; the lines stay black
   KITS.pencil.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.45, 0.75], l: [0.42, 0.56] }); return { kit: { accent: acc }, theme: { accent: acc }, color: acc }; };   // pencil: a vivid brand colour becomes the one warm accent (the bloom, a ring, the hot key); grey / black brands keep amber
   KITS.tapestry.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.3, 0.55], l: [0.36, 0.52] }); return { kit: { colors: { red: acc } }, theme: { accent: acc }, color: acc }; };   // tapestry: a vivid brand colour becomes the accent wool (the red: initials, the hero's tunic, marks), pulled to a dyed-wool saturation; grey / black brands keep terracotta
   KITS.grain.tint = (c) => { const h = hslOf(c); if (!h || h[1] < 0.3) return { kit: {}, theme: {}, color: null }; const acc = tame(c, { s: [0.5, 0.8], l: [0.5, 0.64] }); return { kit: { colors: { a: acc } }, theme: { accent: acc }, color: acc }; };   // grain: a vivid brand colour becomes the warm spot colour (its tints and shade follow), pulled to a printable lightness; grey / black brands keep coral and navy

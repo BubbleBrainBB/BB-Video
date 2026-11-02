@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · drawnworld</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#f8f6f0}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/drawnworld.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · one continuous picture drawn by a pen, then washed with colour, narrated. Every change is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every number and word lettered on the page is traced there), then the treatment (styles/drawnworld/STYLE.md).
+// The telling: the picture starts from one small thing and grows outward, one area per idea: W.group builds it, W.draw({ line }) makes the pen draw it while that line is spoken.
+// Numbers and words are lettered on signs, tags and paper in the picture, never boxes and arrows. When the whole mechanism is on the page, W.wash brings the colour; the last line
+// runs into the held wide shot while each machine starts on its word (from: w('lN', '…')).
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 88, offset: 0, grain: false, chapters: false, tail: 1,
+  theme: { bg: '#f8f6f0', fg: '#17161a', ink: '#17161a', muted: '#5d5952', accent: '#c9452e', paper: '#f8f6f0', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"Noto Sans SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const W = PROMO.drawnworld(F, { palette: 'market', seed: '__TITLE__' });
+    const C = W.colors, GY = 300, L = W.L;
+
+    // ---- what never appears in the line stage: sky, hills, trees ----
+    W.sky({ y0: -700, y1: 420 });
+    W.hill({ pts: [[-1400, 120], [-700, -40], [0, 60], [800, -60], [1400, 110]], fill: C.hill[0] });
+    W.foliage({ x: 0, y: 460, w: 2400, h: 200, z: 2, layers: 3, seed: 'front' });
+
+    // ---- line 1: the first structure ----
+    W.group('start', () => {
+      W.platform({ x0: -700, x1: 700, y: GY, t: 18 });
+      W.stall({ x: 0, y: GY, w: 320, h: 240 });
+      W.write(M('第一句的关键词', 'Line 1 keyword'), { x: 0, y: -60, size: 56, plate: true });
+    });
+    W.draw('start', { line: 'l1', pull: 1 });
+
+    // … one group per line: the picture grows outward from the start (W.house, W.stairs, W.truss, W.pipe, W.gear, W.person, W.queue, W.sign …; STYLE.md §12).
+
+    // ---- the colour, when the whole mechanism is on the page; then the world lives ----
+    W.wash({ at: e('l1') + 0.2, dur: 3.2, from: 'corners' });
+    F.section(0, 1, { name: 'open' });
+    F.section(e('l1') + 0.2, 2, { name: 'wash' });
+    F.coverAt(F.duration - 1);
+  },
+});
+</script></body></html>

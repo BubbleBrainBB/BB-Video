@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · drawnworld</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#f8f6f0}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/drawnworld.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · one continuous picture drawn by a pen, then washed with colour, on the beat (promo). Read styles/drawnworld/STYLE.md first.
+// The product told as a place being built: the pen draws what the product does as one machine or building that grows; on the drop the colour washes across and it all starts working.
+// Below: a skeleton with placeholders — replace every word, part and beat with the film's own. Every word on screen must be in brief.md.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 96, offset: 0.3, duration: 18, grain: false, chapters: false,
+  theme: { bg: '#f8f6f0', fg: '#17161a', ink: '#17161a', muted: '#5d5952', accent: '#c9452e', paper: '#f8f6f0', fonts: { display: '"Noto Sans SC", sans-serif', serif: '"Noto Sans SC", serif', sans: '"Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), W = PROMO.drawnworld(F, { palette: 'market', seed: '__TITLE__' }), C = W.colors, GY = 260;
+    F.section(0, 1, { name: 'hook' }); F.section(b(12), 2, { name: 'build' }); F.section(b(20), 3, { name: 'drop', hit: true }); F.section(b(26), 1, { name: 'resolve' });
+    W.sky({ y0: -600, y1: 400 });
+    W.hill({ pts: [[-1400, 100], [-500, -30], [500, 40], [1400, -40]], fill: C.hill[0] });
+    W.foliage({ x: 0, y: 420, w: 2400, h: 180, layers: 3, seed: 'front' });
+    W.group('first', () => { W.platform({ x0: -520, x1: 520, y: GY }); W.house({ x: 0, y: GY, w: 280, h: 230, door: true, roof: 'gable' }); });
+    W.group('second', () => { const g = W.gear({ x: -300, y: 120, r: 70, teeth: 16 }); g.spin(0.25, { from: b(21) }); W.mesh(g, W.gear({ x: -196, y: 158, r: 40, teeth: 9, phase: 12 })); W.write(M('名字', 'Name'), { x: 300, y: 40, size: 90, plate: true }); });
+    W.draw('first', { at: b(1), until: b(10), pull: 0.8 });
+    W.draw('second', { at: b(11), until: b(19), pull: 0.6 });
+    W.wash({ at: b(20), dur: 2.6, from: 'corners' });
+    W.smoke({ x: 0, y: -60, from: b(22) });
+    F.coverAt(b(28));
+  },
+});
+</script></body></html>
