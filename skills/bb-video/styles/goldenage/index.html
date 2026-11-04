@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · goldenage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lilita-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-kuaile@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#0e1c5c}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/goldenage.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · golden-age American theatrical cartoon, on the beat (promo). Read styles/goldenage/STYLE.md first; styles/goldenage/moon-film.html is a whole short to learn from.
+// The product told as one gag with a cause and an effect: a tiny worker, a thing that gets away from them, a chain of bigger and bigger collisions, a dead-still pause, the snap back.
+// Below: a skeleton with placeholders. Replace every word, drawing and beat with the film's own; every word on screen must be in brief.md.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 132, offset: 0.2, duration: 18, grain: false,
+  theme: { bg: '#0e1c5c', fg: '#fdf7e4', ink: '#fdf7e4', muted: '#c9c0da', accent: '#ffc93c', paper: '#0e1c5c', fonts: { display: '"Lilita One", "ZCOOL KuaiLe", sans-serif', serif: '"Lilita One", "ZCOOL KuaiLe", sans-serif', sans: '"Lilita One", "ZCOOL KuaiLe", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), G = PROMO.goldenage(F, { seed: '__TITLE__' }), W = G.W, H = G.H, L = G.L;
+    const { camPush, pop, skyline, drawTower, towerTop, moon, wk, wp, runP, wtower, dust, debris, hitLines, shk, hit, E, dec, K, seg, sm, eIn, bump, sin } = G.lib;
+    const T1 = b(10), T2 = b(20), T3 = b(28), T4 = F.duration;
+    F.section(0, 1, { name: 'quiet' }); F.section(T1, 3, { name: 'chase', hit: true });
+
+    // ---- hook: the title lands on a sleeping city; a worker trots in ----
+    G.write(M('一句钩子', 'The hook line'), { x: W / 2, y: H * L(0.26, 0.11), size: L(96, 84), at: b(1), until: T1 - 0.2, pop: true, color: G.colors.gold });
+    const ground = H + 260, cx0 = W / 2;
+    G.shot(0, T1, (u, t) => {
+      camPush(cx0, H / 2, 1); skyline(cx0, H / 2, t, { far: L(690, 980), mid: L(920, 1220) });
+      drawTower('hotel', cx0 - 180, ground, 1, {}, { ink: 0 }); drawTower('lowa', cx0 + 280, ground, 1, {}, { ink: 0 });
+      moon(cx0 + L(330, 150), H * 0.24, 96, { eo: 0, sm: 12, cl: 0.5 });
+      const top = towerTop('hotel', cx0 - 180, ground, 1, {});
+      wtower(top[0] - 90, top[1], 0.7, { id: 1 });
+      const q = seg(u, 0.6, T1 - 0.4), x = top[0] - 110 + q * 220; wk(x, top[1], 0.62, runP(u * 15, 0.7, { sm: 2, mo: 0.2 }), 1, 1);
+      pop();
+    });
+
+    // ---- the gag: a ball falls, the tower squashes, the ball bounces, the tower rings; the words ride the hits ----
+    const hits = [T1 + 0.5, T1 + 1.7, T1 + 2.9];
+    for (const h of hits) G.bonk(h, 0.9);
+    G.write(M('第一个撞击', 'First hit'), { x: W / 2, y: H * 0.2, size: L(84, 72), at: hits[0], until: hits[1] - 0.1, pop: true });
+    G.write(M('第二个撞击', 'Second hit'), { x: W / 2, y: H * 0.2, size: L(84, 72), at: hits[1], until: hits[2] - 0.1, pop: true, color: G.colors.gold });
+    G.shot(T1, T2, (u, t) => {
+      const n0 = hits.filter((h) => t >= h).length, last = n0 ? hits[n0 - 1] : T1, dt = t - last;
+      const d = { sq: n0 ? hit(t, last, 0.6) : 1, sk: 1.2, bul: n0 ? 0.22 * E(dt, 2.2, 3) : 0, bv: 0.7, rattle: n0 ? dec(dt, 1.4) : 0, rip: n0 ? 0.05 * dec(dt, 1.6) : 0, rp: t * 16 };
+      const sh = shk(t, n0 ? 16 * dec(dt, 3.4) : 0, 5); camPush(cx0, H / 2, 1, 0, sh[0], sh[1]); skyline(cx0, H / 2, t, { far: L(690, 980), mid: L(920, 1220) });
+      drawTower('zig', cx0, ground - 120, 1, d, { iw: 2.4 }); const top = towerTop('zig', cx0, ground - 120, 1, d), R = L(110, 100);
+      /* between hits a parabola; on a hit a pancake held two drawings, then a stretch */
+      const next = hits[n0] ?? T2, span = next - last, q = seg(t, last, next), rise = 4 * q * (1 - q) * (n0 ? 300 : 0), fall = n0 ? 0 : eIn(seg(t, T1, hits[0])) * 700 - 700; const flat = n0 && dt < 0.17, sy = flat ? 0.4 : (n0 && dt < 0.36 ? 0.4 + (dt - 0.17) * 5 : 1 + 0.2 * abs_(q - 0.5)), sx = 1 / Math.pow(sy, 0.72);
+      moon(cx0, top[1] - R * sy - rise + fall, R, { sx, sy, eo: 1, wince: flat, dizzy: n0 && dt > 0.17 && dt < 0.8 ? t * 9 : 0, mo: flat ? 0.1 : 0.6, mw: 24, sm: flat ? 4 : 0, roll: sin(u * 3) * 0.2 });
+      if (n0) { dust(t, last, cx0, top[1], 10, 21, 200, 1); debris(t, last, cx0, top[1], 12, 22, 560, 1100); if (dt < 0.17) hitLines(cx0, top[1], R); }
+      pop();
+    });
+    const abs_ = Math.abs;
+
+    // ---- the pause: everything stops. nobody breathes. then the name ----
+    G.pause(T2, T3 - 0.6, { energy: 1, name: 'resolve', hit: false });
+    G.shot(T2, T3, (u, t) => {
+      camPush(cx0, H / 2, 1.12); skyline(cx0, H / 2, T2, { far: L(690, 980), mid: L(920, 1220) }); drawTower('zig', cx0, ground - 120, 1.12, {}, { ink: 0 });
+      const top = towerTop('zig', cx0, ground - 120, 1.12, {}); moon(cx0, top[1] - 240, 150, { eo: 1, lx: -1, ly: 0.5, sm: 0, mw: 22, brow: 0.6, glow: 0.7 }); wk(cx0 - 100, top[1] + 76, 0.62, wp({ turn: 0, lfd: -1, lx: 1, ly: -0.7, sm: -2, mw: 5, brow: 1 }), 1, 1); pop();
+    });
+    G.iris(T3 - 0.5, { out: true, x: W / 2, y: H * 0.42 }); G.iris(T3 + 0.25, { out: false, x: W / 2, y: H * 0.42 });
+    G.shot(T3, T4, (u, t) => { camPush(cx0, H / 2, 1); skyline(cx0, H / 2, t, { far: L(690, 980), mid: L(920, 1220) }); moon(cx0, H * 0.72, L(130, 170), { eo: 0, sm: 13, cl: 0.5 }); pop(); }, { cut: false });
+    G.write(M('名字', 'Name'), { x: W / 2, y: H * 0.34, size: L(130, 110), at: T3 + 0.5, pop: true, color: G.colors.gold, kind: 'logo', noFact: true });
+    F.sfx(T3 + 0.5, 'boing', 0.8);
+    F.coverAt(hits[1] + 0.2);
+  },
+});
+</script></body></html>

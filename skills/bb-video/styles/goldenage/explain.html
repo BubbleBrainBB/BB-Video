@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · goldenage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/lilita-one@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-kuaile@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#0e1c5c}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/goldenage.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · golden-age American cartoon, narrated. Every shot and hit is timed from the narration (T.start / T.end / T.word). Read styles/goldenage/STYLE.md first.
+// Before drawing: facts with sources in brief.md (every number and word on screen traced there). The telling: the idea acted out by an invented worker and an invented thing that misbehaves,
+// one gag per line, each caused by the one before. Words on screen are what the voice does not say. Below: a skeleton; replace every word and drawing with the film's own.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 112, offset: 0, grain: false, chapters: false, tail: 1,
+  theme: { bg: '#0e1c5c', fg: '#fdf7e4', ink: '#fdf7e4', muted: '#c9c0da', accent: '#ffc93c', paper: '#0e1c5c', fonts: { display: '"Lilita One", "ZCOOL KuaiLe", sans-serif', serif: '"Lilita One", "ZCOOL KuaiLe", sans-serif', sans: '"Lilita One", "ZCOOL KuaiLe", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word, G = PROMO.goldenage(F, { seed: '__TITLE__' }), W = G.W, H = G.H, L = G.L;
+    const { camPush, pop, skyline, drawTower, towerTop, moon, wk, runP, shk, hit, E, dec, dust, seg } = G.lib;
+    const a = s('l1'), b = F.duration, cx = W / 2, ground = H + 260, ht = e('l1') - 0.4;
+    F.section(0, 1, { name: 'story' });
+
+    G.shot(0, b, (u, t) => {
+      const d = { sq: hit(t, ht, 0.62), sk: 1.2, bul: t > ht ? 0.2 * E(t - ht, 2.2, 3) : 0, bv: 0.7, rattle: t > ht ? dec(t - ht, 1.4) : 0, rp: t * 16 };
+      const sh = shk(t, t > ht ? 14 * dec(t - ht, 3.4) : 0, 5); camPush(cx, H / 2, 1, 0, sh[0], sh[1]); skyline(cx, H / 2, t, { far: L(690, 980), mid: L(920, 1220) });
+      drawTower('hotel', cx, ground, 1, d, { iw: 2.2 }); const top = towerTop('hotel', cx, ground, 1, d);
+      wk(cx - 110 + seg(t, a, ht) * 200, top[1], 0.62, runP(t * 14, 0.7, { sm: 2 }), 1, 1);
+      moon(cx + L(330, 130), H * 0.24, 100, { eo: 0, sm: 12, cl: 0.5 });
+      if (t > ht) dust(t, ht, cx, top[1], 8, 21, 180, 1);
+      pop();
+    });
+    G.bonk(ht, 0.8);
+    G.write(M('屏幕上的关键词', 'A word on screen'), { x: W * L(0.38, 0.5), y: H * L(0.2, 0.12), size: L(76, 66), at: w('l1', M('第一句', 'first')) ?? a, until: e('l1'), pop: true, color: G.colors.gold });
+    F.coverAt(ht + 0.2);
+  },
+});
+</script></body></html>

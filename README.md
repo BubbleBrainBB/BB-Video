@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 32 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 33 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -47,6 +47,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `parable` | a wordless 3D stick-figure parable: a black void with a glossy floor that mirrors everything, glowing white stick figures with round heads, one fixed wide camera; two figures do the same thing in opposite ways — bricks laid one by one, piles, steps — and the contrast is the whole story; one red object carries the meaning; small monospace labels and counters, a single title at the end; vertical first, 15–45 s, music only by default |
 | `pencil` | a hand-drawn pencil test: warm animation paper with peg holes and the drawing number, light blue construction lines under a pressure-weighted graphite line, smudge and hatching, drawings on twos with a gentle line boil; one drawing redraws itself into the next instead of a cut, machines really turn (wheels, cranks, chains geared by their teeth), faceless gesture figures, light pools in a graphite haze, one warm bloom at the peak; steps, numbers and contrast are drawn by hand |
 | `drawnworld` | one continuous picture drawn by a pen: a black stylus draws a whole invented world stroke by stroke in clean ink on warm white paper, growing outward from one small thing while the camera follows the pen and eases back; lines behind nearer parts never show through, every sign is lettered by the pen in real stroke order, a tag gets crossed out and rewritten as the story moves on; once the whole mechanism is on the page, a colour wash spreads across it and reveals sky, hills and trees, and the held wide shot comes alive as its machines start one by one |
+| `goldenage` | a golden-age American theatrical cartoon: a painted gouache night city of Art Deco towers and warm windows behind inked cel characters, drawn on twos with a boiling line and projected as a film print. Cartoon physics carry the telling: a giant ball flattens to a pancake and rebounds, skyscrapers accordion and ring like springs, an impact frame on every hit, characters hang in mid-air, and dead-still pauses set the laughs up; a small hot band and a slide whistle follow every action |
 
 What it covers:
 
@@ -264,6 +265,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>drawnworld</code></b> · Why inflation happens: one bread stall and one price tag grow into a whole invented town, one area per cause — more money, more buyers than goods, rising costs, expectations feeding themselves; the colour arrives only when the whole mechanism is on the page<br>
 <sub>Invented town, nothing real drawn · sources: IMF, U.S. BLS, Federal Reserve History, Hanke &amp; Krus, PBS, National Bureau of Statistics of China</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/drawnworld.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/goldenage.mp4"><img src="examples/goldenage/preview.gif" width="100%" alt="goldenage"></a><br>
+<b><code>goldenage</code></b> · The Moon Fell Down: a tiny worker loosens one screw, the moon drops onto Manhattan and bounces from tower to tower, a crane slings it back into the sky, and then a star comes loose<br>
+<sub>A wordless short with an invented cast, no real people or places named</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/goldenage.mp4">Full video</a>
 </td>
 </tr>
 </table>
