@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · rubberhose</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/luckiest-guy@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-kuaile@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/rubberhose.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · 1930s rubber-hose cartoon, narrated. Every shot and hit is timed from the narration (T.start / T.end / T.word). Read styles/rubberhose/STYLE.md first.
+// Before drawing: facts with sources in brief.md (every number and word on screen traced there). The telling: the idea acted out by things that come alive (clocks, tools, the thing
+// the video is about, with gloves and pie-cut eyes) and an invented janitor, one gag per line, each caused by the one before. Words on screen are what the voice does not say.
+// Below: a skeleton; replace every word and drawing with the film's own.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 120, offset: 0, grain: false, chapters: false, tail: 1,
+  theme: { bg: '#0f0e0c', fg: '#f3f0e6', ink: '#f3f0e6', muted: '#a8a59c', accent: '#f3f0e6', paper: '#0f0e0c', fonts: { display: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', serif: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', sans: '"Luckiest Guy", "ZCOOL KuaiLe", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word, G = PROMO.rubberhose(F, { seed: '__TITLE__' }), W = G.W, H = G.H, L = G.L;
+    const { camPush, pop, bgAt, alarm, janitor, jp, shadow, hitLines, shake, dec, seg, sin, abs, PI } = G.lib;
+    const a = s('l1'), b = F.duration, ht = e('l1') - 0.4, fl = 622;
+    F.section(0, 1, { name: 'story' });
+
+    G.shot(0, b, (u, t) => {
+      const hitOn = t > ht, dt = t - ht, sh = shake(t, hitOn ? 10 * dec(dt, 3.4) : 0, 5), v = bgAt('wall', L(440, 470), 520, L(1.45, 2.6), 0, sh[0], sh[1]); camPush(...v);   // portrait: tighter, so the cast stands clear of the captions
+      const up = hitOn ? 4 * seg(dt, 0, 0.9) * (1 - seg(dt, 0, 0.9)) * 180 : 0, f = sin(t * 2 * PI);
+      shadow(L(560, 540), fl + 2, 34, 0.35);
+      alarm(L(560, 540), fl - up, 1.5, { a: 1, ring: hitOn && dt < 1.2 ? 1 : 0, hop: hitOn ? 0 : -abs(f) * 6, mo: hitOn ? 0.9 : 0.4, sm: 1, brow: hitOn ? 1.2 : 0.4, lx: sin(t), al: [-50, -60, -6, 0], ar: [50, -60, 6, 0] }, 1);
+      if (hitOn && dt < 0.17) hitLines(L(560, 540), fl - 40 - up, 60);
+      const scare = hitOn ? dec(dt, 2) : 0;
+      janitor(L(300, 400) + seg(t, a, ht) * L(60, 10), fl, 1.25, jp({ lean: -scare * 0.3, eo: hitOn ? 1.15 : 0.3, hair: scare, cap: scare * 22, mo: scare * 0.9, brow: scare, lax: -46, lay: -64 - scare * 40, rax: 46, ray: -64 - scare * 40, lhk: hitOn ? 3 : 0, rhk: hitOn ? 3 : 0 }), 1, 1);
+      pop();
+    });
+    G.bonk(ht, 0.8); F.sfx(ht - 0.05, 'ring', 0.5, { dur: 0.8 });
+    G.write(M('屏幕上的关键词', 'A word on screen'), { x: W * L(0.5, 0.5), y: H * L(0.18, 0.14), size: L(76, 66), at: w('l1', M('第一句', 'first')) ?? a, until: e('l1'), pop: true });
+    F.coverAt(ht + 0.2);
+  },
+});
+</script></body></html>

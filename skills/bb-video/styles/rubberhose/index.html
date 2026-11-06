@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · rubberhose</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/luckiest-guy@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-kuaile@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/rubberhose.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · 1930s black-and-white rubber-hose cartoon, on the beat (promo). Read styles/rubberhose/STYLE.md first; styles/rubberhose/clock-film.html is a whole short to learn from.
+// The product told as a short gag: things that come alive and bounce to the band, a small trouble that grows on every hit, the band stopping dead, then the answer and a bow.
+// Below: a skeleton with placeholders. Replace every word, drawing and beat with the film's own; every word on screen must be in brief.md.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 132, offset: 0.2, duration: 18, grain: false,
+  theme: { bg: '#0f0e0c', fg: '#f3f0e6', ink: '#f3f0e6', muted: '#a8a59c', accent: '#f3f0e6', paper: '#0f0e0c', fonts: { display: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', serif: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', sans: '"Luckiest Guy", "ZCOOL KuaiLe", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), G = PROMO.rubberhose(F, { seed: '__TITLE__' }), W = G.W, H = G.H, L = G.L;
+    const { camPush, pop, bgAt, rays, wallClock, alarm, janitor, jp, musicNote, hitLines, impactStar, shadow, shake, E, dec, K, seg, eEl, eOut, eBack, frac, pulse, sin, abs, PI } = G.lib;
+    const beat = (t) => (t - b(0)) / (b(1) - b(0));   // beats since the downbeat: everything bounces on it
+    const T1 = b(10), T2 = b(20), T3 = b(28), T4 = F.duration;
+    F.section(0, 1, { name: 'open' }); F.section(T1, 3, { name: 'chase', hit: true });
+
+    // ---- the title card: a sunburst, a clock with gloves bouncing to the band ----
+    G.title([{ text: M('一句钩子', 'The hook line'), x: W / 2, y: H * L(0.17, 0.13), size: L(84, 74) }], { at: b(1), until: T1 - 0.2 });
+    const dancer = (cx, cy, s, t, u, o = {}) => { const f = sin(beat(t) * PI); wallClock(cx, cy - abs(f) * 10, s, { a: o.a ?? 1, h: -0.5 + f * 0.3, m: 0.5 - f * 0.3, lean: f * 0.1, sq: 1 + abs(f) * 0.04, pend: f * 0.8, mo: 0.55 + abs(f) * 0.3, sm: 1, lx: f, brow: 0.5, al: [-74, 6 - f * 36, -14 * f, 0], ar: [74, 6 + f * 36, 14 * f, 0], legs: [-30 + f * 8, 96, 30 + f * 8, 96], ...(o.st || {}) }, 3); };
+    G.shot(0, T1, (u, t) => {
+      const cx = W / 2, cy = H * L(0.6, 0.56); rays(cx, cy, u, { ring: L(200, 230) }); dancer(cx, cy, L(2.1, 2.5), t, u, { a: eEl(seg(u, 0.3, 1.1)) });
+      for (let i = 0; i < 6; i++) { const p = frac(u * 0.45 + i / 6), x = i % 2 ? W * 0.1 + i * 12 : W * 0.9 - i * 12; musicNote(x + sin(p * 7) * 16, H * 0.9 - p * H * 0.36, 1.4, sin(p * 9) * 0.3, i % 2); }
+    });
+
+    // ---- the gag: an alarm clock goes off; every hit it jumps higher, the janitor flies further back; the words ride the hits ----
+    const hits = [T1 + 0.5, T1 + 2.1, T1 + 3.7];
+    for (const h of hits) { G.bonk(h, 0.8); F.sfx(h - 0.05, 'ring', 0.6, { dur: 0.5 }); }
+    G.write(M('第一个撞击', 'First hit'), { x: W / 2, y: H * 0.16, size: L(80, 70), at: hits[0], until: hits[1] - 0.1, pop: true });
+    G.write(M('第二个撞击', 'Second hit'), { x: W / 2, y: H * 0.16, size: L(80, 70), at: hits[1], until: T2, pop: true, color: G.colors.ink });
+    const gag = (u, t) => {
+      const n0 = hits.filter((h) => t >= h).length, last = n0 ? hits[n0 - 1] : T1, dt = t - last, sh = shake(t, n0 ? 10 * dec(dt, 3.4) : 0, 5);
+      const v = bgAt('wall', L(430, 470), 470, 1.3, 0, sh[0], sh[1]); camPush(...v);   // pushed in on the floor; portrait frames it tighter by itself
+      const fl = 622, ax = L(540, 590), up = n0 ? 4 * seg(dt, 0, 0.9) * (1 - seg(dt, 0, 0.9)) * (30 + n0 * 30) : 0, flat = n0 && dt < 0.13, bt = beat(t);
+      shadow(ax, fl + 2, 34 * (1 - up / 600), 0.35);
+      alarm(ax, fl - up, 1.5, { a: 1, ring: n0 ? 1 : 0, jx: n0 ? sin(t * 90) * 2 : 0, sq: flat ? 0.62 : 1 + 0.04 * sin(bt * PI), sx: flat ? 1.4 : 1, mo: n0 ? 0.9 : 0.3, sm: 1, brow: n0 ? 1.2 : 0.4, lx: n0 ? sin(t * 31) : 0, al: [-50, -60 - (n0 ? 20 : 0), -6, 0], ar: [50, -60 - (n0 ? 20 : 0), 6, 0], legL: [-18, 0], legR: [18, 0] }, 1);
+      if (n0 && dt < 0.17) hitLines(ax, fl - 40 - up, 60);
+      /* the janitor, nodding off on his mop, blown back a step further on every hit */
+      const jx = L(280, 410) - n0 * L(34, 18) - (n0 ? L(30, 14) * (1 - dec(dt, 6)) : 0), scare = n0 ? dec(dt, 2) : 0;
+      janitor(jx, fl, 1.25, jp({ lean: -0.1 - scare * 0.3, eo: n0 ? 1.15 : 0.25, hair: scare, cap: scare * 22, mo: scare * 0.9, brow: scare, lax: -46, lay: -64 - scare * 40, rax: 46, ray: -64 - scare * 40, lhk: n0 ? 3 : 0, rhk: n0 ? 3 : 0, llx: -20, rlx: 18 }), 1, 1);
+      pop();
+    };
+    G.shot(T1, T2, gag);
+
+    // ---- the band stops dead: everything freezes, nobody breathes, then the answer ----
+    G.pause(T2, b(27), { energy: 1, name: 'resolve', hit: false, stop: true });
+    G.shot(T2, T3, () => gag(T2 - T1, T2), { cut: false });
+    F.sfx(T3 - 0.9, 'tick', 0.7);
+    G.iris(T3 - 0.5, { out: true, x: W / 2, y: H * 0.5 }); G.iris(T3 + 0.25, { out: false, x: W / 2, y: H * 0.46 });
+
+    // ---- the end card: the stage, the name popping in and bouncing, the clock taking a bow ----
+    G.shot(T3, T4, (u, t) => { const v = bgAt('stage', 640, 430, 1); camPush(...v); const k = seg(u, 1.4, 2); dancer(640, 600, 1.35, t, u, { st: { lean: -k * 0.5, mo: 0.3, al: [-60, 40, -10, 0], ar: [60, 40, 10, 0] } }); pop(); }, { cut: false });
+    G.title([{ text: M('名字', 'Name'), x: W / 2, y: H * L(0.24, 0.2), size: L(130, 110), kind: 'logo', noFact: true }], { at: T3 + 0.5 });
+    F.sfx(T3 + 0.5, 'chime', 0.7);
+    F.coverAt(hits[1] + 0.2);
+  },
+});
+</script></body></html>

@@ -1269,6 +1269,50 @@
     },
   });
 
+  // ======================= 1930s black-and-white rubber-hose cartoon =======================
+  P.kit.register('rubberhose', {
+    runtime: 'rubberhose',
+    theme: { bg: '#0f0e0c', fg: '#f3f0e6', ink: '#f3f0e6', paper: '#0f0e0c', accent: '#f3f0e6', muted: '#a8a59c', fonts: { display: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', serif: '"Luckiest Guy", "ZCOOL KuaiLe", sans-serif', sans: '"Luckiest Guy", "ZCOOL KuaiLe", "Noto Sans SC", sans-serif' } },
+    make(F, opt) {
+      // flat mode: every scene layer gets its own canvas; positions below are in frame px, the runtime takes logical units (px / RS)
+      const G = P.rubberhose(F, { ...opt, flat: true }), W = F.W, H = F.H, PT = F.portrait, RS = G.RS, C2 = G.colors, q = (v) => v / RS, LB = G.lib;
+      const S = { lead: 0.2, push: 0.006, ink: C2.paper, paper: C2.ink, colors: [C2.paper, C2.g1, C2.g2, C2.g3], raw: G };
+      const beatOf = (t) => (F.beat ? (t - F.beat(0)) / Math.max(0.1, F.beat(1) - F.beat(0)) : t * 2);
+      // background: a painted plate; variant 0 the vaudeville stage, 1 the sunburst, 2 a brick wall lined with clocks, 3 the factory floor
+      S.bg = (layer, o = {}) => G.into(layer, () => {
+        const v = (o.variant ?? 0) % 4; layer.style.background = C2.ink;
+        G.draw((u, t) => {
+          if (v === 1) { LB.rays(G.W / 2, G.H * 0.55, t, { ring: 0 }); return; }
+          const [name, x, y] = v === 0 ? ['stage', 640, 430] : v === 2 ? ['wall', 480 + Math.sin(t * 0.2) * 20, 330] : ['factory', 700 + Math.sin(t * 0.15) * 60, 360];
+          LB.bgAt(name, x, y, 1);
+        });
+        return { el: layer };
+      });
+      const sizeOf = (o, dflt, mw) => Math.min(F.px(o.size ?? dflt), mw / Math.max(1, estUnits(o.text)) / 0.98);
+      // big word: hand-lettered, letters hop in one by one and keep bouncing to the band; variant 1 = ink letters edged in white
+      S.word = (layer, o) => G.into(layer, () => { const mw = o.maxW ?? W * 0.86, sz = sizeOf(o, PT ? 130 : 160, mw); const r = G.write(o.text, { x: q(o.x ?? W / 2), y: q(o.y ?? H * 0.44), size: q(sz), at: o.at, until: o.until, pop: true, bounce: 2, color: (o.colors && o.colors[0]) || (o.variant === 1 ? C2.ink : C2.paper), kind: o.kind ?? 'slam', parent: layer, z: o.z, every: Math.min(0.06, 0.5 / Math.max(1, String(o.text).length)) }); if (o.sfx !== false) F.sfx(o.at, 'boing', 0.5); return { el: r.el, x: o.x ?? W / 2, y: o.y ?? H * 0.44 }; });
+      S.line = (layer, o) => G.into(layer, () => { const sz = F.px(Math.min(58, o.size ?? 48)), mw = o.maxW ?? W * (PT ? 0.86 : 0.72), one = estUnits(o.text) * sz <= mw; const r = G.write(o.text, { x: q(o.x ?? W / 2), y: q(o.y ?? H * 0.66), size: q(sz), at: o.at, until: o.until, wrap: one ? null : q(mw), kind: o.kind ?? 'line', parent: layer, z: o.z, color: (o.colors && o.colors[0]) || C2.paper }); return { el: r.el }; });
+      // card: a white show card with an ink edge and a hard ink shadow, bouncing in
+      S.card = (layer, o) => { const c = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;background:${C2.paper};border:${f1(F.px(5))}px solid ${C2.ink};outline:${f1(F.px(3))}px solid ${C2.paper};border-radius:${f1(F.px(22))}px;box-shadow:${f1(F.px(10))}px ${f1(F.px(13))}px 0 ${C2.ink};z-index:${o.z ?? 3};box-sizing:border-box`, layer); const a = o.at - 0.1, until = o.until ?? 1e9; F.add((t) => { const on = t >= a && t < until; set(c, { display: on ? '' : 'none' }); if (on) { const d = G.Q(t) - a, v = d < 0.36 ? 1 - Math.exp(-6 * d) * Math.cos(17.6 * d) * 0.6 : 1; set(c, { transform: `scale(${(1 / Math.pow(Math.max(0.3, v), 0.5)).toFixed(3)},${v.toFixed(3)})` }); } }); return { el: c, w: o.w, h: o.h }; };
+      // screenshot: unaltered (the only colour on screen is the product's own), in an inked frame with a hard shadow; it drops in and bounces, with a whack
+      S.shot = (layer, o) => { const fit = o.fit === 'contain', box = el('div', `left:${f1(o.x - o.w / 2)}px;top:${f1(o.y - o.h / 2)}px;width:${f1(o.w)}px;height:${f1(o.h)}px;overflow:hidden;z-index:${o.z ?? 3};${fit ? '' : `border:${f1(F.px(6))}px solid ${C2.ink};outline:${f1(F.px(4))}px solid ${C2.paper};box-shadow:${f1(F.px(12))}px ${f1(F.px(15))}px 0 ${C2.ink};border-radius:${f1(F.px(10))}px;background:#fff;box-sizing:border-box`}`, layer); const im = el('img', `left:0;top:0;width:100%;height:100%;object-fit:${fit ? 'contain' : 'cover'}`, box); im.src = o.src; const a = o.at - 0.15, until = o.until ?? 1e9; F.add((t) => { const on = t >= a && t < until; set(box, { display: on ? '' : 'none' }); if (on) { const d = G.Q(t) - a, v = d < 0.4 ? 1 - Math.exp(-6 * d) * Math.cos(16 * d) : 1; set(box, { transform: `translateY(${f1((1 - v) * -F.px(240))}px) scale(${(1 + (1 - v) * 0.1).toFixed(3)},${(1 - (1 - v) * 0.08).toFixed(3)})` }); } }); F.sfx(o.at, 'whack', 0.4); return { el: box, w: o.w, h: o.h, img: im, box: { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h } }; };
+      // signature move: impact lines burst round the spot, white stars spin off it, boing
+      S.accent = (layer, o) => G.into(layer, () => { const r = q(F.px(o.size ?? 200) * 0.7), x0 = q(o.x), y0 = q(o.y), a = o.at, until = o.until ?? o.at + 1.2; G.draw((u, t) => { const d = t - a; LB.push(); if (d < 0.42) LB.hitLines(x0, y0, r * (1 + d * 1.4), 130); LB.seed(131); for (let i = 0; i < 6; i++) { const b = d * 3.4 + (i / 6) * LB.TAU; if (d < 1) LB.star(x0 + Math.cos(b) * r * 1.5, y0 + Math.sin(b) * r * 0.55 - r * 0.8, r * 0.1, b, i % 2 ? LB.PAPER : LB.G1, 1.2); } LB.pop(); }, a, until); F.sfx(a, 'boing', 0.7, { size: 0.7 }); });
+      // transition: the iris closes on the frame, opens on the next scene, with a slide whistle
+      let wl = null; const irisL = () => wl ??= F.layer('pointer-events:none', 90);
+      S.wipe = (o) => { const at = o.cover, d = 0.45, cx = G.W * (o.index % 2 ? 0.62 : 0.4), cy = G.H * 0.46; G.into(irisL(), () => G.draw((u, t) => { const k = t < at ? seg(t, at - d, at) ** 3 : (1 - seg(t, at, at + d)) ** 3, far = Math.hypot(G.W, G.H), rad = Math.max(0.01, far * (1 - k)); const c = G.ctx2(); c.fillStyle = '#000'; c.beginPath(); c.rect(0, 0, G.W, G.H); c.moveTo(cx + rad, cy); c.arc(cx, cy, rad, 0, Math.PI * 2, true); c.fill('evenodd'); }, at - d, at + d)); F.sfx(at - d, 'slide', 0.5, { dur: d, dir: -1 }); F.transition(at - d, at + d); F.cut(at); return { show: at, hide: at }; };
+      // end card: the stage, a wall clock taking a bow, the name hopping in letter by letter and bouncing, the line under it
+      S.end = (layer, o) => { S.bg(layer, { variant: 0 }); G.into(layer, () => { G.draw((u, t) => { LB.camPush(640, 430, 1); const f = Math.sin(beatOf(t) * Math.PI), k = seg(t, o.at + 1.6, o.at + 2.1) - seg(t, o.at + 2.6, o.at + 3.1); LB.wallClock(640, 590, 1.2, { a: seg(t, o.at, o.at + 0.5), h: -0.5 + f * 0.3, m: 0.5 - f * 0.3, lean: f * 0.08 - k * 0.5, pend: f * 0.8, mo: 0.4 + Math.abs(f) * 0.3, sm: 1, lx: f, brow: 0.5, al: [-70, 10 - f * 30, -12 * f, 0], ar: [70, 10 + f * 30, 12 * f, 0], legs: [-30 + f * 8, 96, 30 + f * 8, 96] }, 3); LB.pop(); }, o.at); const cy = H * (PT ? 0.26 : 0.24), sz = Math.min(F.px(PT ? 130 : 170), (W * 0.84) / Math.max(1, estUnits(o.title)) / 0.98); G.write(o.title, { x: q(W / 2), y: q(cy), size: q(sz), at: o.at + 0.3, pop: true, bounce: 2, kind: 'logo', noFact: true, parent: layer }); if (o.tagline) { const ts = F.px(PT ? 44 : 48), one = estUnits(o.tagline) * ts < W * 0.84; G.write(o.tagline, { x: q(W / 2), y: q(cy + sz * 0.95), size: q(ts), at: o.at + 1.1, kind: 'endcard', wrap: one ? null : q(W * 0.84), parent: layer }); } if (o.url) G.write(o.url, { x: q(W / 2), y: q(cy + sz * 0.95 + F.px(84)), size: q(F.px(40)), color: C2.g1, at: o.at + 1.7, kind: 'endcard', parent: layer }); F.sfx(o.at + 0.3, 'chime', 0.7); }); };
+      // ---- Telling information: steps are show cards bouncing in along a line; contrast is two cards, the winner inverted; numbers are rubber pillars with an alarm clock riding each up; a spot on the UI is a lens
+      S.steps = (layer, o) => G.into(layer, () => { const R = o.C, pos = G.steps({ items: o.items, T: o.T, until: o.until, x: q(R.x), y: q(R.y + R.h / 2), w: q(R.w), parent: layer }); return pos.map((p2) => ({ x: p2.x * RS, y: p2.y * RS })); });
+      S.versus = (layer, o) => G.into(layer, () => { const R = o.C, pos = G.versus({ cols: o.cols, T: o.T, until: o.until, x: q(R.x), y: q(R.y + R.h / 2), w: q(R.w), parent: layer }); return pos.map((p2) => ({ x: p2.x * RS, y: p2.y * RS })); });
+      S.figures = (layer, o) => G.into(layer, () => { const R = o.C, pos = G.columns({ items: o.data, hot: o.hot, ats: o.ats, until: o.until, unit: o.unit, x: q(R.x), y: q(R.y + R.h * 0.86), w: q(R.w), h: q(R.h * 0.5), parent: layer }); return pos.map((p2) => ({ x: p2.x * RS, y: p2.y * RS })); });
+      S.spotlight = (layer, o) => o.regions.map((rg, j) => { const a = o.T[j], b = j < o.regions.length - 1 ? o.T[j + 1] : o.until, ring = `box-shadow:0 0 0 ${f1(F.px(6))}px ${C2.ink}, 0 0 0 ${f1(F.px(12))}px ${C2.paper}`; return magnify(F, layer, { src: o.src, box: o.box, region: rg, at: a, until: b, zoom: 2.2, ring, z: 30, sfxType: 'boing' }) ?? { x: rg.x + rg.w / 2, y: rg.y + rg.h / 2 }; });
+      infoKit(F, S, { ink: C2.paper, accent: C2.paper, colors: [C2.paper, C2.g1, C2.g2, C2.g3], font: G.fonts.body, display: G.fonts.display, weight: 400, line: F.px(5), outline: C2.ink, radius: F.px(18), mark: C2.paper, cutSfx: 'whack', flashAt: 'center', flashBg: (col) => `background-color:${mix(col, '#0f0e0c', 0.55)}` });
+      return S;
+    },
+  });
+
   // ======================= One continuous picture drawn by a pen, then washed with colour =======================
   P.kit.register('drawnworld', {
     runtime: 'drawnworld',
