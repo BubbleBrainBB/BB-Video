@@ -64,8 +64,9 @@ if (cmd === 'search') {
   const list = pages.map((p) => {
     const ii = (p.imageinfo || [])[0] || {}, md = ii.extmetadata || {}, v = (k) => strip(md[k] && md[k].value);
     const cls = classOf(v('LicenseShortName'), v('License'));
+    // an artist given only as a link (a Flickr stream) keeps the link as the author: CC BY needs a name
     return { title: p.title.replace(/^File:/, ''), page: ii.descriptionurl, url: ii.url, thumb: ii.thumburl, mime: ii.mime, w: ii.width, h: ii.height, bytes: ii.size, dur: ii.duration,
-      licence: v('LicenseShortName') || v('License') || '?', class: cls, ok: allow.has(cls), author: v('Artist').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim(), date: v('DateTimeOriginal') || v('DateTime'), description: v('ImageDescription').slice(0, 200) };
+      licence: v('LicenseShortName') || v('License') || '?', class: cls, ok: allow.has(cls), author: v('Artist').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim() || v('Artist').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').trim(), date: v('DateTimeOriginal') || v('DateTime'), description: v('ImageDescription').slice(0, 200) };
   });
   fs.mkdirSync(path.dirname(cands), { recursive: true });
   fs.writeFileSync(cands, JSON.stringify({ query: q, video, at: new Date().toISOString(), results: list }, null, 1));

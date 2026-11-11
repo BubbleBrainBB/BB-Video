@@ -217,12 +217,14 @@
       return false;
     };
     const hold = Math.round(fps * 0.27);
+    // The outgoing shot of a registered transition (F.transition(a, b): a dissolve, an inset) is taken away at b, once the incoming shot covers it: not a pop-out
+    const transEnds = (F.transitions || []).map(([, b]) => b), nearTransEnd = (f) => transEnds.some((b) => Math.abs(b - f / fps) < 2.5 / fps);
     out.pop = []; out.popout = []; out.repeat = []; out.empty = [];
     txs.forEach((x, k) => {
       for (let i = 1; i < n; i++) {
         const a2 = tv[k][i - 1], b2 = tv[k][i], t = Math.round((i / fps) * 100) / 100;
         if (a2 < 0.05 && b2 > 0.85 && !nearCut(i) && !nearAppear(i) && i + hold < n && !lives(k, i, i + hold)) out.pop.push({ t, k, i, what: tlabel(k) });
-        if (a2 > 0.85 && b2 < 0.05 && !nearCut(i) && i - 1 - hold >= 0 && !lives(k, i - 1 - hold, i - 1)) out.popout.push({ t, k, i, what: tlabel(k) });
+        if (a2 > 0.85 && b2 < 0.05 && !nearCut(i) && !nearTransEnd(i) && i - 1 - hold >= 0 && !lives(k, i - 1 - hold, i - 1)) out.popout.push({ t, k, i, what: tlabel(k) });
       }
     });
     // A value swapped in place (a UI's selected option, a status word changing) is the UI working, not an entrance: a pop-in where another text popped out on the same spot
@@ -351,6 +353,9 @@
     //   stop = music almost stops the beat before and slams back here; off = the signal is cut: the music stops dead here (no ending chord, no sound logo). Hard cuts, impact sfx, logo / end-card names are registered automatically; add the key moments of a hand-written film yourself
     musicCue(t, kind = 'hit') { (this.cues ??= []).push({ t: Math.round(t * 1000) / 1000, kind }); }
     cut(t) { (this.cuts ??= []); if (!this.cuts.some((c) => Math.abs(c - t) < 1e-3)) this.cuts.push(t); }
+    // A flash burst [a, b): hard cuts inside it sit on a finer grid, div cuts per beat (8 = thirty-second notes). The on-beat check accepts
+    //   cuts on that grid inside the span; everywhere else cuts still land on beats or half beats. Keep a burst short (about a beat)
+    burst(a, b, div = 8) { (this.bursts ??= []).push([a, b, div]); }
     // Register an "intended appearance": something appears whole at this moment (e.g. the first frame of paper dropping into view from above). The film check won't report it as a "sudden jump";
     //   unlike cut: it need not be on the beat, and motion blur still blends as usual
     appear(t) { (this.appears ??= []).push(t); }
@@ -1145,7 +1150,8 @@
     // Narrated films follow the narration (sections and transitions between sentences); no beat requirement
     const offBeat = (t) => !F.voiced && Math.abs(t - F.snap(t)) > 0.04;
     F.sections.filter((x) => x.at > 0 && offBeat(x.at)).forEach((x) => add('warn', x.at, M('不在拍上', 'off the beat'), M(`段落 ${x.at.toFixed(2)} 秒不在拍点上（最近的拍是 ${F.snap(x.at).toFixed(2)}）：段落、转场、重击一起挪到拍点`, `section at ${x.at.toFixed(2)} s is not on a beat (nearest beat: ${F.snap(x.at).toFixed(2)}): move the section, transition and hit onto the beat together`)));
-    const offHalf = (t) => !F.voiced && Math.abs(t - F.offset - Math.round((t - F.offset) / (F.B / 2)) * (F.B / 2)) > 0.04;   // quick cuts may land on half beats (eighth notes)
+    const onGrid = (t, g, tol = 0.04) => Math.abs(t - F.offset - Math.round((t - F.offset) / g) * g) <= tol, inBurst = (t) => (F.bursts || []).some(([a, b, div]) => t > a - 1e-3 && t < b + 1e-3 && onGrid(t, F.B / div, Math.min(0.04, (F.B / div) * 0.2)));
+    const offHalf = (t) => !F.voiced && !onGrid(t, F.B / 2) && !inBurst(t);   // quick cuts may land on half beats (eighth notes); inside a registered burst (F.burst) on its finer grid
     [...new Set(F.cuts || [])].filter(offHalf).forEach((c) => add('warn', c, M('不在拍上', 'off the beat'), M(`硬切 ${c.toFixed(2)} 秒不在拍点（或半拍）上（最近的拍是 ${F.snap(c).toFixed(2)}）`, `hard cut at ${c.toFixed(2)} s is not on a beat (or half beat) (nearest beat: ${F.snap(c).toFixed(2)})`)));
     // Portrait safe area: the platform's top bar covers about the top 8%, the caption / account info covers about the bottom 20% (the right-hand button column covers some too)
     // Text-to-ground contrast (WCAG: large text ≥ 3:1, body ≥ 4.5:1): must stay readable on changed grounds too (light ground, brand-colour ground).
@@ -1324,6 +1330,7 @@
         window.__coverAt = o.cover ?? F._coverAt ?? null; // which frame (seconds) to use as the cover; frame 0 if unset
         window.__textWins = () => [...F.texts.map((x) => ({ text: x.text, kind: x.kind, a: x.win[0], b: x.win[1] })), ...(F.factWins || [])]; // for the review report and the dead-air check
         window.__cuts = () => [...(F.cuts || [])].sort((a, b) => a - b);
+        window.__bursts = () => [...(F.bursts || [])];
         window.__appears = () => [...(F.appears || [])].sort((a, b) => a - b);
         window.__lives = () => [...(F.lives || [])];
         window.__hushes = () => [...(F.hushes || [])];

@@ -832,7 +832,12 @@
       const co = opt.captions || {}, segs = window.EV.captionSegments(F.T, co.max ?? (PT || BAND ? 14 : 20)), size = gx(co.size ?? (PT ? 50 : BAND ? 52 : 46));
       const box = el('div', `left:0;right:0;top:${co.top ?? (BAND ? BY + H * BK + gx(40) : PT ? H * 0.66 : H * 0.872)}px;text-align:center;z-index:880;pointer-events:none;display:none`, F.stage);
       const sp = node('span', `position:relative;display:inline-block;max-width:${RW * (BAND ? 0.9 : 0.84)}px;color:#fff;font:900 ${size}px/1.25 ${FONT.sans};letter-spacing:.02em;text-shadow:${outline(size * 0.07)}`, box);
-      F.add((t) => { const c = segs.find((x) => t >= x.start && t < x.end); set(box, { display: c ? '' : 'none' }); if (c && sp.textContent !== c.text) sp.textContent = c.text; });
+      // the scrim: on paper the outlined captions sit over small print; a soft dark band under them (landscape / portrait fill only —
+      // in the band layout the captions are already on black) keeps the print from reading through. captions: { scrim: false } turns it off.
+      const scrim = !BAND && co.scrim !== false ? el('div', `left:0;right:0;bottom:0;top:${(co.top ?? (PT ? H * 0.66 : H * 0.872)) - gx(70)}px;z-index:879;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,${co.scrim ?? 0.72}) 40%,rgba(0,0,0,${co.scrim ?? 0.72}) 100%)`, F.stage) : null;
+      if (scrim) scrim.dataset.motion = 'skip';
+      const capOn = (t) => { let q = 0; for (const x of segs) q = Math.max(q, Math.min(seg(t, x.start - 0.2, x.start), 1 - seg(t, x.end, x.end + 0.25))); return q; };
+      F.add((t) => { const c = segs.find((x) => t >= x.start && t < x.end); set(box, { display: c ? '' : 'none' }); if (c && sp.textContent !== c.text) sp.textContent = c.text; if (scrim) set(scrim, { opacity: capOn(t).toFixed(3) }); });
       for (const c of segs) { F.appear(c.start); F.appear(c.end); }
       F.caps = segs;
     }
@@ -871,7 +876,7 @@
         const e = el('div', `left:${gx(x0 + i * (o.step ?? 0))}px;top:${gx(y0 + i * size * 1.3)}px;opacity:0;transform-origin:0 50%`, S.over);
         const s = node('span', `position:relative;display:inline-block;font:900 ${gx(size)}px/1.05 ${FONT.sans};letter-spacing:-.01em;color:#fff;background:linear-gradient(180deg,#ffffff 0%,#e9e9e6 45%,#9d9d99 58%,#d8d8d4 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;filter:drop-shadow(0 ${gx(3)}px 0 #2a2a2a) drop-shadow(0 ${gx(6)}px 0 #151515) drop-shadow(0 ${gx(12)}px ${gx(14)}px rgba(0,0,0,.7))`, e, esc(ln));
         F.text(s, i === 0 ? 'slam' : 'headline', ln, la, b, { overlap: i > 0 });   // the next line slams in over the last one's edge for a moment
-        F.add((t) => { const q = E.quartOut(seg(t, la, la + 0.22)); set(e, { opacity: seg(t, la, la + 0.08).toFixed(3), transform: `scale(${(1.25 - 0.25 * q).toFixed(4)})` }); });
+        F.add((t) => { const q = E.quartOut(seg(t, la, la + 0.26)); set(e, { opacity: seg(t, la, la + 0.08).toFixed(3), transform: `scale(${(1.18 - 0.18 * q).toFixed(4)})` }); });
         F.sfx(la, 'impact', 0.7);
       });
       F.musicCue(at, 'hit');

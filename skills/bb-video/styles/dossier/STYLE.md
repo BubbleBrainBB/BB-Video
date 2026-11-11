@@ -87,7 +87,7 @@ All sheets live in the shot's world (x / y = top-left, w / h in world units; the
 - **Reading**: at the pushed-in view the quoted line must be big (pad ≤ 1.4); English body copy elsewhere is texture, the translation carries the meaning.
 - **Bars and tags** must not cover the words they explain unless `mode: 'over'` (then the bar *is* the line); check the stills at the moment each lands. When the camera moves on to the next line, lift the last bar (`until`) instead of stacking bars.
 - **Pushing past the headline**: when the camera pushes from a page's headline into its lead, `--check` may say the headline is too close to the top — that is the push, not a layout fault.
-- **Chapter bar and captions** must not collide with headlines: keep headlines ≥ 100 units from the top, nothing important below 860.
+- **Chapter bar and captions** must not collide with headlines: keep headlines ≥ 100 units from the top, nothing important below 860. The captions sit on a soft dark scrim (`captions: { scrim: 0.72 }`, `false` turns it off) so the small print under them does not read through; still frame a page so its sub-heads end above 860.
 - **Pictures**: look at every painter in `--stills`; a halftone that turned solid black needs `ht: { bright }`.
 - Self-check per `references/review.md`: `--check`, `--stills`, then the full render and its frame check (brush and blur transitions are registered; a flagged jump that is not one is a bug).
 

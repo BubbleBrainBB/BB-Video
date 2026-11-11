@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · supercut</title>
+<!-- Grotesk: Inter Tight (OFL) for Latin, Noto Sans SC (思源黑体, OFL) for Chinese; the Latin font goes first -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#000}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/supercut.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · supercut (踩点混剪). Read the skill's styles/supercut/STYLE.md first.
+// The film is footage: this skeleton runs on grey stand-ins (S.standIn) so the timing can be checked, and --check says so until they are replaced.
+//   1. list the pictures each line needs (literal association: the line says "move" → things that move), find them (your own material first,
+//      then node promo/scripts/footage.mjs <project> search "…"; tell the user what, from where, which licence, and wait for their OK before fetch)
+//   2. node explainer/scripts/assets.mjs <project>  → assets/manifest.js;  then a plate is just its file name: 'rocket-night'
+// Every time is on the grid: e(n) = the n-th eighth note. Every word on screen is in brief.md.
+PROMO.compose({
+  bpm: 88, offset: 0, duration: 17.8, grain: false,
+  theme: { bg: '#000', fg: '#ffffff', ink: '#ffffff', muted: '#9a9a9a', accent: '#3d7bf2', paper: '#f6f4ee', fonts: { display: '"Inter Tight", "Noto Sans SC", sans-serif', serif: '"Inter Tight", "Noto Sans SC", sans-serif', sans: '"Inter Tight", "Noto Sans SC", sans-serif' } },
+  build: (F) => {
+    const S = PROMO.supercut(F, { look: 'film', accent: '#3d7bf2' }), e = S.e, P = (i) => S.standIn(i);
+    // 1. the name flashes over a burst (thirty-second notes), then the first line types on over a run of eighth-note shots
+    S.burst(e(0), e(2), [P(1), P(2), P(3), P(4), P(5), P(6), P(7), P(8)]);
+    S.punch(e(0), '标题', { until: e(2), stop: false });
+    S.run(e(2), e(14), [P(9), P(10), P(11), P(12), P(13), P(14), P(15), P(16), P(17)], { pattern: [1, 1, 2] });
+    S.caption({ at: e(2), until: e(14), text: '标语|写在|这里', every: F.B * 1.5, reveal: ['type', 'bar', 'scramble'] });
+    // 2. a hold: the one place the film stops and says something concrete
+    S.hold(e(14), e(22), P(18));
+    S.bubbles({ at: e(15), until: e(22), from: '标题', items: [{ text: '第一条消息' }, { text: '回一句', at: e(17) }] });
+    // 3. the frame multiplies; once the line has been read the pill shrinks to a tag and lets the grid have the frame
+    S.multiply({ at: e(22), until: e(34), steps: [1, 2, 4], cells: Array.from({ length: 21 }, (_, i) => P(20 + i)) });
+    S.caption({ at: e(22), until: e(34), text: '一句话', every: F.B, states: [[e(30), 'tag']] });
+    // 4. single-word cards on alternating grounds, then the name
+    S.cards({ at: e(34), every: F.B * 2, words: ['一句话', '总结'], logo: { text: '标题' }, url: 'example.com' });
+  },
+});
+</script></body></html>

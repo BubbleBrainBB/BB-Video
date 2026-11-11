@@ -9,7 +9,7 @@
 
 | 技能 | 做什么 |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，34 种画面风格 |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **讲解视频**（旁白、字幕、垫底配乐），以及网站 / App / 软件的**宣传片、发布视频**（卡拍配乐和音效）——横屏 16:9、竖屏 9:16，35 种画面风格 |
 
 你只需要选一样：**风格**。旁白、分镜、配音、音乐、音效、排版、检查都交给 Agent。
 
@@ -49,6 +49,7 @@
 | `drawnworld` 线稿成世界 | 全片只有一幅画，由一支笔画出来：黑色的笔在暖白色的纸上用干净的墨线一笔笔画出整个虚构的世界，从一个小东西开始往外长，镜头跟着笔走，隔一会儿缓缓拉远；被挡住的线不会透出来，所有招牌都由笔按真实笔顺写出，一张价签随着故事推进被划掉重写；整个机制都画完之后，颜色才漫过纸面，露出天空、远山和树，最后的定格全景里机器依次启动，整个世界活了过来 |
 | `goldenage` 美式黄金卡通 | 美国黄金时代的影院卡通：水粉画的午夜城市，装饰艺术风的高楼和暖黄的窗，前面是墨线赛璐珞角色，一拍二绘制、线条微微抖动，带着放映拷贝的质感。用卡通物理讲故事：巨大的球压成薄饼再弹回去，摩天楼像弹簧一样压缩、回弹，每次撞击都有冲击帧，角色悬在半空才发现脚下没路，死寂的定格把笑点垫起来；一支小乐队和滑哨紧跟每个动作 |
 | `rubberhose` 黑白橡皮管卡通 | 1930 年代美国的黑白橡皮管卡通：灰色水彩打底、钢笔勾线的场景前面，是一群活过来的东西，戴白手套、长着切角圆眼、胳膊腿像橡皮管，全都踩着二拍子的热爵士乐队一起弹跳；一拍二绘制、线条微微抖动，放映出来是一卷老旧的拷贝（重颗粒、闪烁、灰尘、划痕、每个剪接点闪一下）。用一个接一个的笑点讲故事：东西醒过来跳舞，时间本身乱了套，闹钟胀大到炸开，乐队戛然而止，全场冻住 |
+| `supercut` 踩点混剪 | 真实影像踩着节拍硬切（带运动和快门拖影的授权照片，停留镜头用真视频），每秒两三个镜头；画面正中钉着一个小小的白色字幕条，镜头怎么切它都不动——一句话逐词打进去，跨好几个镜头，新词先是乱码或被色条盖住，字的颜色取自下面的画面，四条细线从它的边缘拉到画面边缘。关键词以巨大的、边缘被噪点啃过的粗体闪现，分格一格格填满或 1 → 4 → 16 裂开，每隔几秒一个停留镜头配两个消息气泡讲一条具体的事，最后是一词一张的片尾字卡。鼓和低音为主，普通切镜头不加音效。适合品牌情绪和抽象卖点；只做宣传片，必须有真实素材 |
 
 能做什么：
 
@@ -280,6 +281,12 @@
 <b><code>rubberhose</code></b> · 《疯狂的时钟》：午夜，整座钟表工厂醒过来跳舞，时间本身乱了套，闹钟炸开了花，值夜班的清洁工把主钟的发条拧停，全场冻住，只剩一只小手表还在走<br>
 <sub>没有台词的短片，角色都是虚构的，没有画任何真实的人</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/rubberhose.mp4">完整视频</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4"><img src="examples/supercut/preview.gif" width="100%" alt="supercut"></a><br>
+<b><code>supercut</code></b> · 代码编辑器 Zed："Code at the speed of thought"，五十张快的东西、机器和手，踩着节拍切<br>
+<sub>照片和视频来自 Wikimedia Commons（CC0 / 公有领域 / CC BY 2.0: Bill Bradford, Mark Dumont, Mercado Viagens, Nicholas A. Tonelli, Oregon Department of Transportation, Shixart1985, flowcomm, kennymatic · CC BY 2.5: Greg L. Wright · CC BY 3.0: Gregory Wilson, 极客湾Geekerwan · CC BY 4.0: Henrysz, NOIRLab/NSF/AURA）；<a href="examples/supercut/CREDITS.txt">完整清单</a></sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4">完整视频</a>
 </td>
 </tr>
 </table>

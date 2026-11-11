@@ -450,6 +450,15 @@ async function popScan(file, fps, from, cuts, acts, appears = [], voice = false,
     if (!inTrans && Math.min(d[i - 1], d[i]) > 4 && diff(i - 1, i + 1) < 0.35 * Math.min(d[i - 1], d[i])) hits.push(M(`${(from + i / fps).toFixed(2)}s 闪了一帧（这一帧和前后都不同，前后两帧却很像）`, `${(from + i / fps).toFixed(2)}s one-frame flash (this frame differs from both neighbours, which look alike)`));
   }
   for (const [a, b] of await sawScan(file, fps, from, trans)) hits.push(M(`${a.toFixed(1)}–${b.toFixed(1)}s 整个画面在来回抽动（一秒里反向很多次），看起来很闪：常见原因是镜头和它跟着的东西不在同一个时钟上（比如画面一拍二、镜头一拍一），让两者走同一个时钟`, `${a.toFixed(1)}–${b.toFixed(1)}s the whole picture saws back and forth (many reversals a second) and reads as flicker: usually the camera and what it follows are on different clocks (say drawings on twos, camera on ones); put them on the same one`));
+  // Photosensitivity: the whole picture going light → dark → light (mean relative luminance one way and back by 10% or more) more than 3 times within one second
+  {
+    const LUT = Float32Array.from({ length: 256 }, (_, v) => { const c = Math.min(1, Math.max(0, (v - 16) / 219)); return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+    const Lm = Array.from({ length: n }, (_, f) => { let q = 0; for (let i = 0; i < sz; i++) q += LUT[buf[f * sz + i]]; return q / sz; });
+    const tr = []; let ext = Lm[0] ?? 0, dir = 0;
+    for (let f = 1; f < n; f++) { const v = Lm[f]; if (dir === 0) { if (Math.abs(v - ext) >= 0.1 && Math.min(v, ext) < 0.8) { dir = Math.sign(v - ext); tr.push(f); ext = v; } } else if ((v - ext) * dir > 0) ext = v; else if (Math.abs(v - ext) >= 0.1 && Math.min(v, ext) < 0.8) { dir = -dir; tr.push(f); ext = v; } }
+    let worst = 0, wf = 0; for (let i = 0; i < tr.length; i++) { let j = i; while (j < tr.length && tr[j] - tr[i] < fps) j++; if (j - i > worst) { worst = j - i; wf = tr[i]; } }
+    if (worst > 6) hits.push(M(`${(from + wf / fps).toFixed(2)}s 起一秒内整个画面明暗来回变了 ${worst} 次（${Math.floor(worst / 2)} 次闪烁），超过每秒 3 次：可能诱发光敏性癫痫——把相邻的亮画面和暗画面排开，或者放慢`, `from ${(from + wf / fps).toFixed(2)}s the whole picture goes light / dark ${worst} times within one second (${Math.floor(worst / 2)} flashes), over 3 a second: a photosensitive-seizure risk — keep bright and dark pictures apart, or slow down`));
+  }
   if (acts) acts = { ...acts, speech: voice ? speechSpans() : [] };
   const gapWhy = voice ? M('旁白停下来的这一段：', 'narration paused: ') : '';
   if (!voice) {
@@ -700,7 +709,10 @@ async function reviewSheets(proj, comp, page) {
 }
 
 // Automatic check results
+//   level 'note' = a style's own measurement line (a supercut's shot lengths, its flash count): printed as it is, not counted as a warning
 function report(issues) {
+  for (const i of issues.filter((x) => x.level === 'note')) console.log(`${i.what}${M('：', ': ')}${i.msg}`);
+  issues = issues.filter((x) => x.level !== 'note');
   if (!issues.length) { console.log(M('自动检查：没有发现问题', 'Lint check: no issues found')); return 0; }
   const errs = issues.filter((i) => i.level === 'error');
   console.log(M(`自动检查：${errs.length} 个错误，${issues.length - errs.length} 个提醒`, `Lint check: ${errs.length} error(s), ${issues.length - errs.length} warning(s)`));

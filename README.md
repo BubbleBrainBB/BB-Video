@@ -9,7 +9,7 @@ Every frame is drawn with HTML / SVG / canvas as a pure function of time, render
 
 | Skill | What it makes |
 |---|---|
-| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 34 visual styles |
+| <a href="skills/bb-video"><code>bb&#8288;-&#8288;video</code></a> | **Explainer videos** with voiceover, captions and background music, and **promo / launch videos** for websites, apps and software with beat-synced music and sound effects — 16:9 and 9:16, in 35 visual styles |
 
 You make one choice: **the style**. Everything else (narration, storyboard, voice, music, sound, layout, checks) is the agent's job.
 
@@ -49,6 +49,7 @@ You make one choice: **the style**. Everything else (narration, storyboard, voic
 | `drawnworld` | one continuous picture drawn by a pen: a black stylus draws a whole invented world stroke by stroke in clean ink on warm white paper, growing outward from one small thing while the camera follows the pen and eases back; lines behind nearer parts never show through, every sign is lettered by the pen in real stroke order, a tag gets crossed out and rewritten as the story moves on; once the whole mechanism is on the page, a colour wash spreads across it and reveals sky, hills and trees, and the held wide shot comes alive as its machines start one by one |
 | `goldenage` | a golden-age American theatrical cartoon: a painted gouache night city of Art Deco towers and warm windows behind inked cel characters, drawn on twos with a boiling line and projected as a film print. Cartoon physics carry the telling: a giant ball flattens to a pancake and rebounds, skyscrapers accordion and ring like springs, an impact frame on every hit, characters hang in mid-air, and dead-still pauses set the laughs up; a small hot band and a slide whistle follow every action |
 | `rubberhose` | a 1930s black-and-white rubber-hose cartoon: grey watercolour washes and pen work behind an inked cast of things that come alive, with white gloves, pie-cut eyes and rubber-hose limbs, all bouncing on the beat to a hot two-beat band, drawn on twos with a boiling line and projected as a worn print (heavy grain, flicker, dust, scratches, a splice bump on every cut). Gags carry the telling: objects wake up and dance, time itself goes wrong, an alarm clock swells and bursts, and the band stops dead while everyone freezes |
+| `supercut` | a beat-cut footage supercut: real-world footage (licence-clean stills with a move and a shutter smear, clips for the holds) hard-cut on the beat two or three shots a second, with one small white caption pill pinned at the exact centre that never moves — a sentence is typed into it word by word across several shots, words arrive scrambled or under a colour bar, its ink takes the colour of the picture under it, hairline guides run from its edges to the frame edges. The key word flashes as giant eroded type, a grid fills cell by cell or splits 1 → 4 → 16, a held shot with two message bubbles says something concrete every few seconds, then single-word end cards. Drums and bass, no sound on ordinary cuts. For brand mood and abstract selling points; promos only, and it needs real footage |
 
 What it covers:
 
@@ -280,6 +281,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <b><code>rubberhose</code></b> · The Clock Goes Crazy: at midnight a whole clock factory wakes up and dances, time itself goes wrong, an alarm clock explodes, and the night janitor winds the master clock down until everything freezes, except one tiny watch<br>
 <sub>A wordless short with an invented cast, no real people or places named</sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/rubberhose.mp4">Full video</a>
+</td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4"><img src="examples/supercut/preview.gif" width="100%" alt="supercut"></a><br>
+<b><code>supercut</code></b> · Zed, the code editor: "Code at the speed of thought", cut to the beat over fifty pictures of fast things, machines and hands<br>
+<sub>Photos and clips from Wikimedia Commons (CC0 / public domain / CC BY 2.0: Bill Bradford, Mark Dumont, Mercado Viagens, Nicholas A. Tonelli, Oregon Department of Transportation, Shixart1985, flowcomm, kennymatic · CC BY 2.5: Greg L. Wright · CC BY 3.0: Gregory Wilson, 极客湾Geekerwan · CC BY 4.0: Henrysz, NOIRLab/NSF/AURA); <a href="examples/supercut/CREDITS.txt">full list</a></sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4">Full video</a>
 </td>
 </tr>
 </table>
