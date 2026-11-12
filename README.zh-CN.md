@@ -289,6 +289,12 @@
 <sub>照片和视频来自 Wikimedia Commons（CC0 / 公有领域 / CC BY 2.0: Bill Bradford, Mark Dumont, Mercado Viagens, Nicholas A. Tonelli, Oregon Department of Transportation, Shixart1985, flowcomm, kennymatic · CC BY 2.5: Greg L. Wright · CC BY 3.0: Gregory Wilson, 极客湾Geekerwan · CC BY 4.0: Henrysz, NOIRLab/NSF/AURA）；<a href="examples/supercut/CREDITS.txt">完整清单</a></sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4">完整视频</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4"><img src="examples/cutaway/preview.gif" width="100%" alt="cutaway"></a><br>
+<b><code>cutaway</code></b> · 《一只眼球的里面》：把人的眼球切开，跟着一束光走九站——角膜、瞳孔、晶状体、玻璃体、视网膜、黄斑、视杆和视锥、盲点、视神经；每张信息卡还写明哪里画得和真实的不一样<br>
+<sub>用代码画的，模型按毫米搭 · 资料来源：EyeWiki（美国眼科学会）、AAO、Webvision、Purves《Neuroscience》、StatPearls、Curcio 等 1990</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4">完整视频</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->

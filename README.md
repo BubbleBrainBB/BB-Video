@@ -289,6 +289,12 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <sub>Photos and clips from Wikimedia Commons (CC0 / public domain / CC BY 2.0: Bill Bradford, Mark Dumont, Mercado Viagens, Nicholas A. Tonelli, Oregon Department of Transportation, Shixart1985, flowcomm, kennymatic · CC BY 2.5: Greg L. Wright · CC BY 3.0: Gregory Wilson, 极客湾Geekerwan · CC BY 4.0: Henrysz, NOIRLab/NSF/AURA); <a href="examples/supercut/CREDITS.txt">full list</a></sub><br>
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/supercut.mp4">Full video</a>
 </td>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4"><img src="examples/cutaway/preview.gif" width="100%" alt="cutaway"></a><br>
+<b><code>cutaway</code></b> · Inside one eyeball: a human eye opens into a cutaway and a beam of light is followed through nine stops — cornea, pupil, lens, vitreous, retina, macula, rods and cones, blind spot, optic nerve; each card also says how the drawing differs from the real thing<br>
+<sub>Drawn in code, built in millimetres · sources: EyeWiki (AAO), AAO, Webvision, Purves <i>Neuroscience</i>, StatPearls, Curcio et al. 1990</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4">Full video</a>
+</td>
 </tr>
 </table>
 <!-- gallery:end -->
