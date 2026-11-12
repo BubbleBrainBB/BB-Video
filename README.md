@@ -297,6 +297,16 @@ One sample per style, all made with this skill (GIFs are 7 s cuts; the full mp4s
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4">Full video</a>
 </td>
 </tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/watercolour.mp4"><img src="examples/watercolour/preview.gif" width="100%" alt="watercolour"></a><br>
+<b><code>watercolour</code></b> · Why corals are turning white: a reef is painted in, then washed white patch by patch; a pencil-ringed close-up of one polyp shows the algae that give it colour and food being pushed out by warm water; the four global bleaching events as swatches that deepen (21% → 37% → 68% → 84% of reef area under bleaching-level heat) and a hundred dabs of which 84 lose their colour; then what recovery takes<br>
+<sub>Painted in code, no photos · sources: NOAA Coral Reef Watch, NOAA Ocean Service, NOAA NESDIS, ICRI, AIMS, GBRMPA, GCRMN</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/watercolour.mp4">Full video</a>
+</td>
+<td width="33%" valign="top"></td>
+<td width="33%" valign="top"></td>
+</tr>
 </table>
 <!-- gallery:end -->
 

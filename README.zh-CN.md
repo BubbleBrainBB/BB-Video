@@ -297,6 +297,16 @@
 <a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/cutaway.mp4">完整视频</a>
 </td>
 </tr>
+<tr>
+<td width="33%" valign="top">
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/watercolour.mp4"><img src="examples/watercolour/preview.gif" width="100%" alt="watercolour"></a><br>
+<b><code>watercolour</code></b> · 《珊瑚为什么在变白》：一片珊瑚礁画出来，再一片片被洗白；铅笔圈起来的特写里，给珊瑚颜色和养分的共生藻被过热的海水逼走；四次全球大白化画成越来越深的色卡（遇到白化级高温的珊瑚礁面积 21% → 37% → 68% → 84%），100 个色点里 84 个被洗掉颜色；最后是恢复要多久<br>
+<sub>用代码画的，没有照片 · 资料来源：NOAA Coral Reef Watch、NOAA Ocean Service、NOAA NESDIS、ICRI、AIMS、GBRMPA、GCRMN</sub><br>
+<a href="https://github.com/BubbleBrainBB/BB-Video/releases/download/samples/watercolour.mp4">完整视频</a>
+</td>
+<td width="33%" valign="top"></td>
+<td width="33%" valign="top"></td>
+</tr>
 </table>
 <!-- gallery:end -->
 
