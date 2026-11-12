@@ -818,6 +818,19 @@ async function main() {
         }
       }
     }
+    // Sourced claims: text the page marks as needing its source next to it (window.__sourced: the cutaway style's "how the drawing differs from the
+    //   real thing" lines). Being somewhere in brief.md is not enough: the bullet that holds the line must also say where it comes from (a link, or 来源 / 出处 / Source)
+    {
+      const sourced = (await first.eval('window.__sourced ? window.__sourced() : []')).result.value || [];
+      if (sourced.length && fs.existsSync(briefPath)) {
+        const norm = (x) => x.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, ''), items = fs.readFileSync(briefPath, 'utf8').split(/\n(?=\s*[-*] |#)|\n\s*\n/);
+        for (const c of [...new Map(sourced.map((x) => [x.text, x])).values()]) {
+          const hits = items.filter((it) => norm(it).includes(norm(c.text)));
+          if (!hits.length) issues.push({ level: 'warn', t: 0, src: '', what: M('出处', 'source'), msg: M(`"${c.text.slice(0, 40)}" 在 brief.md 里找不到：每条「哪里画得不真实」都要原样写进 brief.md，同一条里写明真实的数值和出处`, `"${c.text.slice(0, 40)}" is not in brief.md: every "how the drawing differs" line goes into brief.md verbatim, with the real figure and its source in the same bullet`) });
+          else if (!hits.some((it) => /https?:\/\/|来源|出处|\bsource\b/i.test(it))) issues.push({ level: 'warn', t: 0, src: '', what: M('出处', 'source'), msg: M(`"${c.text.slice(0, 40)}" 在 brief.md 里有，但那一条没有写出处：在同一条里加上来源（链接，或"来源：…"）`, `"${c.text.slice(0, 40)}" is in brief.md, but its bullet names no source: add one in the same bullet (a link, or "Source: …")`) });
+        }
+      }
+    }
     // Colours come from the product (promos): brief.md needs a line "颜色：#…（来自：…）" (Colours: #… (from: …)); also warn when the quick version doesn't use the researched brand colours — otherwise every film gets the style's default palette
     // Explainer (narrated) topics have no brand colours: not checked; a brief that says "风格默认配色" (style default palette) counts as written too
     if ((await first.eval('!!window.PROMO')).result.value && fs.existsSync(briefPath) && !hasVoice() && !/风格默认配色|style default (colou?rs|palette)/i.test(fs.readFileSync(briefPath, 'utf8'))) {

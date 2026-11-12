@@ -277,6 +277,8 @@ Dark motivational short (`lumen`) likewise: hand-written only (`PROMO.lumen(F, o
 
 3D stick-figure parable (`parable`) likewise: hand-written only (`await PROMO.parable(F, opt)`, `styles/parable/STYLE.md`), starters `styles/parable/index.html` (wordless, on the music: the usual way to use it) and `explain.html` (narrated or subtitled); time passing is told by a stack growing on `times` / `count(t)` and `P.counter`, the meaning by one red item. hand-written only (`await PROMO.map(F, opt)`, `styles/map/STYLE.md`), starters `styles/map/index.html` (places on the beat) and `explain.html` (narrated; the coarse world only — a film about a place builds its own geodata with `scripts/geodata.mjs`).
 
+Cutaway tour (`cutaway`) likewise: hand-written only (`await PROMO.cutaway(F, opt)`, `styles/cutaway/STYLE.md`), starters `styles/cutaway/index.html` (a teardown on the beat) and `explain.html` (narrated: the usual way to use it; the card is the film's text, so captions are off by default). `--check` also compares every "how the drawing differs" line with `brief.md` and asks for its source in the same bullet.
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Inter (Latin) + Noto Sans SC for Chinese. three.js loads from jsDelivr (import map); time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#FFFFFF}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/cutaway.js"></script>
+</head><body><div id="stage"></div><script>
+// Cutaway tour (剖视图解) · explainer (follows the narration): how to write it is in the skill's styles/cutaway/STYLE.md. Every piece of on-screen text must be findable in brief.md;
+//   every "how the drawing differs from the real thing" line (card.caveat) needs its source on the same line of brief.md.
+// All times come from the narration: s('l1') = this line starts, w('l1', 'some word') = when that word is said. The card is the film's text: no captions by default.
+// This skeleton: a closed ball with a scale bar → a wedge opens and shows three layers → the camera flies to the middle layer (the rest fades, grains jostle, a card in three rows)
+//   → to the core (it pulses, a label) → pulls back, the wedge closes, one closing fact. Replace the model with your own thing; build it in real units.
+PROMO.compose({
+  bpm: 84, offset: 0.2, grain: false, captions: false,
+  theme: { bg: '#FFFFFF', fg: '#1E2030', muted: '#5C6070', ink: '#1E2030', paper: '#FFFFFF', accent: '#E4553D', fonts: { display: 'Inter, "Noto Sans SC", sans-serif', serif: 'Inter, "Noto Sans SC", sans-serif', sans: 'Inter, "Noto Sans SC", sans-serif', script: 'Inter, sans-serif' } },
+  build: async (F) => {
+    const TL = F.T, s = TL.start, C = await PROMO.cutaway(F, { units: { unit: '厘米', per: 1 } });   // 1 model unit = 1 cm of the real thing
+    const L1 = s('l1'), L1e = TL.end('l1'), b = (k) => L1 + (L1e - L1) * k / 16;   // the skeleton has one narration line: once the narration is written use s('l3') / w('l3', '…')
+    F.section(0, 1, { name: 'whole' }); F.section(b(3), 1, { name: 'tour' }); F.section(b(13), 2, { name: 'whole again' });
+    // the model, in real units: three nested layers that share one cut
+    const cut = C.cutter({ type: 'wedge', axis: [0, 1, 0], from: [-0.42, 0, 0.9] });   // the wedge opens from this direction, turning around the axis: aim its middle at the camera
+    const skin = C.shell({ name: '外壳', r: 5, thickness: 0.5, color: 'peach', cut });
+    const mid = C.shell({ name: '中层', r: 4.4, thickness: 2.2, color: 'purple', inner: 'lilac', cut });
+    const core = C.blob({ name: '核', r: 1.5, lobes: 14, amp: 0.16, color: 'magenta', cut });
+    const dots = C.grains({ on: mid, n: 400, r: 0.09, color: 'yellow', lift: 0.03, wiggle: 0.02, cut });
+    cut.to(b(1.5), 100, { dur: 1.8 });
+    cut.to(b(13.4), 0, { dur: 1.6 });
+    core.pulse(b(10.6), { amt: 0.14, n: 2, dur: 1.2 });
+    C.scaleBar({ of: skin, text: '10 厘米', at: b(0.3), until: b(1.4) });
+    C.tour([
+      { at: 0, look: skin, az: 28, el: 16, fill: 0.74, room: true, card: { swatch: false, name: '一样东西', what: '一句话：它是什么', at: [b(0), b(0.7)] }, cardUntil: b(3.6) },
+      { at: b(1.4), look: skin, az: 22, el: 20, fill: 0.84, room: true, dur: 2 },
+      { at: b(4), focus: [mid, dots], look: mid, az: 44, el: 18, fill: 1.3,
+        card: { color: 'purple', name: '中层', what: '一句话：它是做什么的。', caveat: '这里哪里画得和真实的不一样。', at: [b(4.6), b(6), b(7.6)] } },
+      { at: b(9.5), focus: [core], az: 30, el: 12, fill: 0.7,
+        card: { color: 'magenta', name: '核', what: '一句话：它是做什么的。', caveat: '这里哪里画得和真实的不一样。', at: [b(10), b(10.6), b(11.3)] },
+        labels: [{ on: core, text: '标签', at: b(10.6), dx: 190, dy: -150 }] },
+      { at: b(13), look: skin, az: 34, el: 16, fill: 0.74, room: true, dur: 2 },
+    ]);
+    C.plate({ title: '一个数字', sub: '一句话收尾。', at: b(14.6), until: F.duration });
+    C.run();
+  },
+});
+</script></body></html>

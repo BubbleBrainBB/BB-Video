@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__</title>
+<!-- Fonts: Inter (Latin) + Noto Sans SC for Chinese. three.js loads from jsDelivr (import map); time is driven by our clock -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css">
+<style>html,body{margin:0;background:#FFFFFF}#stage{position:relative;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/cutaway.js"></script>
+</head><body><div id="stage"></div><script>
+// Cutaway tour (剖视图解) · promo (on the beat, no voiceover): how to write it is in the skill's styles/cutaway/STYLE.md. Every piece of on-screen text must be traceable to brief.md;
+//   every "how the drawing differs from the real thing" line (card.caveat) needs its source in the same bullet of brief.md.
+// A product shown as a teardown: the closed thing with its real size → the shell opens on the beat → two stops, each a part with what it does → it closes on the name.
+//   Build the model in real units; take the shell's colour from the product.
+PROMO.compose({
+  bpm: 96, offset: 0.3, duration: 22, grain: false,
+  theme: { bg: '#FFFFFF', fg: '#1E2030', muted: '#5C6070', ink: '#1E2030', paper: '#FFFFFF', accent: '#E4553D', fonts: { display: 'Inter, "Noto Sans SC", sans-serif', serif: 'Inter, "Noto Sans SC", sans-serif', sans: 'Inter, "Noto Sans SC", sans-serif', script: 'Inter, sans-serif' } },
+  build: async (F) => {
+    const b = (n) => F.beat(n), C = await PROMO.cutaway(F, { units: { unit: '厘米', per: 1 } });   // 1 model unit = 1 cm of the real thing
+    F.section(0, 1, { name: 'whole' }); F.section(b(4), 2, { name: 'open' }); F.section(b(8), 2, { name: 'tour' }); F.section(b(26), 3, { name: 'name', hit: true });
+    // the model: a can with a wall, a stack of plates inside and a core; a quarter is taken out
+    const cut = C.cutter({ type: 'wedge', axis: [0, 1, 0], from: [-0.42, 0, 0.9] });
+    const can = C.shell({ name: '外壳', shape: C.shape.cylinder(3, 9), thickness: 0.3, color: 'teal', cut });
+    const plates = C.stack({ name: '叠片', n: 9, r: 2.5, h: 0.5, gap: 0.3, colors: ['gold', 'orange'], cut });
+    const core = C.rod({ name: '芯', a: [0, -3.6, 0], b: [0, 3.6, 0], r: 0.5, color: 'dark' });
+    cut.to(b(4), 95, { dur: F.B * 3 }); cut.to(b(25), 0, { dur: F.B * 2.5 });
+    C.flow({ path: [[0, -3.4, 0.9], [0, 3.4, 0.9]], n: 8, r: 0.16, color: 'yellow', at: b(16), until: b(24), period: 1.6 });
+    C.scaleBar({ of: can, width: 6, text: '6 厘米', at: b(1), until: b(4) });
+    C.tour([
+      { at: 0, look: can, az: 26, el: 14, fill: 0.74, room: true, card: { swatch: false, name: '产品名', what: '一句话：它是什么', at: [b(0.5), b(2)] } },
+      { at: b(4), look: can, az: 24, el: 20, fill: 0.86, room: true, dur: F.B * 3 },
+      { at: b(8), focus: [plates], az: 34, el: 18, fill: 0.9, dur: F.B * 2, card: { color: 'gold', name: '部件一', what: '一句话：它是做什么的。', caveat: '这里哪里画得和真实的不一样。', at: [b(10), b(12), b(14)] } },
+      { at: b(16), focus: [core], look: can, az: 18, el: 12, fill: 0.9, dur: F.B * 2, card: { color: 'dark', name: '部件二', what: '一句话：它是做什么的。', caveat: '这里哪里画得和真实的不一样。', at: [b(18), b(20), b(22)] },
+        labels: [{ on: core.p([0, 2.4, 0]), text: '标签', at: b(20), dx: 200, dy: -120 }] },
+      { at: b(24), look: can, az: 26, el: 14, fill: 0.74, room: true, dur: F.B * 3 },
+    ]);
+    C.plate({ title: '产品名', sub: '一句话卖点', note: 'example.com', at: b(26), until: F.duration });
+    C.run();
+  },
+});
+</script></body></html>
