@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · watercolour</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#f8f4ea}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="timeline.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/watercolour.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · watercolour, narrated. Hand-written PROMO.compose: every brush touch is timed from the narration (T.start / T.end / T.word).
+// Before the picture: facts with sources in brief.md (every number and word on screen is traced there), then the treatment (styles/watercolour/STYLE.md).
+// The telling: one sheet per chapter. A painting grows as the lines go by: `at` is the moment the brush touches. Colour makes the shapes (no outlines);
+// what the story takes away is washed out (node.lift), what it adds is glazed on top (a second wash, node.repaint). Numbers are told in paint
+// (W.dabs, W.swatches, W.bars), details in a pencil-ringed close-up (W.inset). A new chapter starts on a fresh sheet (W.page).
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 80, offset: 0, grain: false, chapters: false, tail: 1.5,
+  theme: { bg: '#f8f4ea', fg: '#2a3147', ink: '#2a3147', muted: '#6c7388', accent: '#ee6f55', paper: '#f8f4ea', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const T = F.T, s = T.start, e = T.end, w = T.word;
+    const W = PROMO.watercolour(F, { palette: 'reef', seed: '__TITLE__' });
+    const L = W.L;   // W.L(landscape, portrait)
+
+    // ---- line 1: the place. A big wet wash first, then the things in it, one touch per phrase ----
+    W.rect({ x: 0, y: -80, w: 1500, h: 700, pigment: 'cool', to: 'deep', density: 0.4, edge: 'wet', grade: [0.5, 1.1], blooms: 2, at: 0.3, enter: 'bloom', from: [-200, -200], dur: 2.2 });
+    W.hills({ x: 0, y: 330, w: 1700, h: 120, pigment: 'earth+dusk', density: 0.5, at: 1.4, enter: 'stroke', dir: 0 });
+    const thing = W.branch({ x: -160, y: 330, h: 170, w: 30, depth: 4, tips: 15, pigment: 'warm', to: 'sun', density: 0.75, at: s('l1') + 0.6 });
+    W.text(M('第一句的关键词', 'Line 1 keyword'), { x: 260, y: -330, size: 60, weight: 900, at: s('l1') + 1.2, kind: 'headline' });
+    W.cam(0, { x: 0, y: 0, z: 1 });
+    W.move(s('l1'), e('l1'), { on: thing, pad: 3.2, dy: -60 });
+
+    // … one block per line: paint the next thing where the story has reached (W.blob / W.stroke / W.branch / W.dots), glaze a change over what is there,
+    //   wash out what is lost (thing.lift(at, { from })), open a W.inset on a detail, count with W.dabs, compare with W.swatches / W.bars;
+    //   a new chapter: W.page(at, { view }) and paint on the fresh sheet.
+
+    F.section(0, 1, { name: 'open' });
+    F.section(e('l1') + 0.4, 1, { name: 'close' });
+    F.coverAt(e('l1') - 0.3);
+  },
+});
+</script></body></html>

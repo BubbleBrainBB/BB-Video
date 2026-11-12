@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>__TITLE__ · watercolour</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>html,body{margin:0;background:#f8f4ea}#stage{position:relative;overflow:hidden}</style>
+<script src="assets/manifest.js"></script>
+<script src="lib/core.js"></script>
+<script src="lib/promo.js"></script>
+<script src="lib/watercolour.js"></script>
+</head><body><div id="stage"></div><script>
+// __TITLE__ · watercolour, on the beat (promo). Read styles/watercolour/STYLE.md first.
+// The product told as a painting being made: a wet wash sets the place, each thing the product does is one brush touch on a beat, the name is painted
+// lettering (W.letters) on the drop. Below: a skeleton with placeholders — replace every word, shape and beat with the film's own. Every word on screen must be in brief.md.
+const { M } = PROMO;
+PROMO.compose({
+  bpm: 84, offset: 0.3, duration: 20, grain: false, chapters: false,
+  theme: { bg: '#f8f4ea', fg: '#2a3147', ink: '#2a3147', muted: '#6c7388', accent: '#ee6f55', paper: '#f8f4ea', fonts: { display: '"Noto Serif SC", serif', serif: '"Noto Serif SC", serif', sans: '"Noto Serif SC", serif' } },
+  build: (F) => {
+    const b = (n) => F.beat(n), W = PROMO.watercolour(F, { palette: 'reef', seed: '__TITLE__' });
+    F.section(0, 1, { name: 'hook' }); F.section(b(8), 2, { name: 'build' }); F.section(b(16), 3, { name: 'drop', hit: true }); F.section(b(22), 1, { name: 'resolve' });
+    W.rect({ x: 0, y: -60, w: 1500, h: 640, pigment: 'cool', to: 'dusk', density: 0.38, edge: 'wet', grade: [0.5, 1.1], blooms: 2, at: b(0), enter: 'bloom', from: [-300, -150], dur: 2.4 });
+    W.hills({ x: 0, y: 320, w: 1700, h: 130, pigment: 'deep+earth', density: 0.5, at: b(3), enter: 'stroke', dir: 0 });
+    W.branch({ x: -420, y: 320, h: 180, w: 30, depth: 4, tips: 14, pigment: 'warm', to: 'sun', density: 0.75, at: b(5) });
+    W.blob({ x: 380, y: 250, w: 300, h: 150, pigment: 'hot', to: 'dusk', density: 0.6, blooms: 1, at: b(7) });
+    W.text(M('它做的第一件事', 'The first thing it does'), { x: 0, y: -360, size: 54, weight: 900, at: b(8), until: b(15.5), kind: 'headline' });
+    W.dabs({ x: 0, y: -120, n: 40, cols: 10, pigment: 'sun', at: b(10), until: b(15.5) });
+    W.page(b(15), { dur: F.B * 1.5, view: { x: 0, y: 0, z: 1 } });
+    W.letters({ text: M('名字', 'Name'), x: 0, y: -40, size: 260, pigment: 'deep', to: 'cool', density: 0.95, at: b(16.5), dur: 1.2 });
+    W.text(M('一句话说清它是什么', 'One line that says what it is'), { x: 0, y: 190, size: 46, at: b(19), kind: 'tagline' });
+    F.coverAt(b(21));
+  },
+});
+</script></body></html>

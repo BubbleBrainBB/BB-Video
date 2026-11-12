@@ -279,6 +279,8 @@ Dark motivational short (`lumen`) likewise: hand-written only (`PROMO.lumen(F, o
 
 Cutaway tour (`cutaway`) likewise: hand-written only (`await PROMO.cutaway(F, opt)`, `styles/cutaway/STYLE.md`), starters `styles/cutaway/index.html` (a teardown on the beat) and `explain.html` (narrated: the usual way to use it; the card is the film's text, so captions are off by default). `--check` also compares every "how the drawing differs" line with `brief.md` and asks for its source in the same bullet.
 
+Watercolour (`watercolour`) likewise: hand-written only (`PROMO.watercolour(F, opt)`, `styles/watercolour/STYLE.md`), starters `styles/watercolour/explain.html` (narrated: the usual way to use it) and `index.html` (on the beat). `at` is the moment the brush touches, not the moment a thing has landed: start a touch 0.2–0.4 s before its word or beat.
+
 ## Adding a style
 
 1. Write `../styles/<name>/STYLE.md` from `../styles/TEMPLATE.md` (Chinese version: `../styles/TEMPLATE.zh.md`), and make `runtime/<name>.js`, the starter page, sound and score.
